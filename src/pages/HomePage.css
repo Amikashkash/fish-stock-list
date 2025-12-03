@@ -1,0 +1,169 @@
+.home-page {
+  min-height: 100vh;
+  background-color: var(--background-color);
+}
+
+.app-header {
+  background: white;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-header h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.user-menu {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.user-menu:hover {
+  transform: scale(1.1);
+}
+
+.home-content {
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.welcome-card {
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.welcome-text h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+.farm-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.info-icon {
+  font-size: 16px;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.action-card {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: none;
+  background: white;
+  border-top: 4px solid;
+  min-height: 120px;
+}
+
+.action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.action-icon {
+  font-size: 40px;
+}
+
+.action-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.status-card {
+  background: #E8F5E9;
+  padding: 24px;
+  text-align: center;
+  border: 1px solid #A5D6A7;
+}
+
+.status-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.status-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2E7D32;
+  margin: 0 0 8px 0;
+}
+
+.status-card p {
+  font-size: 14px;
+  color: #388E3C;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .home-content {
+    padding: 24px;
+  }
+
+  .welcome-card {
+    padding: 24px;
+  }
+
+  .actions-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .app-header h1 {
+    font-size: 24px;
+  }
+
+  .welcome-text h2 {
+    font-size: 24px;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
