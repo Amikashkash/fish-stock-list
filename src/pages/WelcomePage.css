@@ -41,19 +41,33 @@
   margin-bottom: 48px;
 }
 
-.welcome-question {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+.welcome-question-text {
+  font-size: 22px;
+  color: white;
+  font-weight: 600;
+  margin: 0 0 32px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.welcome-question h2 {
-  font-size: 20px;
-  color: var(--text-primary);
+.sign-out-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
   font-weight: 600;
-  margin: 0;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+}
+
+.sign-out-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-2px);
 }
 
 .action-buttons {
@@ -105,8 +119,15 @@
 }
 
 .btn-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.btn-subtitle {
+  font-size: 13px;
+  opacity: 0.7;
+  font-weight: 400;
 }
 
 @media (max-width: 480px) {
@@ -122,11 +143,22 @@
     font-size: 16px;
   }
 
-  .welcome-question h2 {
+  .welcome-question-text {
     font-size: 18px;
   }
 
   .btn-title {
-    font-size: 15px;
+    font-size: 16px;
+  }
+
+  .btn-subtitle {
+    font-size: 12px;
+  }
+
+  .sign-out-btn {
+    top: 10px;
+    left: 10px;
+    padding: 8px 16px;
+    font-size: 13px;
   }
 }
