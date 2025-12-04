@@ -65,6 +65,18 @@ export async function createFarm(farmData) {
         currency: 'ILS',
         language: 'he',
         timezone: 'Asia/Jerusalem',
+        aquariumRooms: [
+          { id: 'reception', label: 'קליטה' },
+          { id: 'main', label: 'ראשי' },
+          { id: 'quarantine', label: 'הסגר' },
+          { id: 'display', label: 'תצוגה' },
+        ],
+        aquariumStatuses: [
+          { id: 'empty', label: 'ריק', color: '#95a5a6' },
+          { id: 'occupied', label: 'תפוס', color: '#3498db' },
+          { id: 'maintenance', label: 'תחזוקה', color: '#f39c12' },
+          { id: 'in-transfer', label: 'בהעברה', color: '#9b59b6' },
+        ],
       },
       createdAt: now,
       updatedAt: now,

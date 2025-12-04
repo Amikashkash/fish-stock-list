@@ -179,10 +179,18 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
                 value={formData.room}
                 onChange={(e) => handleChange('room', e.target.value)}
               >
-                <option value="reception">קליטה</option>
-                <option value="main">ראשי</option>
-                <option value="quarantine">הסגר</option>
-                <option value="display">תצוגה</option>
+                {currentFarm?.settings?.aquariumRooms?.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    {room.label}
+                  </option>
+                )) || (
+                  <>
+                    <option value="reception">קליטה</option>
+                    <option value="main">ראשי</option>
+                    <option value="quarantine">הסגר</option>
+                    <option value="display">תצוגה</option>
+                  </>
+                )}
               </select>
             </div>
           </div>

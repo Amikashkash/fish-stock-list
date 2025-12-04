@@ -5,7 +5,23 @@
 
 import { createContext, useState, useEffect, useContext } from 'react'
 import { auth } from '../firebase/config'
-import { getUserFarms } from '../services/farm.service'
+import { getUserFarms, updateFarm } from '../services/farm.service'
+
+// Default aquarium settings for migration
+const DEFAULT_AQUARIUM_SETTINGS = {
+  aquariumRooms: [
+    { id: 'reception', label: 'קליטה' },
+    { id: 'main', label: 'ראשי' },
+    { id: 'quarantine', label: 'הסגר' },
+    { id: 'display', label: 'תצוגה' },
+  ],
+  aquariumStatuses: [
+    { id: 'empty', label: 'ריק', color: '#95a5a6' },
+    { id: 'occupied', label: 'תפוס', color: '#3498db' },
+    { id: 'maintenance', label: 'תחזוקה', color: '#f39c12' },
+    { id: 'in-transfer', label: 'בהעברה', color: '#9b59b6' },
+  ],
+}
 
 const FarmContext = createContext()
 
@@ -30,6 +46,38 @@ export function FarmProvider({ children }) {
   }, [])
 
   /**
+   * Migrate farm to add missing aquarium settings
+   */
+  async function migrateFarmSettings(farm) {
+    try {
+      // Check if farm needs migration
+      if (!farm.settings?.aquariumRooms || !farm.settings?.aquariumStatuses) {
+        console.log(`Migrating farm ${farm.name} with aquarium settings...`)
+
+        const updates = {
+          settings: {
+            ...farm.settings,
+            ...DEFAULT_AQUARIUM_SETTINGS,
+          },
+        }
+
+        await updateFarm(farm.farmId, updates)
+
+        // Return updated farm
+        return {
+          ...farm,
+          ...updates,
+        }
+      }
+
+      return farm
+    } catch (err) {
+      console.error('Error migrating farm:', err)
+      return farm // Return original farm if migration fails
+    }
+  }
+
+  /**
    * Load all farms for the current user
    */
   async function loadUserFarms(userId) {
@@ -37,7 +85,11 @@ export function FarmProvider({ children }) {
       setLoading(true)
       setError(null)
 
-      const userFarms = await getUserFarms(userId)
+      let userFarms = await getUserFarms(userId)
+
+      // Migrate farms if needed
+      userFarms = await Promise.all(userFarms.map((farm) => migrateFarmSettings(farm)))
+
       setFarms(userFarms)
 
       // Auto-select first farm if available

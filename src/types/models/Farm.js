@@ -35,6 +35,8 @@
  * @property {string} settings.currency - Default currency (ILS, USD, EUR, etc.)
  * @property {string} settings.language - Default language (he, en)
  * @property {string} settings.timezone - Timezone
+ * @property {Array<{id: string, label: string}>} settings.aquariumRooms - Custom aquarium room types
+ * @property {Array<{id: string, label: string, color: string}>} settings.aquariumStatuses - Custom aquarium statuses
  * @property {Date} createdAt - Creation timestamp
  * @property {Date} updatedAt - Last update timestamp
  */
