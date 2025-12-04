@@ -1,8 +1,18 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useFarm } from '../contexts/FarmContext'
+import FarmCreateModal from '../components/features/farm/FarmCreateModal'
 import './WelcomePage.css'
 
 function WelcomePage() {
   const navigate = useNavigate()
+  const { addFarm } = useFarm()
+  const [showCreateModal, setShowCreateModal] = useState(false)
+
+  function handleFarmCreated(farm) {
+    addFarm(farm)
+    navigate('/home')
+  }
 
   return (
     <div className="welcome-page">
@@ -19,7 +29,7 @@ function WelcomePage() {
         <div className="action-buttons">
           <button
             className="btn-primary-large"
-            onClick={() => navigate('/home')}
+            onClick={() => setShowCreateModal(true)}
           >
             <span className="btn-icon">➕</span>
             <div className="btn-content">
@@ -38,6 +48,12 @@ function WelcomePage() {
           </button>
         </div>
       </div>
+
+      <FarmCreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleFarmCreated}
+      />
     </div>
   )
 }

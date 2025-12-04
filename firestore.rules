@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isFarmMember(farmId) {
+      return isAuthenticated() &&
+             request.auth.uid in get(/databases/$(database)/documents/farms/$(farmId)).data.memberIds;
+    }
+
+    function isFarmOwner(farmId) {
+      let farm = get(/databases/$(database)/documents/farms/$(farmId)).data;
+      return isAuthenticated() && request.auth.uid == farm.ownerId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Allow users to read/write their own document
+      allow read, write: if isOwner(userId);
+
+      // User's farm memberships
+      match /farms/{farmId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // Farms collection
+    match /farms/{farmId} {
+      // Allow authenticated users to create farms
+      allow create: if isAuthenticated() &&
+                       request.resource.data.ownerId == request.auth.uid;
+
+      // Allow farm members to read
+      allow read: if isFarmMember(farmId);
+
+      // Allow farm owner to update/delete
+      allow update, delete: if isFarmOwner(farmId);
+
+      // Farm's shipments subcollection
+      match /shipments/{shipmentId} {
+        allow read: if isFarmMember(farmId);
+        allow create: if isFarmMember(farmId);
+        allow update, delete: if isFarmOwner(farmId);
+      }
+
+      // Farm's fish instances subcollection
+      match /fish_instances/{instanceId} {
+        allow read: if isFarmMember(farmId);
+        allow create: if isFarmMember(farmId);
+        allow update, delete: if isFarmMember(farmId);
+      }
+
+      // Farm's aquariums subcollection
+      match /aquariums/{aquariumId} {
+        allow read: if isFarmMember(farmId);
+        allow create, update, delete: if isFarmMember(farmId);
+      }
+
+      // Farm's tasks subcollection
+      match /tasks/{taskId} {
+        allow read: if isFarmMember(farmId);
+        allow create, update, delete: if isFarmMember(farmId);
+      }
+
+      // Farm's invitations subcollection
+      match /invitations/{invitationId} {
+        allow read: if isFarmOwner(farmId);
+        allow create, update, delete: if isFarmOwner(farmId);
+      }
+    }
+
+    // Global invitations collection (for code-based invites)
+    match /invitations/{invitationCode} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() &&
+                               resource.data.createdBy == request.auth.uid;
+    }
+  }
+}
