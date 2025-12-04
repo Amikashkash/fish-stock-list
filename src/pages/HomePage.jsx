@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { auth } from '../firebase/config'
 import { signOut } from 'firebase/auth'
 import { useFarm } from '../contexts/FarmContext'
@@ -7,6 +8,7 @@ import FarmSettingsModal from '../components/features/farm/FarmSettingsModal'
 import './HomePage.css'
 
 function HomePage() {
+  const navigate = useNavigate()
   const user = auth.currentUser
   const { currentFarm } = useFarm()
   const [showImportModal, setShowImportModal] = useState(false)
@@ -35,6 +37,8 @@ function HomePage() {
   const handleCardClick = (action) => {
     if (action === 'import') {
       setShowImportModal(true)
+    } else if (action === 'aquariums') {
+      navigate('/aquariums')
     } else {
       alert(`${action} - בקרוב`)
     }

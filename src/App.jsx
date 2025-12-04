@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
 import WelcomePage from './pages/WelcomePage'
+import AquariumsPage from './pages/AquariumsPage'
 import './App.css'
 
 // Create React Query client
@@ -57,6 +58,10 @@ function App() {
             <Route
               path="/home"
               element={user ? <HomePage /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/aquariums"
+              element={user ? <AquariumsPage /> : <Navigate to="/login" />}
             />
             <Route
               path="/"
