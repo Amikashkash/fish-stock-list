@@ -1,26 +1,12 @@
 import './AquariumCard.css'
 
-const ROOM_LABELS = {
-  reception: 'קליטה',
-  main: 'ראשי',
-  quarantine: 'הסגר',
-  display: 'תצוגה',
-}
-
-const STATUS_LABELS = {
-  empty: 'ריק',
-  occupied: 'תפוס',
-  'in-transfer': 'בהעברה',
-  maintenance: 'תחזוקה',
-}
-
 const SHELF_LABELS = {
   bottom: 'תחתון',
   middle: 'אמצעי',
   top: 'עליון',
 }
 
-function AquariumCard({ aquarium, onClick }) {
+function AquariumCard({ aquarium, onClick, statusLabel }) {
   const statusClass = `status-${aquarium.status}`
   const occupancyPercent = Math.round(aquarium.occupancyRate * 100)
 
@@ -29,7 +15,7 @@ function AquariumCard({ aquarium, onClick }) {
       <div className="aquarium-card-header">
         <div className="aquarium-number">{aquarium.aquariumNumber}</div>
         <div className={`aquarium-status ${statusClass}`}>
-          {STATUS_LABELS[aquarium.status] || aquarium.status}
+          {statusLabel || aquarium.status}
         </div>
       </div>
 
@@ -37,7 +23,7 @@ function AquariumCard({ aquarium, onClick }) {
         {/* Room & Shelf */}
         <div className="aquarium-info-row">
           <span className="label">חדר:</span>
-          <span className="value">{ROOM_LABELS[aquarium.room] || aquarium.room}</span>
+          <span className="value">{aquarium.room}</span>
         </div>
 
         <div className="aquarium-info-row">
@@ -49,12 +35,6 @@ function AquariumCard({ aquarium, onClick }) {
         <div className="aquarium-info-row">
           <span className="label">נפח:</span>
           <span className="value">{aquarium.volume}L</span>
-        </div>
-
-        {/* Location */}
-        <div className="aquarium-info-row">
-          <span className="label">מיקום:</span>
-          <span className="value">{aquarium.location}</span>
         </div>
 
         {/* Fish Count */}
@@ -75,15 +55,6 @@ function AquariumCard({ aquarium, onClick }) {
                 />
               </div>
             )}
-          </div>
-        )}
-
-        {/* Equipment */}
-        {(aquarium.equipment?.heater || aquarium.equipment?.filter || aquarium.equipment?.aerator) && (
-          <div className="aquarium-equipment">
-            {aquarium.equipment.heater && <span className="equipment-icon" title="חימום">🌡️</span>}
-            {aquarium.equipment.filter && <span className="equipment-icon" title="פילטר">🔄</span>}
-            {aquarium.equipment.aerator && <span className="equipment-icon" title="אוורור">💨</span>}
           </div>
         )}
       </div>

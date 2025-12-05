@@ -12,13 +12,6 @@
  */
 
 /**
- * @typedef {Object} Equipment
- * @property {boolean} heater - Has heater
- * @property {boolean} filter - Has filter
- * @property {boolean} aerator - Has aerator
- */
-
-/**
  * @typedef {Object} Aquarium
  * @property {string} aquariumId - Unique identifier
  * @property {string} aquariumNumber - User-defined number (e.g., "A-01", "14a")
@@ -26,8 +19,7 @@
  * Physical properties
  * @property {ShelfLevel} shelf - Position on shelf
  * @property {number} volume - Volume in liters
- * @property {string} location - Physical location/area in farm
- * @property {RoomType} room - Room type
+ * @property {string} room - Room/location (customizable per farm)
  *
  * Status
  * @property {AquariumStatus} status - Current status
@@ -40,9 +32,6 @@
  * Maintenance
  * @property {Date|null} [lastCleaned] - Last cleaning date
  * @property {Date|null} [lastWaterChange] - Last water change date
- *
- * Equipment
- * @property {Equipment} [equipment] - Equipment information
  *
  * @property {string} [notes] - Additional notes
  *
@@ -66,7 +55,6 @@ export function createAquarium(data) {
     // Physical properties
     shelf: data.shelf || 'bottom',
     volume: data.volume || 0,
-    location: data.location || '',
     room: data.room || 'main',
 
     // Status
@@ -80,13 +68,6 @@ export function createAquarium(data) {
     // Maintenance
     lastCleaned: data.lastCleaned || null,
     lastWaterChange: data.lastWaterChange || null,
-
-    // Equipment
-    equipment: data.equipment || {
-      heater: false,
-      filter: false,
-      aerator: false,
-    },
 
     notes: data.notes || '',
 
@@ -112,8 +93,8 @@ export function validateAquarium(data) {
     errors.push('Volume must be greater than 0')
   }
 
-  if (!data.location || data.location.trim() === '') {
-    errors.push('Location is required')
+  if (!data.room || data.room.trim() === '') {
+    errors.push('Room/Location is required')
   }
 
   return {

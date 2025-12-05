@@ -42,6 +42,11 @@ function AquariumsPage() {
     console.log('Aquarium clicked:', aquarium)
   }
 
+  function getStatusLabel(statusId) {
+    const status = currentFarm?.settings?.aquariumStatuses?.find((s) => s.id === statusId)
+    return status?.label || statusId
+  }
+
   // Filter aquariums
   const filteredAquariums = aquariums.filter((aq) => {
     if (filterRoom !== 'all' && aq.room !== filterRoom) return false
@@ -114,10 +119,12 @@ function AquariumsPage() {
           <label>חדר:</label>
           <select value={filterRoom} onChange={(e) => setFilterRoom(e.target.value)}>
             <option value="all">הכל</option>
-            <option value="reception">קליטה</option>
-            <option value="main">ראשי</option>
-            <option value="quarantine">הסגר</option>
-            <option value="display">תצוגה</option>
+            {/* Get unique rooms from actual aquariums */}
+            {[...new Set(aquariums.map((aq) => aq.room))].map((room) => (
+              <option key={room} value={room}>
+                {room}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -125,10 +132,11 @@ function AquariumsPage() {
           <label>סטטוס:</label>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
             <option value="all">הכל</option>
-            <option value="empty">ריק</option>
-            <option value="occupied">תפוס</option>
-            <option value="maintenance">תחזוקה</option>
-            <option value="in-transfer">בהעברה</option>
+            {currentFarm?.settings?.aquariumStatuses?.map((status) => (
+              <option key={status.id} value={status.id}>
+                {status.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -140,24 +148,16 @@ function AquariumsPage() {
           <h3>אין אקווריומים</h3>
           <p>
             {aquariums.length === 0
-              ? 'התחל על ידי יצירת האקווריום הראשון שלך'
+              ? 'התחל על ידי יצירת האקווריום הראשון שלך (לחץ על "אקווריום חדש" למעלה)'
               : 'לא נמצאו אקווריומים התואמים את הסינון'}
           </p>
-          {aquariums.length === 0 && (
-            <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
-              + צור אקווריום חדש
-            </button>
-          )}
         </div>
       ) : (
         <div className="aquariums-content">
           {Object.entries(aquariumsByRoom).map(([room, roomAquariums]) => (
             <div key={room} className="room-section">
               <h2 className="room-title">
-                {room === 'reception' && 'חדר קליטה'}
-                {room === 'main' && 'חדר ראשי'}
-                {room === 'quarantine' && 'חדר הסגר'}
-                {room === 'display' && 'חדר תצוגה'}
+                {room}
                 <span className="room-count">({roomAquariums.length})</span>
               </h2>
 
@@ -166,6 +166,7 @@ function AquariumsPage() {
                   <AquariumCard
                     key={aquarium.aquariumId}
                     aquarium={aquarium}
+                    statusLabel={getStatusLabel(aquarium.status)}
                     onClick={() => handleAquariumClick(aquarium)}
                   />
                 ))}

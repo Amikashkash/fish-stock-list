@@ -13,30 +13,13 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
     aquariumNumber: '',
     shelf: 'bottom',
     volume: '',
-    location: '',
-    room: 'main',
-    status: 'empty',
-    equipment: {
-      heater: false,
-      filter: false,
-      aerator: false,
-    },
+    room: '',
     notes: '',
   })
 
   function handleChange(field, value) {
     setFormData({ ...formData, [field]: value })
     setError('')
-  }
-
-  function handleEquipmentChange(equipment, checked) {
-    setFormData({
-      ...formData,
-      equipment: {
-        ...formData.equipment,
-        [equipment]: checked,
-      },
-    })
   }
 
   async function handleSubmit(e) {
@@ -58,8 +41,12 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
 
     try {
       const aquariumData = {
-        ...formData,
+        aquariumNumber: formData.aquariumNumber,
+        shelf: formData.shelf,
         volume: Number(formData.volume),
+        room: formData.room,
+        status: 'empty',
+        notes: formData.notes,
       }
 
       const result = await createAquarium(currentFarm.farmId, aquariumData)
@@ -73,14 +60,7 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
         aquariumNumber: '',
         shelf: 'bottom',
         volume: '',
-        location: '',
-        room: 'main',
-        status: 'empty',
-        equipment: {
-          heater: false,
-          filter: false,
-          aerator: false,
-        },
+        room: '',
         notes: '',
       })
 
@@ -95,11 +75,14 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null
 
+  // Get room suggestions from farm settings
+  const roomSuggestions = currentFarm?.settings?.aquariumRooms || []
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content aquarium-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>יצירת אקווריום חדש</h2>
+          <h2>אקווריום חדש</h2>
           <button className="modal-close" onClick={onClose}>
             ×
           </button>
@@ -107,7 +90,7 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
 
         <form onSubmit={handleSubmit} className="modal-body">
           {error && (
-            <div className="error-message" style={{ marginBottom: '16px' }}>
+            <div className="error-message">
               {error}
             </div>
           )}
@@ -121,26 +104,13 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
               type="text"
               value={formData.aquariumNumber}
               onChange={(e) => handleChange('aquariumNumber', e.target.value)}
-              placeholder='למשל: "A-01" או "14a"'
+              placeholder='למשל: "A-01", "14a"'
               required
+              autoFocus
             />
-            <small>מזהה ייחודי לאקווריום (למשל: A-01, 14a)</small>
           </div>
 
           <div className="form-row">
-            {/* Shelf */}
-            <div className="form-group">
-              <label>מיקום במדף</label>
-              <select
-                value={formData.shelf}
-                onChange={(e) => handleChange('shelf', e.target.value)}
-              >
-                <option value="bottom">תחתון</option>
-                <option value="middle">אמצעי</option>
-                <option value="top">עליון</option>
-              </select>
-            </div>
-
             {/* Volume */}
             <div className="form-group">
               <label>
@@ -155,75 +125,40 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
                 required
               />
             </div>
-          </div>
 
-          <div className="form-row">
-            {/* Location */}
+            {/* Shelf */}
             <div className="form-group">
-              <label>
-                מיקום בחווה <span className="required">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => handleChange('location', e.target.value)}
-                placeholder='למשל: "קיר צפוני", "מדף 3"'
-                required
-              />
-            </div>
-
-            {/* Room */}
-            <div className="form-group">
-              <label>חדר</label>
+              <label>מיקום במדף</label>
               <select
-                value={formData.room}
-                onChange={(e) => handleChange('room', e.target.value)}
+                value={formData.shelf}
+                onChange={(e) => handleChange('shelf', e.target.value)}
               >
-                {currentFarm?.settings?.aquariumRooms?.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {room.label}
-                  </option>
-                )) || (
-                  <>
-                    <option value="reception">קליטה</option>
-                    <option value="main">ראשי</option>
-                    <option value="quarantine">הסגר</option>
-                    <option value="display">תצוגה</option>
-                  </>
-                )}
+                <option value="bottom">תחתון</option>
+                <option value="middle">אמצעי</option>
+                <option value="top">עליון</option>
               </select>
             </div>
           </div>
 
-          {/* Equipment */}
+          {/* Room/Location (combined) */}
           <div className="form-group">
-            <label>ציוד</label>
-            <div className="checkbox-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.equipment.heater}
-                  onChange={(e) => handleEquipmentChange('heater', e.target.checked)}
-                />
-                <span>חימום</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.equipment.filter}
-                  onChange={(e) => handleEquipmentChange('filter', e.target.checked)}
-                />
-                <span>פילטר</span>
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.equipment.aerator}
-                  onChange={(e) => handleEquipmentChange('aerator', e.target.checked)}
-                />
-                <span>אוורור</span>
-              </label>
-            </div>
+            <label>
+              חדר/מיקום בחווה <span className="required">*</span>
+            </label>
+            <input
+              type="text"
+              list="room-suggestions"
+              value={formData.room}
+              onChange={(e) => handleChange('room', e.target.value)}
+              placeholder='למשל: "קליטה", "ראשי", "חדר 1"'
+              required
+            />
+            <datalist id="room-suggestions">
+              {roomSuggestions.map((room) => (
+                <option key={room.id} value={room.label} />
+              ))}
+            </datalist>
+            <small>בחר מהרשימה או הזן מיקום חדש</small>
           </div>
 
           {/* Notes */}
@@ -232,8 +167,8 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
             <textarea
               value={formData.notes}
               onChange={(e) => handleChange('notes', e.target.value)}
-              placeholder="הערות נוספות על האקווריום..."
-              rows="3"
+              placeholder="הערות נוספות..."
+              rows="2"
             />
           </div>
 
@@ -243,7 +178,7 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
               ביטול
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'יוצר...' : 'צור אקווריום'}
+              {loading ? 'יוצר...' : 'צור'}
             </button>
           </div>
         </form>
