@@ -4,7 +4,6 @@ import { useFarm } from '../contexts/FarmContext'
 import { getAquariums } from '../services/aquarium.service'
 import AquariumCard from '../components/features/aquarium/AquariumCard'
 import AquariumCreateModal from '../components/features/aquarium/AquariumCreateModal'
-import './AquariumsPage.css'
 
 function AquariumsPage() {
   const navigate = useNavigate()
@@ -71,53 +70,63 @@ function AquariumsPage() {
 
   if (loading) {
     return (
-      <div className="aquariums-page">
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p>טוען אקווריומים...</p>
+      <div className="min-h-screen bg-gray-50 p-5 md:p-4">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+          <p className="mt-4 text-base text-gray-500">טוען אקווריומים...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="aquariums-page">
+    <div className="min-h-screen bg-gray-50 p-5 md:p-4">
       {/* Header */}
-      <div className="page-header">
-        <button className="back-button" onClick={() => navigate('/home')}>
+      <div className="flex justify-between items-center mb-6 gap-4 flex-wrap md:flex-nowrap">
+        <button
+          className="px-5 py-2.5 bg-white border border-gray-300 rounded-lg cursor-pointer text-sm font-semibold text-gray-900 transition-all hover:bg-gray-50 hover:border-gray-400"
+          onClick={() => navigate('/home')}
+        >
           ← חזרה
         </button>
-        <h1>ניהול אקווריומים</h1>
-        <button className="btn-primary" onClick={() => setShowCreateModal(true)}>
+        <h1 className="text-[28px] md:text-[22px] font-bold text-gray-900 m-0 flex-1 text-center">ניהול אקווריומים</h1>
+        <button
+          className="px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+          onClick={() => setShowCreateModal(true)}
+        >
           + אקווריום חדש
         </button>
       </div>
 
       {/* Stats */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-value">{stats.total}</div>
-          <div className="stat-label">סה"כ אקווריומים</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-5 rounded-xl shadow-md text-center">
+          <div className="text-[32px] font-bold text-blue-500 mb-1">{stats.total}</div>
+          <div className="text-sm text-gray-500 font-medium">סה"כ אקווריומים</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats.occupied}</div>
-          <div className="stat-label">תפוסים</div>
+        <div className="bg-white p-5 rounded-xl shadow-md text-center">
+          <div className="text-[32px] font-bold text-blue-500 mb-1">{stats.occupied}</div>
+          <div className="text-sm text-gray-500 font-medium">תפוסים</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats.empty}</div>
-          <div className="stat-label">ריקים</div>
+        <div className="bg-white p-5 rounded-xl shadow-md text-center">
+          <div className="text-[32px] font-bold text-blue-500 mb-1">{stats.empty}</div>
+          <div className="text-sm text-gray-500 font-medium">ריקים</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats.maintenance}</div>
-          <div className="stat-label">בתחזוקה</div>
+        <div className="bg-white p-5 rounded-xl shadow-md text-center">
+          <div className="text-[32px] font-bold text-blue-500 mb-1">{stats.maintenance}</div>
+          <div className="text-sm text-gray-500 font-medium">בתחזוקה</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="filters-bar">
-        <div className="filter-group">
-          <label>חדר:</label>
-          <select value={filterRoom} onChange={(e) => setFilterRoom(e.target.value)}>
+      <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-white rounded-xl shadow-md">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-semibold text-gray-900">חדר:</label>
+          <select
+            value={filterRoom}
+            onChange={(e) => setFilterRoom(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
+          >
             <option value="all">הכל</option>
             {/* Get unique rooms from actual aquariums */}
             {[...new Set(aquariums.map((aq) => aq.room))].map((room) => (
@@ -128,9 +137,13 @@ function AquariumsPage() {
           </select>
         </div>
 
-        <div className="filter-group">
-          <label>סטטוס:</label>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-semibold text-gray-900">סטטוס:</label>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
+          >
             <option value="all">הכל</option>
             {currentFarm?.settings?.aquariumStatuses?.map((status) => (
               <option key={status.id} value={status.id}>
@@ -143,25 +156,25 @@ function AquariumsPage() {
 
       {/* Aquariums List */}
       {filteredAquariums.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🏊</div>
-          <h3>אין אקווריומים</h3>
-          <p>
+        <div className="text-center py-[60px] px-5 bg-white rounded-xl shadow-md">
+          <div className="text-[80px] mb-4 opacity-50">🏊</div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">אין אקווריומים</h3>
+          <p className="text-base text-gray-500 mb-6">
             {aquariums.length === 0
               ? 'התחל על ידי יצירת האקווריום הראשון שלך (לחץ על "אקווריום חדש" למעלה)'
               : 'לא נמצאו אקווריומים התואמים את הסינון'}
           </p>
         </div>
       ) : (
-        <div className="aquariums-content">
+        <div className="flex flex-col gap-8">
           {Object.entries(aquariumsByRoom).map(([room, roomAquariums]) => (
-            <div key={room} className="room-section">
-              <h2 className="room-title">
+            <div key={room} className="bg-white p-6 md:p-4 rounded-xl shadow-md">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-gray-100 flex items-center gap-2">
                 {room}
-                <span className="room-count">({roomAquariums.length})</span>
+                <span className="text-sm font-medium text-gray-500">({roomAquariums.length})</span>
               </h2>
 
-              <div className="aquariums-grid">
+              <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
                 {roomAquariums.map((aquarium) => (
                   <AquariumCard
                     key={aquarium.aquariumId}

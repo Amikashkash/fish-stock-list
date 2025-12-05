@@ -9,7 +9,6 @@ import HomePage from './pages/HomePage'
 import WelcomePage from './pages/WelcomePage'
 import AquariumsPage from './pages/AquariumsPage'
 import FarmSettingsPage from './pages/FarmSettingsPage'
-import './App.css'
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -36,9 +35,9 @@ function App() {
 
   if (loading) {
     return (
-      <div className="loading-screen">
-        <div className="spinner"></div>
-        <p>טוען...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+        <p className="mt-4 text-gray-600 text-base">טוען...</p>
       </div>
     )
   }

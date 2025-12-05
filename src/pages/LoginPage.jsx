@@ -7,7 +7,6 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth'
 import { auth } from '../firebase/config'
-import './LoginPage.css'
 
 function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -98,47 +97,49 @@ function LoginPage() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-header">
-          <div className="icon">🐠</div>
-          <h1>ניהול חוות דגי נוי</h1>
-          <p>מערכת ניהול מקצועית לחוות דגים</p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#667eea] to-[#764ba2]">
+      <div className="w-full max-w-[400px] bg-white rounded-2xl p-6 md:p-8 shadow-2xl">
+        <div className="text-center mb-8">
+          <div className="text-6xl mb-4">🐠</div>
+          <h1 className="text-2xl mb-2 text-gray-900 font-semibold">ניהול חוות דגי נוי</h1>
+          <p className="text-sm text-gray-600">מערכת ניהול מקצועית לחוות דגים</p>
         </div>
 
         {error && (
-          <div className="error-message">
+          <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 text-sm text-center border border-red-200">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>דוא"ל</label>
+          <div className="mb-5">
+            <label className="block mb-2 font-medium text-gray-900 text-sm">דוא"ל</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@email.com"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500"
               required
               dir="ltr"
             />
           </div>
 
-          <div className="form-group">
-            <label>סיסמה</label>
-            <div className="password-input">
+          <div className="mb-5">
+            <label className="block mb-2 font-medium text-gray-900 text-sm">סיסמה</label>
+            <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••"
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500"
                 required
                 dir="ltr"
               />
               <button
                 type="button"
-                className="toggle-password"
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-xl cursor-pointer p-1"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? '👁️' : '👁️‍🗨️'}
@@ -147,20 +148,21 @@ function LoginPage() {
           </div>
 
           {!isLogin && (
-            <div className="form-group">
-              <label>אימות סיסמה</label>
-              <div className="password-input">
+            <div className="mb-5">
+              <label className="block mb-2 font-medium text-gray-900 text-sm">אימות סיסמה</label>
+              <div className="relative">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••"
+                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500"
                   required
                   dir="ltr"
                 />
                 <button
                   type="button"
-                  className="toggle-password"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-xl cursor-pointer p-1"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
@@ -172,7 +174,7 @@ function LoginPage() {
           {isLogin && (
             <button
               type="button"
-              className="forgot-password"
+              className="block mb-4 bg-transparent text-blue-500 text-sm underline text-right border-none cursor-pointer"
               onClick={handleForgotPassword}
               disabled={loading}
             >
@@ -182,31 +184,32 @@ function LoginPage() {
 
           <button
             type="submit"
-            className="btn-primary"
+            className="w-full py-3.5 bg-blue-500 text-white border-none rounded-lg text-base font-semibold cursor-pointer transition-colors hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? 'טוען...' : (isLogin ? 'התחבר' : 'הרשם')}
           </button>
         </form>
 
-        <div className="divider">
-          <span>או</span>
+        <div className="flex items-center my-6 text-gray-600 text-sm before:content-[''] before:flex-1 before:h-px before:bg-gray-300 after:content-[''] after:flex-1 after:h-px after:bg-gray-300">
+          <span className="px-4">או</span>
         </div>
 
         <button
           type="button"
-          className="btn-google"
+          className="w-full py-3.5 bg-white text-gray-900 border border-gray-300 rounded-lg text-base font-medium cursor-pointer flex items-center justify-center gap-2 transition-colors hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
           onClick={handleGoogleSignIn}
           disabled={loading}
         >
-          <span className="google-icon">G</span>
+          <span className="font-bold text-lg text-[#4285F4]">G</span>
           התחבר עם Google
         </button>
 
-        <div className="toggle-mode">
+        <div className="mt-6 text-center text-sm text-gray-600">
           {isLogin ? 'אין לך חשבון?' : 'יש לך כבר חשבון?'}
           <button
             type="button"
+            className="bg-transparent text-blue-500 font-semibold mr-1 underline border-none cursor-pointer"
             onClick={() => {
               setIsLogin(!isLogin)
               setError('')

@@ -4,7 +4,6 @@ import { auth } from '../firebase/config'
 import { signOut } from 'firebase/auth'
 import { useFarm } from '../contexts/FarmContext'
 import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
-import './HomePage.css'
 
 function HomePage() {
   const navigate = useNavigate()
@@ -44,71 +43,76 @@ function HomePage() {
 
   if (!currentFarm) {
     return (
-      <div className="home-page">
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p>טוען...</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+          <p className="mt-4 text-base text-gray-500">טוען...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="home-page">
-      <header className="app-header">
-        <h1>{currentFarm.name}</h1>
-        <div className="header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white px-4 py-4 flex justify-between items-center shadow-md sticky top-0 z-[100]">
+        <h1 className="text-xl md:text-2xl font-semibold text-gray-900 m-0">{currentFarm.name}</h1>
+        <div className="flex gap-2.5 items-center">
           <button
-            className="icon-button"
+            className="bg-transparent border-none text-2xl cursor-pointer"
             onClick={() => navigate('/settings')}
             title="הגדרות חווה"
-            style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}
           >
             ⚙️
           </button>
-          <button className="user-menu" onClick={handleSignOut} title="התנתק">
+          <button
+            className="w-10 h-10 rounded-full bg-blue-500 text-white text-xl flex items-center justify-center border-none cursor-pointer transition-transform hover:scale-110"
+            onClick={handleSignOut}
+            title="התנתק"
+          >
             👤
           </button>
         </div>
       </header>
 
-      <main className="home-content">
-        <div className="welcome-card card">
-          <div className="welcome-text">
-            <h2>שלום, {user?.displayName || user?.email || 'משתמש'}!</h2>
-            <div className="farm-info">
-              <div className="info-row">
-                <span className="info-icon">🏢</span>
+      <main className="p-4 md:p-6 max-w-[1200px] mx-auto">
+        <div className="bg-white rounded-xl shadow-md p-5 md:p-6 mb-6">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 m-0 mb-4">
+              שלום, {user?.displayName || user?.email || 'משתמש'}!
+            </h2>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="text-base">🏢</span>
                 <span>חוות ראשית</span>
               </div>
-              <div className="info-row">
-                <span className="info-icon">👔</span>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="text-base">👔</span>
                 <span>בעלים</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="actions-grid">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
           {actionCards.map((card, index) => (
             <button
               key={index}
-              className="action-card card"
+              className="bg-white rounded-xl shadow-md p-6 md:p-4 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all border-none border-t-4 min-h-[120px] hover:-translate-y-1 hover:shadow-xl"
               style={{ borderTopColor: card.color }}
               onClick={() => handleCardClick(card.action)}
             >
-              <div className="action-icon" style={{ color: card.color }}>
+              <div className="text-[40px]" style={{ color: card.color }}>
                 {card.icon}
               </div>
-              <div className="action-label">{card.label}</div>
+              <div className="text-base font-semibold text-gray-900">{card.label}</div>
             </button>
           ))}
         </div>
 
-        <div className="status-card card">
-          <div className="status-icon">✅</div>
-          <h3>המערכת מוכנה לשימוש</h3>
-          <p>כל התשתיות מוכנות - ניתן להתחיל לעבוד</p>
+        <div className="bg-green-50 border border-green-300 rounded-xl shadow-md p-6 text-center">
+          <div className="text-5xl mb-3">✅</div>
+          <h3 className="text-lg font-bold text-green-800 m-0 mb-2">המערכת מוכנה לשימוש</h3>
+          <p className="text-sm text-green-700 m-0">כל התשתיות מוכנות - ניתן להתחיל לעבוד</p>
         </div>
       </main>
 
