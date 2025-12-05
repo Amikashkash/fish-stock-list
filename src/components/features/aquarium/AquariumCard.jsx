@@ -1,11 +1,5 @@
 import './AquariumCard.css'
 
-const SHELF_LABELS = {
-  bottom: 'תחתון',
-  middle: 'אמצעי',
-  top: 'עליון',
-}
-
 function AquariumCard({ aquarium, onClick, statusLabel }) {
   const statusClass = `status-${aquarium.status}`
   const occupancyPercent = Math.round(aquarium.occupancyRate * 100)
@@ -20,15 +14,10 @@ function AquariumCard({ aquarium, onClick, statusLabel }) {
       </div>
 
       <div className="aquarium-card-body">
-        {/* Room & Shelf */}
+        {/* Room */}
         <div className="aquarium-info-row">
-          <span className="label">חדר:</span>
+          <span className="label">מיקום:</span>
           <span className="value">{aquarium.room}</span>
-        </div>
-
-        <div className="aquarium-info-row">
-          <span className="label">מדף:</span>
-          <span className="value">{SHELF_LABELS[aquarium.shelf] || aquarium.shelf}</span>
         </div>
 
         {/* Volume */}

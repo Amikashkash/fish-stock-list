@@ -110,6 +110,38 @@
   background: #e0e0e0;
 }
 
+/* New room input */
+.new-room-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.new-room-input input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.new-room-input input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.new-room-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.new-room-actions button {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
 /* Form styling */
 .form-group {
   margin-bottom: 20px;

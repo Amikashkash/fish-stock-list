@@ -11,15 +11,32 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
 
   const [formData, setFormData] = useState({
     aquariumNumber: '',
-    shelf: 'bottom',
     volume: '',
     room: '',
     notes: '',
   })
+  const [showNewRoomInput, setShowNewRoomInput] = useState(false)
+  const [newRoomName, setNewRoomName] = useState('')
 
   function handleChange(field, value) {
     setFormData({ ...formData, [field]: value })
     setError('')
+
+    // Show new room input if "new" is selected
+    if (field === 'room' && value === '__new__') {
+      setShowNewRoomInput(true)
+      setFormData({ ...formData, room: '' })
+    } else if (field === 'room') {
+      setShowNewRoomInput(false)
+    }
+  }
+
+  function handleNewRoomSubmit() {
+    if (newRoomName.trim()) {
+      setFormData({ ...formData, room: newRoomName.trim() })
+      setShowNewRoomInput(false)
+      setNewRoomName('')
+    }
   }
 
   async function handleSubmit(e) {
@@ -42,7 +59,6 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
     try {
       const aquariumData = {
         aquariumNumber: formData.aquariumNumber,
-        shelf: formData.shelf,
         volume: Number(formData.volume),
         room: formData.room,
         status: 'empty',
@@ -58,11 +74,12 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
       // Reset form
       setFormData({
         aquariumNumber: '',
-        shelf: 'bottom',
         volume: '',
         room: '',
         notes: '',
       })
+      setShowNewRoomInput(false)
+      setNewRoomName('')
 
       onClose()
     } catch (err) {
@@ -110,55 +127,70 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
             />
           </div>
 
-          <div className="form-row">
-            {/* Volume */}
-            <div className="form-group">
-              <label>
-                נפח (ליטרים) <span className="required">*</span>
-              </label>
-              <input
-                type="number"
-                value={formData.volume}
-                onChange={(e) => handleChange('volume', e.target.value)}
-                placeholder="200"
-                min="1"
-                required
-              />
-            </div>
-
-            {/* Shelf */}
-            <div className="form-group">
-              <label>מיקום במדף</label>
-              <select
-                value={formData.shelf}
-                onChange={(e) => handleChange('shelf', e.target.value)}
-              >
-                <option value="bottom">תחתון</option>
-                <option value="middle">אמצעי</option>
-                <option value="top">עליון</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Room/Location (combined) */}
+          {/* Volume */}
           <div className="form-group">
             <label>
-              חדר/מיקום בחווה <span className="required">*</span>
+              נפח (ליטרים) <span className="required">*</span>
             </label>
             <input
-              type="text"
-              list="room-suggestions"
-              value={formData.room}
-              onChange={(e) => handleChange('room', e.target.value)}
-              placeholder='למשל: "קליטה", "ראשי", "חדר 1"'
+              type="number"
+              value={formData.volume}
+              onChange={(e) => handleChange('volume', e.target.value)}
+              placeholder="200"
+              min="1"
               required
             />
-            <datalist id="room-suggestions">
-              {roomSuggestions.map((room) => (
-                <option key={room.id} value={room.label} />
-              ))}
-            </datalist>
-            <small>בחר מהרשימה או הזן מיקום חדש</small>
+          </div>
+
+          {/* Location/Room Dropdown */}
+          <div className="form-group">
+            <label>
+              מיקום בחווה <span className="required">*</span>
+            </label>
+            {!showNewRoomInput ? (
+              <select
+                value={formData.room}
+                onChange={(e) => handleChange('room', e.target.value)}
+                required
+              >
+                <option value="">בחר מיקום...</option>
+                {roomSuggestions.map((room) => (
+                  <option key={room.id} value={room.label}>
+                    {room.label}
+                  </option>
+                ))}
+                <option value="__new__">+ הוסף מיקום חדש...</option>
+              </select>
+            ) : (
+              <div className="new-room-input">
+                <input
+                  type="text"
+                  value={newRoomName}
+                  onChange={(e) => setNewRoomName(e.target.value)}
+                  placeholder="שם המיקום החדש"
+                  autoFocus
+                />
+                <div className="new-room-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      setShowNewRoomInput(false)
+                      setNewRoomName('')
+                    }}
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleNewRoomSubmit}
+                  >
+                    הוסף
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Notes */}
