@@ -435,6 +435,566 @@ src/
 
 ---
 
+## Styling with Tailwind CSS
+
+### Why Tailwind CSS?
+
+**Completed full migration in December 2024** - All component-specific CSS files have been removed in favor of Tailwind utility classes.
+
+**Benefits:**
+- ✅ **Consistency** - Uniform styling approach across entire codebase
+- ✅ **Maintainability** - No CSS class hunting, styles are co-located with markup
+- ✅ **Performance** - Tailwind purges unused CSS in production builds
+- ✅ **Developer Experience** - IntelliSense support, faster development
+- ✅ **Responsive Design** - Mobile-first utilities built-in
+- ✅ **Code Reduction** - Reduced from 1,649 lines of CSS to inline utilities
+
+### Basic Principles
+
+**1. Use Utility Classes**
+```jsx
+// ❌ WRONG - Don't create custom CSS files
+// ComponentName.css
+.my-button {
+  padding: 12px 24px;
+  background: #2196F3;
+  color: white;
+}
+
+// ✅ CORRECT - Use Tailwind utilities
+<button className="px-6 py-3 bg-blue-500 text-white rounded-lg">
+  Click Me
+</button>
+```
+
+**2. Use Tailwind's Design System**
+```jsx
+// ❌ WRONG - Arbitrary values for standard use cases
+<div className="p-[13px] text-[#2196F3]">
+
+// ✅ CORRECT - Use Tailwind's scale
+<div className="p-3 text-blue-500">
+```
+
+**3. Mobile-First Responsive Design**
+```jsx
+// Default = mobile, then add breakpoints for larger screens
+<div className="text-sm md:text-base lg:text-lg">
+  Responsive text
+</div>
+
+// Breakpoints:
+// sm:  640px and up  (small tablets)
+// md:  768px and up  (tablets)
+// lg:  1024px and up (desktops)
+// xl:  1280px and up (large screens)
+// 2xl: 1536px and up (extra large screens)
+```
+
+### Common Patterns
+
+**Layout Patterns**
+
+```jsx
+// Centered container with max width
+<div className="max-w-[1200px] mx-auto p-4">
+  {/* Content */}
+</div>
+
+// Flex row with gap
+<div className="flex items-center gap-4">
+  <button>Action 1</button>
+  <button>Action 2</button>
+</div>
+
+// Flex column
+<div className="flex flex-col gap-2">
+  <div>Item 1</div>
+  <div>Item 2</div>
+</div>
+
+// Grid layout
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+  {items.map(item => <Card key={item.id} {...item} />)}
+</div>
+
+// Sticky header
+<header className="sticky top-0 z-50 bg-white shadow-md">
+  {/* Header content */}
+</header>
+```
+
+**Card Patterns**
+
+```jsx
+// Basic card
+<div className="bg-white rounded-xl shadow-md p-6">
+  <h2 className="text-xl font-bold mb-4">Card Title</h2>
+  <p className="text-gray-600">Card content</p>
+</div>
+
+// Interactive card
+<div className="bg-white rounded-xl shadow-md p-6 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1">
+  {/* Clickable card */}
+</div>
+
+// Card with border accent
+<div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-blue-500">
+  {/* Card with top border */}
+</div>
+```
+
+**Button Patterns**
+
+```jsx
+// Primary button
+<button className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+  Save Changes
+</button>
+
+// Secondary button
+<button className="px-6 py-3 bg-gray-100 text-gray-900 rounded-lg font-semibold hover:bg-gray-200 transition-colors">
+  Cancel
+</button>
+
+// Icon button
+<button className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+  ⚙️
+</button>
+
+// Danger button
+<button className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors">
+  Delete
+</button>
+```
+
+**Form Patterns**
+
+```jsx
+// Form group
+<div className="mb-5">
+  <label className="block mb-2 font-medium text-gray-900 text-sm">
+    Email Address
+  </label>
+  <input
+    type="email"
+    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+    placeholder="example@email.com"
+  />
+</div>
+
+// Select dropdown
+<select className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500">
+  <option value="">Choose option...</option>
+  <option value="1">Option 1</option>
+  <option value="2">Option 2</option>
+</select>
+
+// Textarea
+<textarea
+  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors resize-y min-h-[80px] focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+  rows="3"
+/>
+```
+
+**Modal Patterns**
+
+```jsx
+// Modal overlay with centered content
+<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-5">
+  <div className="bg-white rounded-2xl shadow-2xl max-w-[600px] w-full max-h-[90vh] overflow-y-auto">
+    {/* Modal header */}
+    <div className="px-6 pt-6 pb-4 border-b border-gray-200 flex justify-between items-center">
+      <h2 className="text-xl font-semibold">Modal Title</h2>
+      <button className="text-2xl text-gray-400 hover:text-gray-700">×</button>
+    </div>
+
+    {/* Modal body */}
+    <div className="p-6">
+      {/* Content */}
+    </div>
+
+    {/* Modal footer */}
+    <div className="px-6 pb-6 pt-4 border-t border-gray-200 flex gap-3 justify-end">
+      <button className="px-6 py-3 bg-gray-100 rounded-lg">Cancel</button>
+      <button className="px-6 py-3 bg-blue-500 text-white rounded-lg">Save</button>
+    </div>
+  </div>
+</div>
+```
+
+**Loading States**
+
+```jsx
+// Loading spinner
+<div className="flex flex-col items-center justify-center min-h-screen">
+  <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+  <p className="mt-4 text-gray-600">Loading...</p>
+</div>
+
+// Skeleton loader
+<div className="bg-white rounded-xl p-6">
+  <div className="h-6 bg-gray-200 rounded w-3/4 mb-4 animate-pulse"></div>
+  <div className="h-4 bg-gray-200 rounded w-full mb-2 animate-pulse"></div>
+  <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse"></div>
+</div>
+```
+
+**Message/Alert Patterns**
+
+```jsx
+// Success message
+<div className="px-5 py-4 rounded-xl mb-6 bg-green-100 text-green-800 border border-green-200">
+  Changes saved successfully!
+</div>
+
+// Error message
+<div className="px-5 py-4 rounded-xl mb-6 bg-red-100 text-red-800 border border-red-200">
+  An error occurred. Please try again.
+</div>
+
+// Info message
+<div className="px-5 py-4 rounded-xl mb-6 bg-blue-100 text-blue-800 border border-blue-200">
+  Please note: This action cannot be undone.
+</div>
+
+// Warning message
+<div className="px-5 py-4 rounded-xl mb-6 bg-yellow-100 text-yellow-800 border border-yellow-200">
+  Warning: You have unsaved changes.
+</div>
+```
+
+### Custom Configuration
+
+**Tailwind Config Location:** `tailwind.config.js`
+
+```javascript
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      // Custom colors
+      colors: {
+        primary: {
+          DEFAULT: '#2196F3',
+          light: '#64B5F6',
+          dark: '#1976D2',
+        },
+        secondary: {
+          DEFAULT: '#00BCD4',
+          light: '#4DD0E1',
+          dark: '#0097A7',
+        },
+      },
+
+      // Custom animations
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+      },
+      animation: {
+        float: 'float 3s ease-in-out infinite',
+      },
+    },
+  },
+  plugins: [],
+}
+```
+
+**Usage:**
+```jsx
+// Use custom colors
+<button className="bg-primary hover:bg-primary-dark">
+  Primary Action
+</button>
+
+// Use custom animation
+<div className="animate-float">
+  🐠
+</div>
+```
+
+### Responsive Design
+
+**Mobile-First Approach**
+
+```jsx
+// Start with mobile, add larger breakpoints
+<div className="
+  p-4           // Mobile: 16px padding
+  sm:p-6        // Tablet: 24px padding
+  lg:p-8        // Desktop: 32px padding
+">
+  {/* Content */}
+</div>
+
+// Responsive grid
+<div className="
+  grid
+  grid-cols-1         // Mobile: 1 column
+  sm:grid-cols-2      // Tablet: 2 columns
+  lg:grid-cols-3      // Desktop: 3 columns
+  xl:grid-cols-4      // Large: 4 columns
+  gap-4
+">
+  {items.map(item => <Card key={item.id} />)}
+</div>
+
+// Responsive text
+<h1 className="
+  text-2xl          // Mobile: 24px
+  md:text-3xl       // Tablet: 30px
+  lg:text-4xl       // Desktop: 36px
+  font-bold
+">
+  Heading
+</h1>
+
+// Hide on mobile, show on desktop
+<div className="hidden lg:block">
+  Desktop only content
+</div>
+
+// Show on mobile, hide on desktop
+<div className="block lg:hidden">
+  Mobile only content
+</div>
+```
+
+### RTL (Right-to-Left) Support
+
+**For Hebrew text, use `dir="rtl"` on specific elements:**
+
+```jsx
+// English input (left-to-right)
+<input
+  type="email"
+  placeholder="example@email.com"
+  dir="ltr"
+  className="w-full px-4 py-3"
+/>
+
+// Hebrew text (right-to-left is default in our app)
+<p className="text-right">
+  טקסט בעברית
+</p>
+```
+
+### Best Practices
+
+**1. Extract Complex Classes**
+
+If a component uses the same class combination multiple times, consider extracting:
+
+```jsx
+// ❌ AVOID - Repeated long class strings
+function CardGrid({ items }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {items.map(item => (
+        <div key={item.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-all">
+          {/* Card content */}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ✅ BETTER - Extract to constants
+const CARD_CLASSES = "bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-all"
+const GRID_CLASSES = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+
+function CardGrid({ items }) {
+  return (
+    <div className={GRID_CLASSES}>
+      {items.map(item => (
+        <div key={item.id} className={CARD_CLASSES}>
+          {/* Card content */}
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+**2. Conditional Classes**
+
+Use template literals for dynamic classes:
+
+```jsx
+// Simple conditional
+<button className={`px-6 py-3 rounded-lg ${isActive ? 'bg-blue-500' : 'bg-gray-300'}`}>
+  Toggle
+</button>
+
+// Multiple conditionals with clsx (if installed)
+import clsx from 'clsx'
+
+<div className={clsx(
+  'rounded-xl p-4',
+  isActive && 'bg-blue-500 text-white',
+  isDisabled && 'opacity-50 cursor-not-allowed',
+  size === 'large' && 'p-6'
+)}>
+  {/* Content */}
+</div>
+```
+
+**3. Arbitrary Values (Use Sparingly)**
+
+Only use arbitrary values when Tailwind's scale doesn't fit:
+
+```jsx
+// ✅ GOOD - Use Tailwind's scale when possible
+<div className="w-12 h-12">  // 48px
+
+// ⚠️ USE SPARINGLY - Only when standard sizes don't work
+<div className="w-[73px] h-[73px]">  // Specific brand requirement
+
+// ✅ GOOD - Use custom config for repeated values
+// Add to tailwind.config.js instead:
+extend: {
+  spacing: {
+    '73': '73px',
+  }
+}
+```
+
+**4. Keep Classes Organized**
+
+Order classes by category for readability:
+
+```jsx
+<div className="
+  // Layout
+  flex items-center justify-between
+
+  // Spacing
+  px-6 py-4 gap-3
+
+  // Appearance
+  bg-white rounded-xl shadow-md
+
+  // Typography
+  text-base font-semibold text-gray-900
+
+  // States
+  hover:shadow-xl hover:-translate-y-1
+
+  // Responsive
+  sm:px-8 md:flex-row
+">
+  {/* Content */}
+</div>
+```
+
+**5. Avoid Over-Nesting**
+
+Keep components flat when possible:
+
+```jsx
+// ❌ AVOID - Too much nesting
+<div className="flex">
+  <div className="flex">
+    <div className="flex">
+      <button>Click</button>
+    </div>
+  </div>
+</div>
+
+// ✅ BETTER - Flat structure
+<div className="flex">
+  <button>Click</button>
+</div>
+```
+
+### Migration Notes
+
+**December 2024 Migration:**
+- ✅ Migrated all 8 CSS files to Tailwind utilities
+- ✅ Deleted: `App.css`, `FarmSettingsPage.css`, `AquariumModal.css`, `AquariumCard.css`, `AquariumsPage.css`, `HomePage.css`, `LoginPage.css`, `WelcomePage.css`
+- ✅ Kept: `index.css` (for Tailwind directives and global CSS variables)
+- ✅ Added custom `float` animation to `tailwind.config.js`
+- ✅ Net reduction: 1,364 lines of code
+
+**If you need to add new components:**
+1. ❌ **DO NOT** create new `.css` files
+2. ✅ **DO** use Tailwind utility classes directly in JSX
+3. ✅ **DO** add custom values to `tailwind.config.js` if needed for design tokens
+
+### Common Gotchas
+
+**1. Focus States**
+
+Always remove default outline and add Tailwind focus styles:
+
+```jsx
+// ❌ WRONG - Browser default outline
+<input type="text" className="border" />
+
+// ✅ CORRECT - Custom focus styles
+<input
+  type="text"
+  className="border focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+/>
+```
+
+**2. Transition Classes**
+
+Add `transition-*` for smooth state changes:
+
+```jsx
+// ❌ WRONG - Abrupt color change
+<button className="bg-blue-500 hover:bg-blue-600">
+
+// ✅ CORRECT - Smooth transition
+<button className="bg-blue-500 hover:bg-blue-600 transition-colors">
+```
+
+**3. Z-Index Management**
+
+Use consistent z-index values:
+
+```jsx
+// Standard z-index hierarchy:
+// - Modals: z-[1000]
+// - Sticky headers: z-50
+// - Dropdowns: z-40
+// - Tooltips: z-30
+
+<div className="fixed inset-0 z-[1000]">  // Modal
+<header className="sticky top-0 z-50">    // Header
+<div className="absolute z-40">           // Dropdown
+```
+
+**4. Backdrop Blur (Requires Vite Config)**
+
+```jsx
+// Works in most modern browsers
+<div className="bg-white/20 backdrop-blur-md">
+  Glassmorphism effect
+</div>
+```
+
+### Resources
+
+- [Tailwind CSS Docs](https://tailwindcss.com/docs) - Official documentation
+- [Tailwind UI](https://tailwindui.com/) - Component examples (paid)
+- [Headless UI](https://headlessui.com/) - Unstyled accessible components
+- [Tailwind Play](https://play.tailwindcss.com/) - Online playground
+
+**VS Code Extension:**
+- Install: `bradlc.vscode-tailwindcss`
+- Provides: IntelliSense, autocomplete, linting
+
+---
+
 ## State Management
 
 ### Context API (Global State)
