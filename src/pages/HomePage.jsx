@@ -4,7 +4,6 @@ import { auth } from '../firebase/config'
 import { signOut } from 'firebase/auth'
 import { useFarm } from '../contexts/FarmContext'
 import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
-import FarmSettingsModal from '../components/features/farm/FarmSettingsModal'
 import './HomePage.css'
 
 function HomePage() {
@@ -12,7 +11,6 @@ function HomePage() {
   const user = auth.currentUser
   const { currentFarm } = useFarm()
   const [showImportModal, setShowImportModal] = useState(false)
-  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   const handleSignOut = async () => {
     try {
@@ -62,7 +60,7 @@ function HomePage() {
         <div className="header-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button
             className="icon-button"
-            onClick={() => setShowSettingsModal(true)}
+            onClick={() => navigate('/settings')}
             title="הגדרות חווה"
             style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}
           >
@@ -120,12 +118,6 @@ function HomePage() {
         onClose={() => setShowImportModal(false)}
         farmId={currentFarm.farmId}
         onSuccess={handleImportSuccess}
-      />
-
-      {/* Farm Settings Modal */}
-      <FarmSettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
       />
     </div>
   )

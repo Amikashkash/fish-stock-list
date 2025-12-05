@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
 import WelcomePage from './pages/WelcomePage'
 import AquariumsPage from './pages/AquariumsPage'
+import FarmSettingsPage from './pages/FarmSettingsPage'
 import './App.css'
 
 // Create React Query client
@@ -62,6 +63,10 @@ function App() {
             <Route
               path="/aquariums"
               element={user ? <AquariumsPage /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/settings"
+              element={user ? <FarmSettingsPage /> : <Navigate to="/login" />}
             />
             <Route
               path="/"
