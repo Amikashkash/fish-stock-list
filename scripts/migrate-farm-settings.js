@@ -23,10 +23,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const DEFAULT_ROOMS = [
-  { id: 'reception', label: 'קליטה' },
+  
   { id: 'main', label: 'ראשי' },
-  { id: 'quarantine', label: 'הסגר' },
-  { id: 'display', label: 'תצוגה' },
+  
 ];
 
 const DEFAULT_STATUSES = [
