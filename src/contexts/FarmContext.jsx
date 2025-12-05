@@ -9,12 +9,7 @@ import { getUserFarms, updateFarm } from '../services/farm.service'
 
 // Default aquarium settings for migration
 const DEFAULT_AQUARIUM_SETTINGS = {
-  aquariumRooms: [
-    { id: 'reception', label: 'קליטה' },
-    { id: 'main', label: 'ראשי' },
-    { id: 'quarantine', label: 'הסגר' },
-    { id: 'display', label: 'תצוגה' },
-  ],
+  aquariumRooms: [],
   aquariumStatuses: [
     { id: 'empty', label: 'ריק', color: '#95a5a6' },
     { id: 'occupied', label: 'תפוס', color: '#3498db' },

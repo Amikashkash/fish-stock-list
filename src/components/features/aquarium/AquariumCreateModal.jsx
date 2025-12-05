@@ -12,6 +12,7 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     aquariumNumber: '',
     volume: '',
+    shelf: 'bottom',
     room: '',
     notes: '',
   })
@@ -60,6 +61,7 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
       const aquariumData = {
         aquariumNumber: formData.aquariumNumber,
         volume: Number(formData.volume),
+        shelf: formData.shelf,
         room: formData.room,
         status: 'empty',
         notes: formData.notes,
@@ -75,6 +77,7 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
       setFormData({
         aquariumNumber: '',
         volume: '',
+        shelf: 'bottom',
         room: '',
         notes: '',
       })
@@ -140,6 +143,19 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
               min="1"
               required
             />
+          </div>
+
+          {/* Shelf */}
+          <div className="form-group">
+            <label>מונח על מדף</label>
+            <select
+              value={formData.shelf}
+              onChange={(e) => handleChange('shelf', e.target.value)}
+            >
+              <option value="bottom">תחתון</option>
+              <option value="middle">אמצעי</option>
+              <option value="top">עליון</option>
+            </select>
           </div>
 
           {/* Location/Room Dropdown */}

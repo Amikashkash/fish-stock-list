@@ -1,5 +1,6 @@
 /**
  * @typedef {'empty' | 'occupied' | 'in-transfer' | 'maintenance'} AquariumStatus
+ * @typedef {'bottom' | 'middle' | 'top'} ShelfLevel
  */
 
 /**
@@ -15,6 +16,7 @@
  * @property {string} aquariumNumber - User-defined number (e.g., "A-01", "14a")
  *
  * Physical properties
+ * @property {ShelfLevel} shelf - Position on shelf
  * @property {number} volume - Volume in liters
  * @property {string} room - Room/location (customizable per farm)
  *
@@ -50,6 +52,7 @@ export function createAquarium(data) {
     aquariumNumber: data.aquariumNumber || '',
 
     // Physical properties
+    shelf: data.shelf || 'bottom',
     volume: data.volume || 0,
     room: data.room || 'main',
 
