@@ -1,18 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFarm } from '../contexts/FarmContext'
 import { updateFarm } from '../services/farm.service'
+import { getAquariums } from '../services/aquarium.service'
 import './FarmSettingsPage.css'
 
 function FarmSettingsPage() {
   const navigate = useNavigate()
   const { currentFarm, refreshFarms } = useFarm()
   const [locations, setLocations] = useState(currentFarm?.settings?.aquariumRooms || [])
+  const [aquariums, setAquariums] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [editingLabel, setEditingLabel] = useState('')
   const [newLocationLabel, setNewLocationLabel] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+
+  // Load aquariums to check for location usage
+  useEffect(() => {
+    if (currentFarm) {
+      loadAquariums()
+    }
+  }, [currentFarm])
+
+  async function loadAquariums() {
+    try {
+      const data = await getAquariums(currentFarm.farmId)
+      setAquariums(data)
+    } catch (error) {
+      console.error('Error loading aquariums:', error)
+    }
+  }
 
   async function saveLocations(updatedLocations) {
     setSaving(true)
@@ -97,7 +115,38 @@ function FarmSettingsPage() {
   }
 
   function handleDeleteLocation(locationId) {
-    if (!confirm('האם אתה בטוח שברצונך למחוק את המיקום?')) {
+    const location = locations.find((loc) => loc.id === locationId)
+    if (!location) return
+
+    // Check if any aquariums are using this location
+    const aquariumsUsingLocation = aquariums.filter((aq) => aq.room === location.label)
+
+    if (aquariumsUsingLocation.length > 0) {
+      // Show detailed warning
+      const aquariumNumbers = aquariumsUsingLocation
+        .map((aq) => aq.aquariumNumber)
+        .slice(0, 5)
+        .join(', ')
+
+      const moreCount = aquariumsUsingLocation.length > 5
+        ? ` ועוד ${aquariumsUsingLocation.length - 5}`
+        : ''
+
+      const message = `לא ניתן למחוק את המיקום "${location.label}"!\n\n` +
+        `${aquariumsUsingLocation.length} אקווריומים משתמשים במיקום זה:\n` +
+        `${aquariumNumbers}${moreCount}\n\n` +
+        `יש למחוק או להעביר תחילה את האקווריומים הללו למיקום אחר.`
+
+      alert(message)
+      setMessage({
+        type: 'error',
+        text: `המיקום "${location.label}" בשימוש ב-${aquariumsUsingLocation.length} אקווריומים ולא ניתן למחוק אותו`
+      })
+      return
+    }
+
+    // If no aquariums are using it, allow deletion
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את המיקום "${location.label}"?`)) {
       return
     }
 
@@ -164,68 +213,80 @@ function FarmSettingsPage() {
           </div>
         ) : (
           <div className="locations-list">
-            {locations.map((location) => (
-              <div key={location.id} className="location-item">
-                {editingId === location.id ? (
-                  <>
-                    <input
-                      type="text"
-                      value={editingLabel}
-                      onChange={(e) => setEditingLabel(e.target.value)}
-                      className="edit-input"
-                      autoFocus
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          handleSaveEdit(location.id)
-                        } else if (e.key === 'Escape') {
-                          handleCancelEdit()
-                        }
-                      }}
-                    />
-                    <div className="location-actions">
-                      <button
-                        className="btn-icon btn-success"
-                        onClick={() => handleSaveEdit(location.id)}
-                        disabled={saving}
-                        title="שמור"
-                      >
-                        ✓
-                      </button>
-                      <button
-                        className="btn-icon btn-secondary"
-                        onClick={handleCancelEdit}
-                        disabled={saving}
-                        title="ביטול"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="location-label">{location.label}</span>
-                    <div className="location-actions">
-                      <button
-                        className="btn-icon btn-edit"
-                        onClick={() => handleStartEdit(location)}
-                        disabled={saving}
-                        title="ערוך"
-                      >
-                        ✎
-                      </button>
-                      <button
-                        className="btn-icon btn-delete"
-                        onClick={() => handleDeleteLocation(location.id)}
-                        disabled={saving}
-                        title="מחק"
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
+            {locations.map((location) => {
+              const usageCount = aquariums.filter((aq) => aq.room === location.label).length
+              const isInUse = usageCount > 0
+
+              return (
+                <div key={location.id} className={`location-item ${isInUse ? 'in-use' : ''}`}>
+                  {editingId === location.id ? (
+                    <>
+                      <input
+                        type="text"
+                        value={editingLabel}
+                        onChange={(e) => setEditingLabel(e.target.value)}
+                        className="edit-input"
+                        autoFocus
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handleSaveEdit(location.id)
+                          } else if (e.key === 'Escape') {
+                            handleCancelEdit()
+                          }
+                        }}
+                      />
+                      <div className="location-actions">
+                        <button
+                          className="btn-icon btn-success"
+                          onClick={() => handleSaveEdit(location.id)}
+                          disabled={saving}
+                          title="שמור"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          className="btn-icon btn-secondary"
+                          onClick={handleCancelEdit}
+                          disabled={saving}
+                          title="ביטול"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="location-info">
+                        <span className="location-label">{location.label}</span>
+                        {isInUse && (
+                          <span className="usage-badge" title={`${usageCount} אקווריומים במיקום זה`}>
+                            {usageCount} 🐠
+                          </span>
+                        )}
+                      </div>
+                      <div className="location-actions">
+                        <button
+                          className="btn-icon btn-edit"
+                          onClick={() => handleStartEdit(location)}
+                          disabled={saving}
+                          title="ערוך"
+                        >
+                          ✎
+                        </button>
+                        <button
+                          className="btn-icon btn-delete"
+                          onClick={() => handleDeleteLocation(location.id)}
+                          disabled={saving}
+                          title={isInUse ? `לא ניתן למחוק - ${usageCount} אקווריומים בשימוש` : 'מחק'}
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

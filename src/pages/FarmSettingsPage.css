@@ -125,11 +125,38 @@
   background: #f0f1f3;
 }
 
+.location-item.in-use {
+  background: #e3f2fd;
+  border-left: 4px solid #2196F3;
+}
+
+.location-item.in-use:hover {
+  background: #bbdefb;
+}
+
+.location-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
 .location-label {
   font-size: 16px;
   font-weight: 500;
   color: var(--text-primary);
-  flex: 1;
+}
+
+.usage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #2196F3;
+  color: white;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .edit-input {
