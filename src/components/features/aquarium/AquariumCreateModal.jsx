@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import { createAquarium } from '../../../services/aquarium.service'
+import { updateFarm } from '../../../services/farm.service'
 import { validateAquarium } from '../../../models/Aquarium'
 
 function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
-  const { currentFarm } = useFarm()
+  const { currentFarm, reloadFarms } = useFarm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -64,6 +65,30 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
         room: formData.room,
         status: 'empty',
         notes: formData.notes,
+      }
+
+      // Check if room is new and needs to be added to farm settings
+      const roomSuggestions = currentFarm?.settings?.aquariumRooms || []
+      const roomExists = roomSuggestions.some((r) => r.label === formData.room)
+
+      if (!roomExists && formData.room) {
+        // Add new room to farm settings
+        const newRoom = {
+          id: formData.room.toLowerCase().replace(/\s+/g, '-'),
+          label: formData.room,
+        }
+
+        const updatedRooms = [...roomSuggestions, newRoom]
+
+        await updateFarm(currentFarm.farmId, {
+          settings: {
+            ...currentFarm.settings,
+            aquariumRooms: updatedRooms,
+          },
+        })
+
+        // Reload farm data to get updated settings
+        await reloadFarms()
       }
 
       const result = await createAquarium(currentFarm.farmId, aquariumData)
