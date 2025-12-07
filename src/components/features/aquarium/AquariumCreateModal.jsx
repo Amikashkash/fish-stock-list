@@ -44,6 +44,10 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
     e.preventDefault()
     setError('')
 
+    console.log('=== AQUARIUM CREATE SUBMIT ===')
+    console.log('Form data:', formData)
+    console.log('Current farm:', currentFarm)
+
     // Validate
     const validation = validateAquarium({
       ...formData,
@@ -71,6 +75,13 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
       const roomSuggestions = currentFarm?.settings?.aquariumRooms || []
       const roomExists = roomSuggestions.some((r) => r.label === formData.room)
 
+      console.log('Room check:', {
+        room: formData.room,
+        roomSuggestions,
+        roomExists,
+        currentSettings: currentFarm?.settings,
+      })
+
       if (!roomExists && formData.room) {
         // Add new room to farm settings
         const newRoom = {
@@ -80,15 +91,30 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
 
         const updatedRooms = [...roomSuggestions, newRoom]
 
-        await updateFarm(currentFarm.farmId, {
-          settings: {
-            ...currentFarm.settings,
-            aquariumRooms: updatedRooms,
-          },
-        })
+        console.log('Saving new room to farm settings:', { newRoom, updatedRooms })
 
-        // Reload farm data to get updated settings
-        await reloadFarms()
+        try {
+          const updatedSettings = {
+            ...(currentFarm.settings || {}),
+            aquariumRooms: updatedRooms,
+          }
+
+          console.log('Updating farm with settings:', updatedSettings)
+
+          await updateFarm(currentFarm.farmId, {
+            settings: updatedSettings,
+          })
+
+          console.log('Farm settings updated successfully')
+
+          // Reload farm data to get updated settings
+          await reloadFarms()
+
+          console.log('Farm data reloaded')
+        } catch (updateError) {
+          console.error('Error updating farm settings:', updateError)
+          throw updateError
+        }
       }
 
       const result = await createAquarium(currentFarm.farmId, aquariumData)

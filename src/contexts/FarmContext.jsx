@@ -51,8 +51,8 @@ export function FarmProvider({ children }) {
 
         const updates = {
           settings: {
-            ...farm.settings,
-            ...DEFAULT_AQUARIUM_SETTINGS,
+            ...DEFAULT_AQUARIUM_SETTINGS,  // Defaults first
+            ...farm.settings,              // Then farm settings to override
           },
         }
 
