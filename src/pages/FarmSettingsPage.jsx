@@ -6,7 +6,7 @@ import { getAquariums } from '../services/aquarium.service'
 
 function FarmSettingsPage() {
   const navigate = useNavigate()
-  const { currentFarm, refreshFarms } = useFarm()
+  const { currentFarm, reloadFarms } = useFarm()
   const [locations, setLocations] = useState(currentFarm?.settings?.aquariumRooms || [])
   const [aquariums, setAquariums] = useState([])
   const [editingId, setEditingId] = useState(null)
@@ -43,7 +43,7 @@ function FarmSettingsPage() {
         },
       })
 
-      await refreshFarms()
+      await reloadFarms()
       setMessage({ type: 'success', text: 'השינויים נשמרו בהצלחה!' })
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
     } catch (error) {

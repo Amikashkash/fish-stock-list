@@ -1,11 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useFarm } from '../../../contexts/FarmContext'
 import { createAquarium } from '../../../services/aquarium.service'
-import { updateFarm } from '../../../services/farm.service'
 import { validateAquarium } from '../../../models/Aquarium'
 
 function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
-  const { currentFarm, reloadFarms } = useFarm()
+  const navigate = useNavigate()
+  const { currentFarm } = useFarm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -16,37 +17,15 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
     room: '',
     notes: '',
   })
-  const [showNewRoomInput, setShowNewRoomInput] = useState(false)
-  const [newRoomName, setNewRoomName] = useState('')
 
   function handleChange(field, value) {
     setFormData({ ...formData, [field]: value })
     setError('')
-
-    // Show new room input if "new" is selected
-    if (field === 'room' && value === '__new__') {
-      setShowNewRoomInput(true)
-      setFormData({ ...formData, room: '' })
-    } else if (field === 'room') {
-      setShowNewRoomInput(false)
-    }
-  }
-
-  function handleNewRoomSubmit() {
-    if (newRoomName.trim()) {
-      setFormData({ ...formData, room: newRoomName.trim() })
-      setShowNewRoomInput(false)
-      setNewRoomName('')
-    }
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-
-    console.log('=== AQUARIUM CREATE SUBMIT ===')
-    console.log('Form data:', formData)
-    console.log('Current farm:', currentFarm)
 
     // Validate
     const validation = validateAquarium({
@@ -69,52 +48,6 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
         room: formData.room,
         status: 'empty',
         notes: formData.notes,
-      }
-
-      // Check if room is new and needs to be added to farm settings
-      const roomSuggestions = currentFarm?.settings?.aquariumRooms || []
-      const roomExists = roomSuggestions.some((r) => r.label === formData.room)
-
-      console.log('Room check:', {
-        room: formData.room,
-        roomSuggestions,
-        roomExists,
-        currentSettings: currentFarm?.settings,
-      })
-
-      if (!roomExists && formData.room) {
-        // Add new room to farm settings
-        const newRoom = {
-          id: formData.room.toLowerCase().replace(/\s+/g, '-'),
-          label: formData.room,
-        }
-
-        const updatedRooms = [...roomSuggestions, newRoom]
-
-        console.log('Saving new room to farm settings:', { newRoom, updatedRooms })
-
-        try {
-          const updatedSettings = {
-            ...(currentFarm.settings || {}),
-            aquariumRooms: updatedRooms,
-          }
-
-          console.log('Updating farm with settings:', updatedSettings)
-
-          await updateFarm(currentFarm.farmId, {
-            settings: updatedSettings,
-          })
-
-          console.log('Farm settings updated successfully')
-
-          // Reload farm data to get updated settings
-          await reloadFarms()
-
-          console.log('Farm data reloaded')
-        } catch (updateError) {
-          console.error('Error updating farm settings:', updateError)
-          throw updateError
-        }
       }
 
       const result = await createAquarium(currentFarm.farmId, aquariumData)
@@ -225,52 +158,32 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
             <label className="block mb-2 font-semibold text-gray-900 text-sm">
               מיקום בחווה <span className="text-red-500">*</span>
             </label>
-            {!showNewRoomInput ? (
-              <select
-                value={formData.room}
-                onChange={(e) => handleChange('room', e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                required
-              >
-                <option value="">בחר מיקום...</option>
-                {roomSuggestions.map((room) => (
-                  <option key={room.id} value={room.label}>
-                    {room.label}
-                  </option>
-                ))}
-                <option value="__new__">+ הוסף מיקום חדש...</option>
-              </select>
-            ) : (
-              <div className="flex flex-col gap-3">
-                <input
-                  type="text"
-                  value={newRoomName}
-                  onChange={(e) => setNewRoomName(e.target.value)}
-                  placeholder="שם המיקום החדש"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                  autoFocus
-                />
-                <div className="flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    className="px-4 py-2 text-sm bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200"
-                    onClick={() => {
-                      setShowNewRoomInput(false)
-                      setNewRoomName('')
-                    }}
-                  >
-                    ביטול
-                  </button>
-                  <button
-                    type="button"
-                    className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    onClick={handleNewRoomSubmit}
-                  >
-                    הוסף
-                  </button>
-                </div>
-              </div>
+            <select
+              value={formData.room}
+              onChange={(e) => handleChange('room', e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              required
+            >
+              <option value="">בחר מיקום...</option>
+              {roomSuggestions.map((room) => (
+                <option key={room.id} value={room.label}>
+                  {room.label}
+                </option>
+              ))}
+            </select>
+            {roomSuggestions.length === 0 && (
+              <p className="text-xs text-gray-500 mt-2">אין מיקומים מוגדרים</p>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                navigate('/settings')
+              }}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-700 underline"
+            >
+              ⚙️ ניהול מיקומים בחווה
+            </button>
           </div>
 
           {/* Notes */}
