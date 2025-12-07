@@ -12,8 +12,12 @@ function HomePage() {
   const [showImportModal, setShowImportModal] = useState(false)
 
   const handleSignOut = async () => {
+    const confirmed = window.confirm('האם אתה בטוח שברצונך להתנתק?')
+    if (!confirmed) return
+
     try {
       await signOut(auth)
+      navigate('/login')
     } catch (err) {
       console.error('Error signing out:', err)
     }
@@ -65,11 +69,20 @@ function HomePage() {
             ⚙️
           </button>
           <button
-            className="w-10 h-10 rounded-full bg-blue-500 text-white text-xl flex items-center justify-center border-none cursor-pointer transition-transform hover:scale-110"
+            className="w-10 h-10 rounded-full bg-blue-500 border-2 border-white shadow-md cursor-pointer transition-transform hover:scale-110 overflow-hidden flex items-center justify-center"
             onClick={handleSignOut}
             title="התנתק"
           >
-            👤
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt="Profile"
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <span className="text-white text-xl">👤</span>
+            )}
           </button>
         </div>
       </header>

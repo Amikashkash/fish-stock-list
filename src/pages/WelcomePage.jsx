@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth } from '../firebase/config'
 import { signOut } from 'firebase/auth'
@@ -7,15 +7,8 @@ import FarmCreateModal from '../components/features/farm/FarmCreateModal'
 
 function WelcomePage() {
   const navigate = useNavigate()
-  const { farms, addFarm, loading } = useFarm()
+  const { addFarm, loading } = useFarm()
   const [showCreateModal, setShowCreateModal] = useState(false)
-
-  // Auto-navigate if user already has farms
-  useEffect(() => {
-    if (!loading && farms.length > 0) {
-      navigate('/home')
-    }
-  }, [farms, loading, navigate])
 
   function handleFarmCreated(farm) {
     addFarm(farm)
@@ -23,8 +16,12 @@ function WelcomePage() {
   }
 
   async function handleSignOut() {
+    const confirmed = window.confirm('האם אתה בטוח שברצונך להתנתק?')
+    if (!confirmed) return
+
     try {
       await signOut(auth)
+      navigate('/login')
     } catch (err) {
       console.error('Error signing out:', err)
     }

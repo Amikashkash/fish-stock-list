@@ -166,26 +166,36 @@ function AquariumsPage() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-8">
-          {Object.entries(aquariumsByRoom).map(([room, roomAquariums]) => (
-            <div key={room} className="bg-white p-6 md:p-4 rounded-xl shadow-md">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-gray-100 flex items-center gap-2">
-                {room}
-                <span className="text-sm font-medium text-gray-500">({roomAquariums.length})</span>
-              </h2>
+        <div className="flex flex-col gap-6">
+          {Object.entries(aquariumsByRoom).map(([room, roomAquariums]) => {
+            const emptyCount = roomAquariums.filter(aq => aq.status === 'empty').length
+            return (
+              <div key={room} className="bg-white p-6 md:p-5 rounded-xl shadow-md">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-gray-100 flex items-center justify-between">
+                  <span>{room}</span>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-gray-500 font-medium">
+                      סה"כ: {roomAquariums.length}
+                    </span>
+                    <span className="text-green-600 font-semibold bg-green-50 px-3 py-1 rounded-lg">
+                      ריקים: {emptyCount}
+                    </span>
+                  </div>
+                </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
-                {roomAquariums.map((aquarium) => (
-                  <AquariumCard
-                    key={aquarium.aquariumId}
-                    aquarium={aquarium}
-                    statusLabel={getStatusLabel(aquarium.status)}
-                    onClick={() => handleAquariumClick(aquarium)}
-                  />
-                ))}
+                <div className="flex flex-col gap-2">
+                  {roomAquariums.map((aquarium) => (
+                    <AquariumCard
+                      key={aquarium.aquariumId}
+                      aquarium={aquarium}
+                      statusLabel={getStatusLabel(aquarium.status)}
+                      onClick={() => handleAquariumClick(aquarium)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

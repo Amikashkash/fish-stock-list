@@ -4,75 +4,39 @@ const SHELF_LABELS = {
   top: 'עליון',
 }
 
-const STATUS_BORDER_COLORS = {
-  empty: 'border-gray-200',
-  occupied: 'border-blue-400',
-  maintenance: 'border-yellow-500',
-  'in-transfer': 'border-purple-500',
+const STATUS_COLORS = {
+  empty: 'text-gray-500',
+  occupied: 'text-blue-600',
+  maintenance: 'text-yellow-600',
+  'in-transfer': 'text-purple-600',
 }
 
-const STATUS_BADGE_COLORS = {
-  empty: 'bg-gray-200 text-gray-600',
-  occupied: 'bg-blue-100 text-blue-700',
-  maintenance: 'bg-yellow-100 text-yellow-600',
-  'in-transfer': 'bg-purple-100 text-purple-600',
+const STATUS_BG_COLORS = {
+  empty: 'bg-gray-50',
+  occupied: 'bg-blue-50',
+  maintenance: 'bg-yellow-50',
+  'in-transfer': 'bg-purple-50',
 }
 
 function AquariumCard({ aquarium, onClick, statusLabel }) {
-  const occupancyPercent = Math.round(aquarium.occupancyRate * 100)
-  const borderColor = STATUS_BORDER_COLORS[aquarium.status] || 'border-gray-200'
-  const badgeColor = STATUS_BADGE_COLORS[aquarium.status] || 'bg-gray-200 text-gray-600'
+  const statusColor = STATUS_COLORS[aquarium.status] || 'text-gray-500'
+  const bgColor = STATUS_BG_COLORS[aquarium.status] || 'bg-gray-50'
+  const shelfLabel = SHELF_LABELS[aquarium.shelf] || aquarium.shelf
 
   return (
     <div
-      className={`bg-white rounded-xl p-4 sm:p-3 shadow-md cursor-pointer transition-all border-2 ${borderColor} hover:shadow-xl hover:-translate-y-0.5`}
+      className={`${bgColor} rounded-lg px-4 py-2.5 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 border border-gray-200`}
       onClick={onClick}
     >
-      <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-200">
-        <div className="text-xl sm:text-lg font-bold text-gray-900">{aquarium.aquariumNumber}</div>
-        <div className={`px-3 py-1 rounded-xl text-xs font-semibold ${badgeColor}`}>
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="font-bold text-gray-900 min-w-[80px]">{aquarium.aquariumNumber}</span>
+        <span className={`font-semibold ${statusColor} min-w-[60px]`}>
           {statusLabel || aquarium.status}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        {/* Shelf */}
-        <div className="flex justify-between text-sm sm:text-[13px]">
-          <span className="text-gray-500 font-medium">מדף:</span>
-          <span className="text-gray-900 font-semibold">{SHELF_LABELS[aquarium.shelf] || aquarium.shelf}</span>
-        </div>
-
-        {/* Room */}
-        <div className="flex justify-between text-sm sm:text-[13px]">
-          <span className="text-gray-500 font-medium">מיקום:</span>
-          <span className="text-gray-900 font-semibold">{aquarium.room}</span>
-        </div>
-
-        {/* Volume */}
-        <div className="flex justify-between text-sm sm:text-[13px]">
-          <span className="text-gray-500 font-medium">נפח:</span>
-          <span className="text-gray-900 font-semibold">{aquarium.volume}L</span>
-        </div>
-
-        {/* Fish Count */}
-        {aquarium.status === 'occupied' && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="text-sm font-semibold text-gray-900 mb-2">
-              🐠 {aquarium.totalFish} דגים
-            </div>
-            {aquarium.occupancyRate > 0 && (
-              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{
-                    width: `${Math.min(occupancyPercent, 100)}%`,
-                    backgroundColor:
-                      occupancyPercent > 80 ? '#e74c3c' : occupancyPercent > 60 ? '#f39c12' : '#27ae60',
-                  }}
-                />
-              </div>
-            )}
-          </div>
+        </span>
+        <span className="text-gray-600 min-w-[50px]">{shelfLabel}</span>
+        <span className="text-gray-900 font-medium">{aquarium.volume}L</span>
+        {aquarium.status === 'occupied' && aquarium.totalFish > 0 && (
+          <span className="text-blue-600 font-medium">🐠 {aquarium.totalFish}</span>
         )}
       </div>
     </div>

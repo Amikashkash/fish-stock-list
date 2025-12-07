@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { FarmProvider } from './contexts/FarmContext'
+import { FarmProvider, useFarm } from './contexts/FarmContext'
 import { auth } from './firebase/config'
 import { onAuthStateChanged } from 'firebase/auth'
 import LoginPage from './pages/LoginPage'
@@ -20,13 +20,67 @@ const queryClient = new QueryClient({
   },
 })
 
-function App() {
+function AppRoutes() {
+  const { farms, loading: farmsLoading } = useFarm()
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(true)
 
+  // Listen to auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
+      setAuthLoading(false)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  // Wait for auth and farms to load before making routing decisions
+  if (authLoading || farmsLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+        <p className="mt-4 text-gray-600 text-base">טוען...</p>
+      </div>
+    )
+  }
+
+  const hasFarms = farms.length > 0
+
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={user ? <Navigate to={hasFarms ? "/home" : "/welcome"} /> : <LoginPage />}
+      />
+      <Route
+        path="/welcome"
+        element={user ? (hasFarms ? <Navigate to="/home" /> : <WelcomePage />) : <Navigate to="/login" />}
+      />
+      <Route
+        path="/home"
+        element={user ? (hasFarms ? <HomePage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
+      />
+      <Route
+        path="/aquariums"
+        element={user ? (hasFarms ? <AquariumsPage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
+      />
+      <Route
+        path="/settings"
+        element={user ? (hasFarms ? <FarmSettingsPage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
+      />
+      <Route
+        path="/"
+        element={<Navigate to={user ? (hasFarms ? "/home" : "/welcome") : "/login"} />}
+      />
+    </Routes>
+  )
+}
+
+function App() {
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, () => {
       setLoading(false)
     })
 
@@ -46,32 +100,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <FarmProvider>
         <Router>
-          <Routes>
-            <Route
-              path="/login"
-              element={user ? <Navigate to="/welcome" /> : <LoginPage />}
-            />
-            <Route
-              path="/welcome"
-              element={user ? <WelcomePage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/home"
-              element={user ? <HomePage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/aquariums"
-              element={user ? <AquariumsPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/settings"
-              element={user ? <FarmSettingsPage /> : <Navigate to="/login" />}
-            />
-            <Route
-              path="/"
-              element={<Navigate to={user ? "/welcome" : "/login"} />}
-            />
-          </Routes>
+          <AppRoutes />
         </Router>
       </FarmProvider>
     </QueryClientProvider>
