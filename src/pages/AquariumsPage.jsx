@@ -5,6 +5,7 @@ import { getAquariums } from '../services/aquarium.service'
 import AquariumCard from '../components/features/aquarium/AquariumCard'
 import AquariumCreateModal from '../components/features/aquarium/AquariumCreateModal'
 import AquariumEditModal from '../components/features/aquarium/AquariumEditModal'
+import FishTransferModal from '../components/features/transfer/FishTransferModal'
 
 function AquariumsPage() {
   const navigate = useNavigate()
@@ -13,7 +14,9 @@ function AquariumsPage() {
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showTransferModal, setShowTransferModal] = useState(false)
   const [selectedAquarium, setSelectedAquarium] = useState(null)
+  const [transferSourceAquarium, setTransferSourceAquarium] = useState(null)
   const [filterRoom, setFilterRoom] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
 
@@ -56,6 +59,21 @@ function AquariumsPage() {
     }
     setShowEditModal(false)
     setSelectedAquarium(null)
+  }
+
+  function handleTransferClick(aquarium) {
+    // Close edit modal and open transfer modal with source aquarium
+    setShowEditModal(false)
+    setTransferSourceAquarium(aquarium)
+    setShowTransferModal(true)
+  }
+
+  function handleTransferSuccess(result) {
+    // Reload aquariums after successful transfer
+    loadAquariums()
+    setShowTransferModal(false)
+    setTransferSourceAquarium(null)
+    alert(`הועברו ${result.transferred} ${result.fishName} בהצלחה!`)
   }
 
   function getStatusLabel(statusId) {
@@ -231,7 +249,19 @@ function AquariumsPage() {
           setSelectedAquarium(null)
         }}
         onSuccess={handleAquariumUpdated}
+        onTransferClick={handleTransferClick}
         aquarium={selectedAquarium}
+      />
+
+      {/* Transfer Modal */}
+      <FishTransferModal
+        isOpen={showTransferModal}
+        onClose={() => {
+          setShowTransferModal(false)
+          setTransferSourceAquarium(null)
+        }}
+        onSuccess={handleTransferSuccess}
+        sourceAquarium={transferSourceAquarium}
       />
     </div>
   )

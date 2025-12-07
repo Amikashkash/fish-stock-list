@@ -3,7 +3,7 @@ import { useFarm } from '../../../contexts/FarmContext'
 import { updateAquarium, deleteAquarium } from '../../../services/aquarium.service'
 import { validateAquarium } from '../../../models/Aquarium'
 
-function AquariumEditModal({ isOpen, onClose, onSuccess, aquarium }) {
+function AquariumEditModal({ isOpen, onClose, onSuccess, aquarium, onTransferClick }) {
   const { currentFarm } = useFarm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -309,14 +309,26 @@ function AquariumEditModal({ isOpen, onClose, onSuccess, aquarium }) {
 
           {/* Actions */}
           <div className="flex gap-3 justify-between mt-6 pt-5 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(true)}
-              className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all border-none cursor-pointer bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={loading || showDeleteConfirm}
-            >
-              מחק
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all border-none cursor-pointer bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading || showDeleteConfirm}
+              >
+                מחק
+              </button>
+              {aquarium?.totalFish > 0 && onTransferClick && (
+                <button
+                  type="button"
+                  onClick={() => onTransferClick(aquarium)}
+                  className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all border-none cursor-pointer bg-purple-500 text-white hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading}
+                >
+                  🔄 העבר דגים
+                </button>
+              )}
+            </div>
             <div className="flex gap-3">
               <button
                 type="button"

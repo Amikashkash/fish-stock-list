@@ -4,12 +4,14 @@ import { auth } from '../firebase/config'
 import { signOut } from 'firebase/auth'
 import { useFarm } from '../contexts/FarmContext'
 import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
+import FishTransferModal from '../components/features/transfer/FishTransferModal'
 
 function HomePage() {
   const navigate = useNavigate()
   const user = auth.currentUser
   const { currentFarm } = useFarm()
   const [showImportModal, setShowImportModal] = useState(false)
+  const [showTransferModal, setShowTransferModal] = useState(false)
 
   const handleSignOut = async () => {
     const confirmed = window.confirm('האם אתה בטוח שברצונך להתנתק?')
@@ -28,9 +30,15 @@ function HomePage() {
     alert(`Success! Imported ${result.fishCount} fish types (${result.totalFish} total fish)`)
   }
 
+  const handleTransferSuccess = (result) => {
+    console.log('Transfer successful:', result)
+    alert(`הועברו ${result.transferred} ${result.fishName} בהצלחה!`)
+  }
+
   const actionCards = [
     { icon: '📋', label: 'משימות', color: '#2196F3', action: 'tasks' },
     { icon: '🐠', label: 'אקווריומים', color: '#00BCD4', action: 'aquariums' },
+    { icon: '🔄', label: 'העברת דגים', color: '#9C27B0', action: 'transfer' },
     { icon: '📥', label: 'ייבוא משלוח', color: '#4CAF50', action: 'import' },
     { icon: '🚚', label: 'משלוחים', color: '#FF9800', action: 'shipments' },
   ]
@@ -38,6 +46,8 @@ function HomePage() {
   const handleCardClick = (action) => {
     if (action === 'import') {
       setShowImportModal(true)
+    } else if (action === 'transfer') {
+      setShowTransferModal(true)
     } else if (action === 'aquariums') {
       navigate('/aquariums')
     } else {
@@ -135,6 +145,13 @@ function HomePage() {
         onClose={() => setShowImportModal(false)}
         farmId={currentFarm.farmId}
         onSuccess={handleImportSuccess}
+      />
+
+      {/* Transfer Modal */}
+      <FishTransferModal
+        isOpen={showTransferModal}
+        onClose={() => setShowTransferModal(false)}
+        onSuccess={handleTransferSuccess}
       />
     </div>
   )
