@@ -5,6 +5,7 @@ import { signOut } from 'firebase/auth'
 import { useFarm } from '../contexts/FarmContext'
 import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
 import FishTransferModal from '../components/features/transfer/FishTransferModal'
+import { VERSION } from '../version'
 
 function HomePage() {
   const navigate = useNavigate()
@@ -69,7 +70,10 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white px-4 py-4 flex justify-between items-center shadow-md sticky top-0 z-[100]">
-        <h1 className="text-xl md:text-2xl font-semibold text-gray-900 m-0">{currentFarm.name}</h1>
+        <div className="flex flex-col">
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-900 m-0">{currentFarm.name}</h1>
+          <span className="text-xs text-gray-500 mt-0.5">v{VERSION}</span>
+        </div>
         <div className="flex gap-2.5 items-center">
           <button
             className="bg-transparent border-none text-2xl cursor-pointer"
