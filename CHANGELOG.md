@@ -1,5 +1,13 @@
 # יומן שינויים - Fish Stock Management System
 
+## [1.1.1] - 2025-12-07
+
+### תיקוני באגים 🐛
+- תוקן: שגיאת `ReferenceError: setShowNewRoomInput is not defined` ביצירת אקווריום
+  - הוסרו הפניות למשתני state שנמחקו בגרסה קודמת
+
+---
+
 ## [1.1.0] - 2025-12-07
 
 ### תכונות חדשות ✨
