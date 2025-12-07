@@ -64,8 +64,6 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
         room: '',
         notes: '',
       })
-      setShowNewRoomInput(false)
-      setNewRoomName('')
 
       onClose()
     } catch (err) {
