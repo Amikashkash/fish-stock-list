@@ -4,6 +4,7 @@ import { useFarm } from '../contexts/FarmContext'
 import { getAquariums } from '../services/aquarium.service'
 import AquariumCard from '../components/features/aquarium/AquariumCard'
 import AquariumCreateModal from '../components/features/aquarium/AquariumCreateModal'
+import AquariumEditModal from '../components/features/aquarium/AquariumEditModal'
 
 function AquariumsPage() {
   const navigate = useNavigate()
@@ -11,6 +12,8 @@ function AquariumsPage() {
   const [aquariums, setAquariums] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedAquarium, setSelectedAquarium] = useState(null)
   const [filterRoom, setFilterRoom] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
 
@@ -37,8 +40,22 @@ function AquariumsPage() {
   }
 
   function handleAquariumClick(aquarium) {
-    // TODO: Navigate to aquarium details or open edit modal
-    console.log('Aquarium clicked:', aquarium)
+    setSelectedAquarium(aquarium)
+    setShowEditModal(true)
+  }
+
+  function handleAquariumUpdated(updatedAquarium, isDeleted = false) {
+    if (isDeleted) {
+      // Remove from list
+      setAquariums(aquariums.filter((aq) => aq.aquariumId !== selectedAquarium.aquariumId))
+    } else {
+      // Update in list
+      setAquariums(
+        aquariums.map((aq) => (aq.aquariumId === updatedAquarium.aquariumId ? updatedAquarium : aq))
+      )
+    }
+    setShowEditModal(false)
+    setSelectedAquarium(null)
   }
 
   function getStatusLabel(statusId) {
@@ -204,6 +221,17 @@ function AquariumsPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleAquariumCreated}
+      />
+
+      {/* Edit Modal */}
+      <AquariumEditModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false)
+          setSelectedAquarium(null)
+        }}
+        onSuccess={handleAquariumUpdated}
+        aquarium={selectedAquarium}
       />
     </div>
   )
