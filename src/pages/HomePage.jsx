@@ -5,6 +5,7 @@ import { signOut } from 'firebase/auth'
 import { useFarm } from '../contexts/FarmContext'
 import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
 import FishTransferModal from '../components/features/transfer/FishTransferModal'
+import ReceptionPlansModal from '../components/features/reception/ReceptionPlansModal'
 import { VERSION } from '../version'
 
 function HomePage() {
@@ -13,6 +14,7 @@ function HomePage() {
   const { currentFarm } = useFarm()
   const [showImportModal, setShowImportModal] = useState(false)
   const [showTransferModal, setShowTransferModal] = useState(false)
+  const [showReceptionModal, setShowReceptionModal] = useState(false)
 
   const handleSignOut = async () => {
     const confirmed = window.confirm('האם אתה בטוח שברצונך להתנתק?')
@@ -42,6 +44,7 @@ function HomePage() {
     { icon: '🔄', label: 'העברת דגים', color: '#9C27B0', action: 'transfer' },
     { icon: '📥', label: 'ייבוא משלוח', color: '#4CAF50', action: 'import' },
     { icon: '🚚', label: 'משלוחים', color: '#FF9800', action: 'shipments' },
+    { icon: '🏠', label: 'איכלוס אקווריומים', color: '#E91E63', action: 'reception' },
   ]
 
   const handleCardClick = (action) => {
@@ -49,6 +52,8 @@ function HomePage() {
       setShowImportModal(true)
     } else if (action === 'transfer') {
       setShowTransferModal(true)
+    } else if (action === 'reception') {
+      setShowReceptionModal(true)
     } else if (action === 'aquariums') {
       navigate('/aquariums')
     } else {
@@ -156,6 +161,12 @@ function HomePage() {
         isOpen={showTransferModal}
         onClose={() => setShowTransferModal(false)}
         onSuccess={handleTransferSuccess}
+      />
+
+      {/* Reception Plans Modal */}
+      <ReceptionPlansModal
+        isOpen={showReceptionModal}
+        onClose={() => setShowReceptionModal(false)}
       />
     </div>
   )
