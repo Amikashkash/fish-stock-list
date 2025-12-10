@@ -76,6 +76,27 @@ service cloud.firestore {
         allow read: if isFarmOwner(farmId);
         allow create, update, delete: if isFarmOwner(farmId);
       }
+
+      // Farm's reception plans subcollection
+      match /reception_plans/{planId} {
+        allow read: if isFarmMember(farmId);
+        allow create: if isFarmMember(farmId);
+        allow update, delete: if isFarmMember(farmId);
+
+        // Farm's reception items subcollection (nested under reception plans)
+        match /items/{itemId} {
+          allow read: if isFarmMember(farmId);
+          allow create: if isFarmMember(farmId);
+          allow update, delete: if isFarmMember(farmId);
+        }
+      }
+
+      // Farm's reception items subcollection (top-level)
+      match /reception_items/{itemId} {
+        allow read: if isFarmMember(farmId);
+        allow create: if isFarmMember(farmId);
+        allow update, delete: if isFarmMember(farmId);
+      }
     }
 
     // Global invitations collection (for code-based invites)
