@@ -5,6 +5,7 @@ import {
   getReceptionItems,
   receiveItem,
 } from '../../../services/reception.service'
+import { formatDateDDMMYYYY } from '../../../utils/dateFormatter'
 
 function ReceiveFishModal({ isOpen, onClose, planId, onSuccess }) {
   const { currentFarm } = useFarm()
@@ -104,8 +105,10 @@ function ReceiveFishModal({ isOpen, onClose, planId, onSuccess }) {
           {plan && (
             <div>
               <div className="text-sm text-gray-600 mb-2">
-                תאריך צפוי: {new Date(plan.expectedDate).toLocaleDateString('he-IL')}
-                {plan.shipmentReference && ` | משלוח: ${plan.shipmentReference}`}
+                <span className="font-semibold">תאריך צפוי:</span> {formatDateDDMMYYYY(plan.expectedDate)}
+                {plan.countryOfOrigin && <span> | 🌍 {plan.countryOfOrigin}</span>}
+                {plan.supplierName && <span> | 🏢 {plan.supplierName}</span>}
+                {plan.shipmentReference && <span> | משלוח: {plan.shipmentReference}</span>}
               </div>
 
               {/* Progress Bar */}

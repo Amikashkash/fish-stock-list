@@ -5,7 +5,11 @@ import {
   createReceptionPlan,
   addReceptionItem,
   getReceptionItems,
+  getPreviousCountries,
+  getPreviousSuppliers,
 } from '../../../services/reception.service'
+import { generateShipmentReference } from '../../../models/ReceptionPlan'
+import { formatDateDDMMYYYY } from '../../../utils/dateFormatter'
 
 function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
   const { currentFarm } = useFarm()
@@ -20,8 +24,15 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
 
   // Plan form
   const [expectedDate, setExpectedDate] = useState('')
+  const [countryOfOrigin, setCountryOfOrigin] = useState('')
+  const [supplierName, setSupplierName] = useState('')
   const [shipmentReference, setShipmentReference] = useState('')
+  const [expectedAquariumCount, setExpectedAquariumCount] = useState('')
   const [planNotes, setPlanNotes] = useState('')
+
+  // Lists for dropdowns
+  const [previousCountries, setPreviousCountries] = useState([])
+  const [previousSuppliers, setPreviousSuppliers] = useState([])
 
   // Item form
   const [aquariums, setAquariums] = useState([])
@@ -35,12 +46,26 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
   const [quantity, setQuantity] = useState('1')
   const [itemNotes, setItemNotes] = useState('')
 
-  // Load aquariums on mount
+  // Load aquariums and previous data on mount
   useEffect(() => {
     if (currentFarm && isOpen) {
       loadAquariums()
+      loadPreviousData()
     }
   }, [currentFarm, isOpen])
+
+  async function loadPreviousData() {
+    try {
+      const [countries, suppliers] = await Promise.all([
+        getPreviousCountries(currentFarm.farmId),
+        getPreviousSuppliers(currentFarm.farmId),
+      ])
+      setPreviousCountries(countries)
+      setPreviousSuppliers(suppliers)
+    } catch (err) {
+      console.error('Error loading previous data:', err)
+    }
+  }
 
   async function loadAquariums() {
     try {
@@ -68,15 +93,30 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
       return
     }
 
+    if (!countryOfOrigin.trim()) {
+      setError('נא לבחור/להזין ארץ מוצא')
+      return
+    }
+
+    if (!supplierName.trim()) {
+      setError('נא לבחור/להזין שם ספק או חוות מקור')
+      return
+    }
+
     setLoading(true)
     setError('')
 
     try {
+      const finalShipmentRef = shipmentReference.trim() || generateShipmentReference()
+
       const result = await createReceptionPlan(currentFarm.farmId, {
         expectedDate,
         source: 'manual',
-        shipmentReference,
+        countryOfOrigin: countryOfOrigin.trim(),
+        supplierName: supplierName.trim(),
+        shipmentReference: finalShipmentRef,
         notes: planNotes,
+        expectedAquariumCount: expectedAquariumCount ? parseInt(expectedAquariumCount) : 0,
       })
 
       setCurrentPlan(result.plan)
@@ -165,7 +205,10 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
     setCurrentPlan(null)
     setPlanItems([])
     setExpectedDate('')
+    setCountryOfOrigin('')
+    setSupplierName('')
     setShipmentReference('')
+    setExpectedAquariumCount('')
     setPlanNotes('')
     setSelectedAquarium(null)
     setHebrewName('')
@@ -267,21 +310,80 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
               </h3>
 
               <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block mb-2 font-semibold text-gray-900 text-sm">
+                      תאריך צפוי <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={expectedDate}
+                      onChange={(e) => setExpectedDate(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-2 font-semibold text-gray-900 text-sm">
+                      מספר אקווריומים צפויים
+                    </label>
+                    <input
+                      type="number"
+                      value={expectedAquariumCount}
+                      onChange={(e) => setExpectedAquariumCount(e.target.value)}
+                      min="0"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                      placeholder="כמה אקווריומים יקבלו דגים?"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block mb-2 font-semibold text-gray-900 text-sm">
-                    תאריך צפוי <span className="text-red-500">*</span>
+                    ארץ מוצא <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    value={expectedDate}
-                    onChange={(e) => setExpectedDate(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={countryOfOrigin}
+                      onChange={(e) => setCountryOfOrigin(e.target.value)}
+                      list="countries-list"
+                      className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                      placeholder="בחר או הקלד ארץ..."
+                    />
+                    <datalist id="countries-list">
+                      {previousCountries.map((country) => (
+                        <option key={country} value={country} />
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-900 text-sm">
+                    ספק / חוות מקור <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={supplierName}
+                      onChange={(e) => setSupplierName(e.target.value)}
+                      list="suppliers-list"
+                      className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                      placeholder="בחר או הקלד שם ספק..."
+                    />
+                    <datalist id="suppliers-list">
+                      {previousSuppliers.map((supplier) => (
+                        <option key={supplier} value={supplier} />
+                      ))}
+                    </datalist>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block mb-2 font-semibold text-gray-900 text-sm">
                     מספר משלוח / אסמכתא
+                    <span className="text-gray-500 text-xs mr-1">(אופציונלי - יופק אוטומטי אם לא מהוקלד)</span>
                   </label>
                   <input
                     type="text"
@@ -290,6 +392,11 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                     placeholder="לדוגמה: משלוח-2025-001"
                   />
+                  {!shipmentReference && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      📝 יופק אוטומטי: {generateShipmentReference()}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -299,7 +406,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
                   <textarea
                     value={planNotes}
                     onChange={(e) => setPlanNotes(e.target.value)}
-                    rows={3}
+                    rows={2}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm transition-colors focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                     placeholder="הערות לגבי התוכנית..."
                   />
@@ -311,18 +418,34 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
           {/* Step 3: Add Items */}
           {step === 3 && (
             <div>
-              <div className="bg-blue-50 p-4 rounded-lg mb-5">
-                <h3 className="text-sm font-semibold text-gray-600 mb-1">תוכנית קליטה:</h3>
-                <div className="text-lg font-bold text-gray-900">
-                  {new Date(currentPlan.expectedDate.seconds * 1000).toLocaleDateString('he-IL')}
-                </div>
-                {currentPlan.shipmentReference && (
-                  <div className="text-sm text-gray-600">
-                    משלוח: {currentPlan.shipmentReference}
+              <div className="bg-blue-50 p-4 rounded-lg mb-5 border border-blue-200">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-600 mb-1">תוכנית קליטה:</h3>
+                    <div className="text-lg font-bold text-gray-900">
+                      {formatDateDDMMYYYY(currentPlan.expectedDate)}
+                    </div>
                   </div>
-                )}
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500">משלוח</div>
+                    <div className="text-sm font-mono font-bold text-gray-900">
+                      {currentPlan.shipmentReference}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 text-sm text-gray-600 border-t border-blue-200 pt-2">
+                  <div>
+                    <span className="font-semibold">מקור:</span> {currentPlan.countryOfOrigin}
+                  </div>
+                  <div>
+                    <span className="font-semibold">ספק:</span> {currentPlan.supplierName}
+                  </div>
+                </div>
                 <div className="text-sm text-blue-600 mt-2">
-                  פריטים בתוכנית: {planItems.length}
+                  📋 פריטים בתוכנית: {planItems.length}
+                  {currentPlan.expectedAquariumCount > 0 && (
+                    <span> / אקווריומים צפויים: {currentPlan.expectedAquariumCount}</span>
+                  )}
                 </div>
               </div>
 

@@ -22,6 +22,50 @@ import { createFishInstance } from './fish.service'
 import { getAquarium, updateAquarium } from './aquarium.service'
 
 /**
+ * Get list of countries used in previous reception plans
+ */
+export async function getPreviousCountries(farmId) {
+  try {
+    const plansRef = collection(db, 'farms', farmId, 'reception_plans')
+    const snapshot = await getDocs(plansRef)
+    const countries = new Set()
+
+    snapshot.docs.forEach((doc) => {
+      if (doc.data().countryOfOrigin) {
+        countries.add(doc.data().countryOfOrigin)
+      }
+    })
+
+    return Array.from(countries).sort()
+  } catch (error) {
+    console.error('Error getting previous countries:', error)
+    return []
+  }
+}
+
+/**
+ * Get list of suppliers used in previous reception plans
+ */
+export async function getPreviousSuppliers(farmId) {
+  try {
+    const plansRef = collection(db, 'farms', farmId, 'reception_plans')
+    const snapshot = await getDocs(plansRef)
+    const suppliers = new Set()
+
+    snapshot.docs.forEach((doc) => {
+      if (doc.data().supplierName) {
+        suppliers.add(doc.data().supplierName)
+      }
+    })
+
+    return Array.from(suppliers).sort()
+  } catch (error) {
+    console.error('Error getting previous suppliers:', error)
+    return []
+  }
+}
+
+/**
  * Create a new reception plan
  */
 export async function createReceptionPlan(farmId, planData) {
@@ -35,8 +79,11 @@ export async function createReceptionPlan(farmId, planData) {
       expectedDate: Timestamp.fromDate(new Date(planData.expectedDate)),
       source: planData.source, // 'excel' or 'manual'
       status: 'planning',
+      countryOfOrigin: planData.countryOfOrigin || '',
+      supplierName: planData.supplierName || '',
       shipmentReference: planData.shipmentReference || '',
       notes: planData.notes || '',
+      expectedAquariumCount: planData.expectedAquariumCount || 0,
       itemCount: 0,
       receivedCount: 0,
       createdAt: Timestamp.now(),

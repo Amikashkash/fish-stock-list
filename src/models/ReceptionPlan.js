@@ -37,6 +37,14 @@ export function validateReceptionPlan(data) {
     errors.push('מקור נתונים לא חוקי')
   }
 
+  if (!data.countryOfOrigin || !data.countryOfOrigin.trim()) {
+    errors.push('ארץ מוצא חסרה')
+  }
+
+  if (!data.supplierName || !data.supplierName.trim()) {
+    errors.push('שם ספק/חוות מקור חסר')
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -72,22 +80,40 @@ export function validateReceptionItem(data) {
 }
 
 /**
+ * Generate a shipment reference if not provided
+ */
+export function generateShipmentReference() {
+  const date = new Date()
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const timestamp = Date.now().toString().slice(-6)
+  return `משלוח-${year}-${month}${day}-${timestamp}`
+}
+
+/**
  * Create a new reception plan object
  */
 export function createReceptionPlan({
   farmId,
   expectedDate,
   source,
+  countryOfOrigin = '',
+  supplierName = '',
   notes = '',
   shipmentReference = '',
+  expectedAquariumCount = 0,
 }) {
   return {
     farmId,
     expectedDate,
     source, // 'excel' or 'manual'
     status: RECEPTION_STATUS.PLANNING,
-    shipmentReference,
+    countryOfOrigin,
+    supplierName,
+    shipmentReference: shipmentReference || generateShipmentReference(),
     notes,
+    expectedAquariumCount,
     itemCount: 0,
     receivedCount: 0,
     createdAt: new Date(),

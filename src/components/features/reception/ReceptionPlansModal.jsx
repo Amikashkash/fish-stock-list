@@ -3,6 +3,7 @@ import { useFarm } from '../../../contexts/FarmContext'
 import { getReceptionPlans, deleteReceptionPlan } from '../../../services/reception.service'
 import ReceptionPlanningModal from './ReceptionPlanningModal'
 import ReceiveFishModal from './ReceiveFishModal'
+import { formatDateDDMMYYYY } from '../../../utils/dateFormatter'
 
 function ReceptionPlansModal({ isOpen, onClose }) {
   const { currentFarm } = useFarm()
@@ -172,16 +173,22 @@ function ReceptionPlansModal({ isOpen, onClose }) {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="text-lg font-bold text-gray-900 m-0">
-                            {new Date(plan.expectedDate).toLocaleDateString('he-IL', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                            })}
+                            {formatDateDDMMYYYY(plan.expectedDate)}
                           </h3>
                           {getStatusBadge(plan.status)}
                         </div>
+                        <div className="flex gap-3 text-xs text-gray-600 mb-2">
+                          {plan.countryOfOrigin && (
+                            <span>🌍 {plan.countryOfOrigin}</span>
+                          )}
+                          {plan.supplierName && (
+                            <span>🏢 {plan.supplierName}</span>
+                          )}
+                        </div>
                         {plan.shipmentReference && (
-                          <div className="text-sm text-gray-600">משלוח: {plan.shipmentReference}</div>
+                          <div className="text-sm text-gray-600 font-mono">
+                            משלוח: {plan.shipmentReference}
+                          </div>
                         )}
                         {plan.notes && (
                           <div className="text-sm text-gray-600 mt-1">{plan.notes}</div>
@@ -192,6 +199,9 @@ function ReceptionPlansModal({ isOpen, onClose }) {
                     <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                       <div>
                         <span className="font-semibold">פריטים:</span> {plan.itemCount || 0}
+                        {plan.expectedAquariumCount > 0 && (
+                          <span className="text-xs ml-1">(צפוי: {plan.expectedAquariumCount})</span>
+                        )}
                       </div>
                       <div>
                         <span className="font-semibold">התקבלו:</span> {plan.receivedCount || 0}
