@@ -81,6 +81,7 @@ export async function createReceptionPlan(farmId, planData) {
       status: 'planning',
       countryOfOrigin: planData.countryOfOrigin || '',
       supplierName: planData.supplierName || '',
+      targetRoom: planData.targetRoom || '',
       shipmentReference: planData.shipmentReference || '',
       notes: planData.notes || '',
       expectedAquariumCount: planData.expectedAquariumCount || 0,

@@ -108,6 +108,7 @@ function ReceiveFishModal({ isOpen, onClose, planId, onSuccess }) {
                 <span className="font-semibold">תאריך צפוי:</span> {formatDateDDMMYYYY(plan.expectedDate)}
                 {plan.countryOfOrigin && <span> | 🌍 {plan.countryOfOrigin}</span>}
                 {plan.supplierName && <span> | 🏢 {plan.supplierName}</span>}
+                {plan.targetRoom && <span> | 📍 {plan.targetRoom}</span>}
                 {plan.shipmentReference && <span> | משלוח: {plan.shipmentReference}</span>}
               </div>
 

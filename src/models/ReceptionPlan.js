@@ -45,6 +45,10 @@ export function validateReceptionPlan(data) {
     errors.push('שם ספק/חוות מקור חסר')
   }
 
+  if (!data.targetRoom || !data.targetRoom.trim()) {
+    errors.push('חדר/אזור יעד חסר')
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -100,6 +104,7 @@ export function createReceptionPlan({
   source,
   countryOfOrigin = '',
   supplierName = '',
+  targetRoom = '',
   notes = '',
   shipmentReference = '',
   expectedAquariumCount = 0,
@@ -111,6 +116,7 @@ export function createReceptionPlan({
     status: RECEPTION_STATUS.PLANNING,
     countryOfOrigin,
     supplierName,
+    targetRoom,
     shipmentReference: shipmentReference || generateShipmentReference(),
     notes,
     expectedAquariumCount,

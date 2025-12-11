@@ -26,6 +26,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
   const [expectedDate, setExpectedDate] = useState('')
   const [countryOfOrigin, setCountryOfOrigin] = useState('')
   const [supplierName, setSupplierName] = useState('')
+  const [targetRoom, setTargetRoom] = useState('')
   const [shipmentReference, setShipmentReference] = useState('')
   const [expectedAquariumCount, setExpectedAquariumCount] = useState('')
   const [planNotes, setPlanNotes] = useState('')
@@ -33,6 +34,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
   // Lists for dropdowns
   const [previousCountries, setPreviousCountries] = useState([])
   const [previousSuppliers, setPreviousSuppliers] = useState([])
+  const [rooms, setRooms] = useState([])
 
   // Item form
   const [aquariums, setAquariums] = useState([])
@@ -71,6 +73,9 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
     try {
       const data = await getAquariums(currentFarm.farmId)
       setAquariums(data)
+      // Extract unique rooms
+      const uniqueRooms = [...new Set(data.map((aq) => aq.room))].sort()
+      setRooms(uniqueRooms)
     } catch (err) {
       console.error('Error loading aquariums:', err)
       setError('שגיאה בטעינת אקווריומים')
@@ -103,6 +108,11 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
       return
     }
 
+    if (!targetRoom.trim()) {
+      setError('נא לבחור חדר/אזור יעד')
+      return
+    }
+
     setLoading(true)
     setError('')
 
@@ -114,6 +124,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
         source: 'manual',
         countryOfOrigin: countryOfOrigin.trim(),
         supplierName: supplierName.trim(),
+        targetRoom: targetRoom.trim(),
         shipmentReference: finalShipmentRef,
         notes: planNotes,
         expectedAquariumCount: expectedAquariumCount ? parseInt(expectedAquariumCount) : 0,
@@ -207,6 +218,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
     setExpectedDate('')
     setCountryOfOrigin('')
     setSupplierName('')
+    setTargetRoom('')
     setShipmentReference('')
     setExpectedAquariumCount('')
     setPlanNotes('')
@@ -240,8 +252,10 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
   const rooms = [...new Set(aquariums.map((aq) => aq.room))]
 
   // Filter aquariums by room
+  // In Step 3, filter aquariums by target room
   const filteredAquariums = aquariums.filter((aq) => {
-    if (filterRoom !== 'all' && aq.room !== filterRoom) return false
+    // Only show aquariums from the target room
+    if (currentPlan && aq.room !== currentPlan.targetRoom) return false
     return true
   })
 
@@ -382,6 +396,24 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
 
                 <div>
                   <label className="block mb-2 font-semibold text-gray-900 text-sm">
+                    חדר / אזור יעד <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={targetRoom}
+                    onChange={(e) => setTargetRoom(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  >
+                    <option value="">בחר חדר...</option>
+                    {rooms.map((room) => (
+                      <option key={room} value={room}>
+                        {room}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block mb-2 font-semibold text-gray-900 text-sm">
                     מספר משלוח / אסמכתא
                     <span className="text-gray-500 text-xs mr-1">(אופציונלי - יופק אוטומטי אם לא מהוקלד)</span>
                   </label>
@@ -440,6 +472,9 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
                   <div>
                     <span className="font-semibold">ספק:</span> {currentPlan.supplierName}
                   </div>
+                  <div>
+                    <span className="font-semibold">חדר:</span> {currentPlan.targetRoom}
+                  </div>
                 </div>
                 <div className="text-sm text-blue-600 mt-2">
                   📋 פריטים בתוכנית: {planItems.length}
@@ -449,25 +484,16 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
                 </div>
               </div>
 
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">הוסף דגים לתוכנית</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                הוסף דגים לתוכנית
+                <span className="text-sm text-gray-500 font-normal mr-2">
+                  (חדר: {currentPlan.targetRoom})
+                </span>
+              </h3>
 
-              {/* Room Filter */}
-              <div className="mb-4">
-                <label className="block mb-2 font-semibold text-gray-900 text-sm">
-                  סנן לפי חדר:
-                </label>
-                <select
-                  value={filterRoom}
-                  onChange={(e) => setFilterRoom(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
-                >
-                  <option value="all">כל החדרים</option>
-                  {rooms.map((room) => (
-                    <option key={room} value={room}>
-                      {room}
-                    </option>
-                  ))}
-                </select>
+              {/* Note about room */}
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-gray-700">
+                📍 אקווריומים מחדר <span className="font-semibold">{currentPlan.targetRoom}</span> בלבד יופיעו לבחירה
               </div>
 
               {/* Aquarium Selection */}

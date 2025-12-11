@@ -184,6 +184,9 @@ function ReceptionPlansModal({ isOpen, onClose }) {
                           {plan.supplierName && (
                             <span>🏢 {plan.supplierName}</span>
                           )}
+                          {plan.targetRoom && (
+                            <span>📍 {plan.targetRoom}</span>
+                          )}
                         </div>
                         {plan.shipmentReference && (
                           <div className="text-sm text-gray-600 font-mono">
