@@ -47,6 +47,8 @@ function FishListManagementModal({
         notes: newItem.notes,
         code: newItem.code,
         targetRoom: plan?.targetRoom || '',
+        targetAquariumId: null,
+        targetAquariumNumber: '',
       })
       setNewItem({
         hebrewName: '',

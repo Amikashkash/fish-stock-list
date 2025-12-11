@@ -190,10 +190,11 @@ export async function deleteReceptionPlan(farmId, planId) {
     const batch = writeBatch(db)
 
     // Delete all items
-    const itemsSnapshot = await getDocs(
+    const q = query(
       collection(db, 'farms', farmId, 'reception_items'),
       where('planId', '==', planId)
     )
+    const itemsSnapshot = await getDocs(q)
 
     itemsSnapshot.forEach((doc) => {
       batch.delete(doc.ref)
@@ -264,8 +265,7 @@ export async function getReceptionItems(farmId, planId) {
   try {
     const q = query(
       collection(db, 'farms', farmId, 'reception_items'),
-      where('planId', '==', planId),
-      orderBy('createdAt', 'asc')
+      where('planId', '==', planId)
     )
 
     const snapshot = await getDocs(q)
@@ -279,6 +279,9 @@ export async function getReceptionItems(farmId, planId) {
         updatedAt: data.updatedAt?.toDate(),
       })
     })
+
+    // Sort by createdAt on client side
+    items.sort((a, b) => (a.createdAt?.getTime?.() || 0) - (b.createdAt?.getTime?.() || 0))
 
     return items
   } catch (error) {
@@ -424,12 +427,11 @@ export async function lockReceptionPlan(farmId, planId) {
     const batch = writeBatch(db)
 
     // Get all items for the plan
-    const itemsSnapshot = await getDocs(
-      query(
-        collection(db, 'farms', farmId, 'reception_items'),
-        where('planId', '==', planId)
-      )
+    const q = query(
+      collection(db, 'farms', farmId, 'reception_items'),
+      where('planId', '==', planId)
     )
+    const itemsSnapshot = await getDocs(q)
 
     // Validate all items have aquarium assignments
     let unassignedCount = 0

@@ -3,6 +3,6 @@
  * Update this file before each release
  */
 
-export const VERSION = '1.3.0'
+export const VERSION = '1.3.1'
 export const RELEASE_DATE = '2025-12-11'
-export const RELEASE_NAME = 'Reception Workflow Redesign'
+export const RELEASE_NAME = 'Reception Workflow Redesign - Bug Fixes'
