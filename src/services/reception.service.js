@@ -415,3 +415,78 @@ export async function receiveItem(farmId, itemId) {
     throw error
   }
 }
+
+/**
+ * Lock a reception plan - validates and prevents editing
+ */
+export async function lockReceptionPlan(farmId, planId) {
+  try {
+    const batch = writeBatch(db)
+
+    // Get all items for the plan
+    const itemsSnapshot = await getDocs(
+      query(
+        collection(db, 'farms', farmId, 'reception_items'),
+        where('planId', '==', planId)
+      )
+    )
+
+    // Validate all items have aquarium assignments
+    let unassignedCount = 0
+    itemsSnapshot.forEach((doc) => {
+      if (!doc.data().targetAquariumId) {
+        unassignedCount += 1
+      }
+    })
+
+    if (unassignedCount > 0) {
+      throw new Error(`לא ניתן לנעול - ${unassignedCount} פריטים ללא אקווריום מוקצה`)
+    }
+
+    // Lock the plan
+    const planRef = doc(db, 'farms', farmId, 'reception_plans', planId)
+    batch.update(planRef, {
+      isLocked: true,
+      status: 'locked',
+      updatedAt: Timestamp.now(),
+    })
+
+    await batch.commit()
+  } catch (error) {
+    console.error('Error locking reception plan:', error)
+    throw error
+  }
+}
+
+/**
+ * Unlock a reception plan - allows editing again
+ */
+export async function unlockReceptionPlan(farmId, planId) {
+  try {
+    const planRef = doc(db, 'farms', farmId, 'reception_plans', planId)
+    await updateDoc(planRef, {
+      isLocked: false,
+      status: 'finalized',
+      updatedAt: Timestamp.now(),
+    })
+  } catch (error) {
+    console.error('Error unlocking reception plan:', error)
+    throw error
+  }
+}
+
+/**
+ * Move plan to next status
+ */
+export async function updatePlanStatus(farmId, planId, newStatus) {
+  try {
+    const planRef = doc(db, 'farms', farmId, 'reception_plans', planId)
+    await updateDoc(planRef, {
+      status: newStatus,
+      updatedAt: Timestamp.now(),
+    })
+  } catch (error) {
+    console.error('Error updating plan status:', error)
+    throw error
+  }
+}

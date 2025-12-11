@@ -4,14 +4,16 @@
  */
 
 /**
- * Reception Plan statuses
+ * Reception Plan statuses - Multi-stage workflow
  */
 export const RECEPTION_STATUS = {
-  PLANNING: 'planning',      // בתכנון - still adding fish to plan
-  READY: 'ready',            // מוכן לקליטה - plan is ready, waiting for fish arrival
-  IN_PROGRESS: 'in-progress', // בתהליך קבלה - currently receiving fish
-  COMPLETED: 'completed',    // הושלם - all fish received
-  CANCELLED: 'cancelled',    // בוטל - plan was cancelled
+  PLANNING: 'planning',              // בתכנון - Initial plan creation
+  PROFORMA_RECEIVED: 'proforma_received', // פרופורמה התקבלה - Initial fish list received
+  FINALIZED: 'finalized',            // סופי - Fish list and aquarium assignments finalized
+  LOCKED: 'locked',                  // נעול - Plan locked, ready for reception
+  IN_PROGRESS: 'in-progress',        // בתהליך קבלה - Currently receiving fish
+  COMPLETED: 'completed',            // הושלם - All fish received
+  CANCELLED: 'cancelled',            // בוטל - Plan was cancelled
 }
 
 /**
@@ -47,6 +49,28 @@ export function validateReceptionPlan(data) {
 
   if (!data.targetRoom || !data.targetRoom.trim()) {
     errors.push('חדר/אזור יעד חסר')
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  }
+}
+
+/**
+ * Validate that all items in a plan have aquarium assignments
+ */
+export function validatePlanComplete(items) {
+  const errors = []
+
+  if (!items || items.length === 0) {
+    errors.push('אין פריטים בתוכנית')
+    return { valid: false, errors }
+  }
+
+  const unassignedItems = items.filter((item) => !item.targetAquariumId)
+  if (unassignedItems.length > 0) {
+    errors.push(`${unassignedItems.length} פריטים ללא אקווריום מוקצה`)
   }
 
   return {
@@ -96,6 +120,54 @@ export function generateShipmentReference() {
 }
 
 /**
+ * Calculate work requirements from items
+ * Shows how many aquariums of each size are needed by room
+ */
+export function calculateWorkRequirements(items) {
+  if (!items || items.length === 0) {
+    return {
+      bySize: {},
+      byRoom: {},
+      totalItems: 0,
+      totalAquariumsNeeded: 0,
+    }
+  }
+
+  const bySize = {}
+  const byRoom = {}
+
+  items.forEach((item) => {
+    const size = item.size || 'unknown'
+    const room = item.targetRoom || 'unknown'
+
+    // Aggregate by size
+    if (!bySize[size]) {
+      bySize[size] = { count: 0, items: [] }
+    }
+    bySize[size].count += 1
+    bySize[size].items.push(item.hebrewName)
+
+    // Aggregate by room
+    if (!byRoom[room]) {
+      byRoom[room] = { count: 0, sizes: {} }
+    }
+    byRoom[room].count += 1
+
+    if (!byRoom[room].sizes[size]) {
+      byRoom[room].sizes[size] = 0
+    }
+    byRoom[room].sizes[size] += 1
+  })
+
+  return {
+    bySize,
+    byRoom,
+    totalItems: items.length,
+    totalAquariumsNeeded: items.length,
+  }
+}
+
+/**
  * Create a new reception plan object
  */
 export function createReceptionPlan({
@@ -122,6 +194,9 @@ export function createReceptionPlan({
     expectedAquariumCount,
     itemCount: 0,
     receivedCount: 0,
+    isLocked: false,
+    lastEditedAt: null,
+    lastEditedBy: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   }
