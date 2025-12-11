@@ -13,6 +13,7 @@ function ReceptionPlansModal({ isOpen, onClose }) {
   const [showPlanningModal, setShowPlanningModal] = useState(false)
   const [showReceiveModal, setShowReceiveModal] = useState(false)
   const [selectedPlanId, setSelectedPlanId] = useState(null)
+  const [editingPlanId, setEditingPlanId] = useState(null)
   const [statusFilter, setStatusFilter] = useState('all')
 
   useEffect(() => {
@@ -52,9 +53,15 @@ function ReceptionPlansModal({ isOpen, onClose }) {
     setShowReceiveModal(true)
   }
 
+  function handleOpenPlanning(planId) {
+    setEditingPlanId(planId)
+    setShowPlanningModal(true)
+  }
+
   function handlePlanningSuccess(plan) {
     loadPlans() // Reload to show new plan
     setShowPlanningModal(false)
+    setEditingPlanId(null)
   }
 
   function handleReceiveSuccess(plan) {
@@ -224,6 +231,24 @@ function ReceptionPlansModal({ isOpen, onClose }) {
                     </div>
 
                     <div className="flex gap-2 flex-wrap">
+                      {plan.status === 'planning' && (
+                        <button
+                          onClick={() => handleOpenPlanning(plan.planId)}
+                          className="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-blue-500 text-white hover:bg-blue-600"
+                        >
+                          ✏️ ערוך
+                        </button>
+                      )}
+
+                      {(plan.status === 'proforma_received' || plan.status === 'finalized') && (
+                        <button
+                          onClick={() => handleOpenPlanning(plan.planId)}
+                          className="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-blue-500 text-white hover:bg-blue-600"
+                        >
+                          ✏️ ערוך
+                        </button>
+                      )}
+
                       {plan.status !== 'completed' && plan.status !== 'cancelled' && (
                         <button
                           onClick={() => handleOpenReceive(plan.planId)}
@@ -262,8 +287,12 @@ function ReceptionPlansModal({ isOpen, onClose }) {
       {/* Planning Modal */}
       <ReceptionPlanningModal
         isOpen={showPlanningModal}
-        onClose={() => setShowPlanningModal(false)}
+        onClose={() => {
+          setShowPlanningModal(false)
+          setEditingPlanId(null)
+        }}
         onSuccess={handlePlanningSuccess}
+        editingPlanId={editingPlanId}
       />
 
       {/* Receive Modal */}

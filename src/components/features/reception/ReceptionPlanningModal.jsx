@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import {
   createReceptionPlan,
+  getReceptionPlan,
   getReceptionItems,
   getPreviousCountries,
   getPreviousSuppliers,
@@ -18,11 +19,12 @@ import ExcelTemplateDisplay from './ExcelTemplateDisplay'
 import FishListManagementModal from './FishListManagementModal'
 import AquariumAssignmentModal from './AquariumAssignmentModal'
 
-function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
+function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = null }) {
   const { currentFarm } = useFarm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [step, setStep] = useState(1) // 1: create plan, 2: add fish, 3: work requirements, 4: assign aquariums, 5: review & lock
+  const isEditing = !!editingPlanId
 
   // Plan data
   const [currentPlan, setCurrentPlan] = useState(null)
@@ -52,10 +54,13 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
     if (currentFarm && isOpen) {
       loadPreviousData()
       loadRooms()
+      if (isEditing && editingPlanId) {
+        loadExistingPlan()
+      }
     }
-  }, [currentFarm, isOpen])
+  }, [currentFarm, isOpen, editingPlanId])
 
-  // Load fish items when plan is created
+  // Load fish items when plan is created or loaded
   useEffect(() => {
     if (currentPlan && currentPlan.planId) {
       loadPlanItems()
@@ -91,6 +96,31 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
       setPlanItems(items)
     } catch (err) {
       console.error('Error loading plan items:', err)
+    }
+  }
+
+  async function loadExistingPlan() {
+    try {
+      setLoading(true)
+      setError('')
+      const plan = await getReceptionPlan(currentFarm.farmId, editingPlanId)
+      setCurrentPlan(plan)
+      // Populate form with plan data
+      setExpectedDate(plan.expectedDate ? new Date(plan.expectedDate).toISOString().split('T')[0] : '')
+      setCountryOfOrigin(plan.countryOfOrigin || '')
+      setSupplierName(plan.supplierName || '')
+      setTargetRoom(plan.targetRoom || '')
+      setShipmentReference(plan.shipmentReference || '')
+      setExpectedAquariumCount(plan.expectedAquariumCount || '')
+      setPlanNotes(plan.notes || '')
+      // Start at step 2 (add fish) when editing
+      setStep(2)
+    } catch (err) {
+      console.error('Error loading existing plan:', err)
+      setError('שגיאה בטעינת התוכנית')
+      handleClose()
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -226,7 +256,9 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess }) {
         >
           {/* Header */}
           <div className="px-6 pt-6 pb-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
-            <h2 className="m-0 text-[22px] font-semibold text-gray-900">תוכנית קליטה חדשה</h2>
+            <h2 className="m-0 text-[22px] font-semibold text-gray-900">
+              {isEditing ? 'עריכת תוכנית קליטה' : 'תוכנית קליטה חדשה'}
+            </h2>
             <button
               className="bg-transparent border-none text-[28px] leading-none text-gray-400 cursor-pointer p-0 w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-gray-100 hover:text-gray-700"
               onClick={handleClose}
