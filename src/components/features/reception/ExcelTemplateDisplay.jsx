@@ -24,6 +24,12 @@ function ExcelTemplateDisplay({ onClose }) {
       example: 'CAT-001',
       description: 'מספר הזיהוי מהספק (רשות)',
     },
+    {
+      name: 'קטע/ארגז',
+      key: 'boxNumber',
+      example: 'Box-001',
+      description: 'מספר הקטע או הארגז במשלוח (רשות)',
+    },
   ]
 
   return (
@@ -57,18 +63,21 @@ function ExcelTemplateDisplay({ onClose }) {
                 quantity: '50',
                 size: 'M',
                 code: 'NILO-001',
+                boxNumber: 'Box-101',
               },
               {
                 scientificName: 'Clarias gariepinus',
                 quantity: '30',
                 size: 'L',
                 code: 'CLAR-002',
+                boxNumber: 'Box-102',
               },
               {
                 scientificName: 'Mugil cephalus',
                 quantity: '100',
                 size: 'S',
                 code: 'MUGIL-003',
+                boxNumber: 'Box-103',
               },
             ].map((row, idx) => (
               <tr key={idx} className="border border-gray-200 hover:bg-gray-50">
