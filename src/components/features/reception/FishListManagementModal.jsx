@@ -341,7 +341,6 @@ function FishListManagementModal({
                     value={newItem.hebrewName}
                     onChange={(e) => setNewItem({ ...newItem, hebrewName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
-                    placeholder="טילפיה"
                     disabled={loading}
                   />
                 </div>
@@ -352,7 +351,6 @@ function FishListManagementModal({
                     value={newItem.scientificName}
                     onChange={(e) => setNewItem({ ...newItem, scientificName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
-                    placeholder="Oreochromis niloticus"
                     disabled={loading}
                   />
                 </div>
@@ -363,7 +361,6 @@ function FishListManagementModal({
                     value={newItem.size}
                     onChange={(e) => setNewItem({ ...newItem, size: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
-                    placeholder="M"
                     disabled={loading}
                   />
                 </div>
@@ -389,7 +386,6 @@ function FishListManagementModal({
                     value={newItem.code}
                     onChange={(e) => setNewItem({ ...newItem, code: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
-                    placeholder="CAT-001"
                     disabled={loading}
                   />
                 </div>
@@ -400,7 +396,6 @@ function FishListManagementModal({
                     value={newItem.boxNumber}
                     onChange={(e) => setNewItem({ ...newItem, boxNumber: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
-                    placeholder="Box-001"
                     disabled={loading}
                   />
                 </div>
@@ -413,7 +408,6 @@ function FishListManagementModal({
                     value={newItem.boxPortion}
                     onChange={(e) => setNewItem({ ...newItem, boxPortion: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
-                    placeholder="רבע / חצי / שלם"
                     disabled={loading}
                   />
                 </div>
@@ -424,7 +418,6 @@ function FishListManagementModal({
                   value={newItem.notes}
                   onChange={(e) => setNewItem({ ...newItem, notes: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500 h-20"
-                  placeholder="הערות או הנחיות מיוחדות..."
                   disabled={loading}
                 />
               </div>
