@@ -19,8 +19,8 @@ function FishListManagementModal({
   const [newItem, setNewItem] = useState({
     hebrewName: '',
     scientificName: '',
-    size: 'M',
-    quantity: 1,
+    size: '',
+    quantity: '',
     notes: '',
     code: '',
     boxNumber: '',
@@ -45,7 +45,7 @@ function FishListManagementModal({
         hebrewName: newItem.hebrewName,
         scientificName: newItem.scientificName,
         size: newItem.size,
-        quantity: newItem.quantity,
+        quantity: newItem.quantity || 1,
         notes: newItem.notes,
         code: newItem.code,
         boxNumber: newItem.boxNumber,
@@ -57,8 +57,8 @@ function FishListManagementModal({
       setNewItem({
         hebrewName: '',
         scientificName: '',
-        size: 'M',
-        quantity: 1,
+        size: '',
+        quantity: '',
         notes: '',
         code: '',
         boxNumber: '',
@@ -86,7 +86,7 @@ function FishListManagementModal({
         hebrewName: editItem.hebrewName,
         scientificName: editItem.scientificName,
         size: editItem.size,
-        quantity: editItem.quantity,
+        quantity: editItem.quantity || 1,
         notes: editItem.notes,
         code: editItem.code,
         boxNumber: editItem.boxNumber,
@@ -195,11 +195,13 @@ function FishListManagementModal({
                         <div>
                           <label className="text-xs font-semibold text-gray-700">כמות</label>
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
                             value={editItem.quantity}
-                            onChange={(e) =>
-                              setEditItem({ ...editItem, quantity: parseInt(e.target.value) || 1 })
-                            }
+                            onChange={(e) => {
+                              const num = parseInt(e.target.value) || ''
+                              setEditItem({ ...editItem, quantity: num })
+                            }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
                             disabled={loading}
                           />
@@ -367,12 +369,13 @@ function FishListManagementModal({
                 <div>
                   <label className="text-xs font-semibold text-gray-700">כמות</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={newItem.quantity}
-                    onChange={(e) =>
-                      setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })
-                    }
-                    min="1"
+                    onChange={(e) => {
+                      const num = parseInt(e.target.value) || ''
+                      setNewItem({ ...newItem, quantity: num })
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
                     disabled={loading}
                   />
