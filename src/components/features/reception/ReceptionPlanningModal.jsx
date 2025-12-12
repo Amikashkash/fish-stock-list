@@ -462,7 +462,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
                     onClick={() => setShowFishListModal(true)}
                     className="w-full px-4 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600"
                   >
-                    ➕ הוסף דגים ({completionStatus.totalItems})
+                    ➕ ערוך/הוסף דגים ({completionStatus.totalItems})
                   </button>
 
                   {completionStatus.totalItems > 0 && (
