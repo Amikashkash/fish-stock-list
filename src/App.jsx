@@ -9,6 +9,8 @@ import HomePage from './pages/HomePage'
 import WelcomePage from './pages/WelcomePage'
 import AquariumsPage from './pages/AquariumsPage'
 import FarmSettingsPage from './pages/FarmSettingsPage'
+import VersionUpdateDialog from './components/VersionUpdateDialog'
+import { initializeVersionCheck, isNewVersionAvailable } from './services/version.service'
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -24,12 +26,21 @@ function AppRoutes() {
   const { farms, loading: farmsLoading } = useFarm()
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [showVersionUpdate, setShowVersionUpdate] = useState(false)
 
-  // Listen to auth state changes
+  // Listen to auth state changes and check version
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
       setAuthLoading(false)
+
+      // Check version when user logs in
+      if (currentUser) {
+        const hasNewVersion = initializeVersionCheck()
+        if (hasNewVersion) {
+          setShowVersionUpdate(true)
+        }
+      }
     })
     return () => unsubscribe()
   }, [])
@@ -47,32 +58,37 @@ function AppRoutes() {
   const hasFarms = farms.length > 0
 
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={user ? <Navigate to={hasFarms ? "/home" : "/welcome"} /> : <LoginPage />}
-      />
-      <Route
-        path="/welcome"
-        element={user ? (hasFarms ? <Navigate to="/home" /> : <WelcomePage />) : <Navigate to="/login" />}
-      />
-      <Route
-        path="/home"
-        element={user ? (hasFarms ? <HomePage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
-      />
-      <Route
-        path="/aquariums"
-        element={user ? (hasFarms ? <AquariumsPage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
-      />
-      <Route
-        path="/settings"
-        element={user ? (hasFarms ? <FarmSettingsPage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
-      />
-      <Route
-        path="/"
-        element={<Navigate to={user ? (hasFarms ? "/home" : "/welcome") : "/login"} />}
-      />
-    </Routes>
+    <>
+      <Routes>
+        <Route
+          path="/login"
+          element={user ? <Navigate to={hasFarms ? "/home" : "/welcome"} /> : <LoginPage />}
+        />
+        <Route
+          path="/welcome"
+          element={user ? (hasFarms ? <Navigate to="/home" /> : <WelcomePage />) : <Navigate to="/login" />}
+        />
+        <Route
+          path="/home"
+          element={user ? (hasFarms ? <HomePage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
+        />
+        <Route
+          path="/aquariums"
+          element={user ? (hasFarms ? <AquariumsPage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
+        />
+        <Route
+          path="/settings"
+          element={user ? (hasFarms ? <FarmSettingsPage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
+        />
+        <Route
+          path="/"
+          element={<Navigate to={user ? (hasFarms ? "/home" : "/welcome") : "/login"} />}
+        />
+      </Routes>
+
+      {/* Version Update Notification */}
+      <VersionUpdateDialog isOpen={showVersionUpdate} onClose={() => setShowVersionUpdate(false)} />
+    </>
   )
 }
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useFarm } from '../contexts/FarmContext'
 import { updateFarm } from '../services/farm.service'
 import { getAquariums } from '../services/aquarium.service'
+import { getCurrentVersion, clearCacheAndReload, isNewVersionAvailable } from '../services/version.service'
 
 function FarmSettingsPage() {
   const navigate = useNavigate()
@@ -14,6 +15,8 @@ function FarmSettingsPage() {
   const [newLocationLabel, setNewLocationLabel] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+  const [checkingUpdates, setCheckingUpdates] = useState(false)
+  const [updateAvailable, setUpdateAvailable] = useState(false)
 
   // Load aquariums to check for location usage
   useEffect(() => {
@@ -21,6 +24,35 @@ function FarmSettingsPage() {
       loadAquariums()
     }
   }, [currentFarm])
+
+  // Check if update is available
+  useEffect(() => {
+    const hasUpdate = isNewVersionAvailable()
+    setUpdateAvailable(hasUpdate)
+  }, [])
+
+  async function handleCheckUpdates() {
+    setCheckingUpdates(true)
+    try {
+      // Simulate checking for updates
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      if (isNewVersionAvailable()) {
+        setMessage({ type: 'success', text: 'גרסה חדשה זמינה! לחץ על "עדכן עכשיו" כדי להתקין.' })
+        setUpdateAvailable(true)
+      } else {
+        setMessage({ type: 'success', text: 'אתה משתמש בגרסה העדכנית ביותר!' })
+        setUpdateAvailable(false)
+      }
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    } finally {
+      setCheckingUpdates(false)
+    }
+  }
+
+  async function handleUpdateNow() {
+    await clearCacheAndReload()
+  }
 
   async function loadAquariums() {
     try {
@@ -306,6 +338,63 @@ function FarmSettingsPage() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Application Settings */}
+      <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">הגדרות אפליקציה</h2>
+          <p className="text-[15px] text-gray-600">
+            בדוק עדכונים והגדרות כלליות
+          </p>
+        </div>
+
+        {/* Version Info */}
+        <div className="bg-gray-50 rounded-xl p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-600 mb-1">גרסה נוכחית</p>
+              <p className="text-2xl font-bold text-gray-900">{getCurrentVersion()}</p>
+            </div>
+            {updateAvailable && (
+              <div className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-semibold">
+                ✨ עדכון זמין
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleCheckUpdates}
+              disabled={checkingUpdates}
+              className="flex-1 sm:flex-none px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {checkingUpdates ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  בודק...
+                </>
+              ) : (
+                <>
+                  🔄 בדוק עדכונים
+                </>
+              )}
+            </button>
+
+            {updateAvailable && (
+              <button
+                onClick={handleUpdateNow}
+                className="flex-1 sm:flex-none px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
+              >
+                ⬇️ עדכן עכשיו
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs text-gray-500 mt-4">
+            עדכון יחזקה את המטמון של הדפדפן ויטען את הגרסה החדשה
+          </p>
+        </div>
       </div>
     </div>
   )
