@@ -227,6 +227,7 @@ export async function addReceptionItem(farmId, itemData) {
       scientificName: itemData.scientificName || '',
       size: itemData.size,
       boxNumber: itemData.boxNumber || '',
+      boxPortion: itemData.boxPortion || '',
       code: itemData.code || '',
       targetAquariumId: itemData.targetAquariumId,
       targetAquariumNumber: itemData.targetAquariumNumber || '',

@@ -25,10 +25,16 @@ function ExcelTemplateDisplay({ onClose }) {
       description: 'מספר הזיהוי מהספק (רשות)',
     },
     {
-      name: 'קטע/ארגז',
+      name: 'מספר ארגז',
       key: 'boxNumber',
       example: 'Box-001',
-      description: 'מספר הקטע או הארגז במשלוח (רשות)',
+      description: 'מספר מזהה הארגז (רשות)',
+    },
+    {
+      name: 'חלק ארגז',
+      key: 'boxPortion',
+      example: 'חצי / רבע / שלם',
+      description: 'איזה חלק מהארגז (רבע, חצי, שלם וכו\') (רשות)',
     },
   ]
 
@@ -64,6 +70,7 @@ function ExcelTemplateDisplay({ onClose }) {
                 size: 'M',
                 code: 'NILO-001',
                 boxNumber: 'Box-101',
+                boxPortion: 'חצי',
               },
               {
                 scientificName: 'Clarias gariepinus',
@@ -71,6 +78,7 @@ function ExcelTemplateDisplay({ onClose }) {
                 size: 'L',
                 code: 'CLAR-002',
                 boxNumber: 'Box-102',
+                boxPortion: 'שלם',
               },
               {
                 scientificName: 'Mugil cephalus',
@@ -78,6 +86,7 @@ function ExcelTemplateDisplay({ onClose }) {
                 size: 'S',
                 code: 'MUGIL-003',
                 boxNumber: 'Box-103',
+                boxPortion: 'רבע',
               },
             ].map((row, idx) => (
               <tr key={idx} className="border border-gray-200 hover:bg-gray-50">
