@@ -8,6 +8,7 @@ function FishListManagementModal({
   planId,
   items = [],
   plan = null,
+  previousFishNames = [],
   onItemsChanged = null,
 }) {
   const { currentFarm } = useFarm()
@@ -15,6 +16,9 @@ function FishListManagementModal({
   const [isAdding, setIsAdding] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Create map for quick lookup: hebrewName -> scientificName
+  const fishNameMap = new Map(previousFishNames.map((f) => [f.hebrewName, f.scientificName]))
 
   const [newItem, setNewItem] = useState({
     hebrewName: '',
@@ -30,6 +34,25 @@ function FishListManagementModal({
   const [editItem, setEditItem] = useState(null)
 
   if (!isOpen) return null
+
+  // Handle Hebrew name change and auto-fill scientific name
+  function handleHebrewNameChange(value, isEditing = false) {
+    if (isEditing) {
+      setEditItem({ ...editItem, hebrewName: value })
+    } else {
+      setNewItem({ ...newItem, hebrewName: value })
+    }
+
+    // Auto-fill scientific name if Hebrew name matches a previous entry
+    const scientificName = fishNameMap.get(value)
+    if (scientificName) {
+      if (isEditing) {
+        setEditItem((prev) => ({ ...prev, scientificName }))
+      } else {
+        setNewItem((prev) => ({ ...prev, scientificName }))
+      }
+    }
+  }
 
   async function handleAddItem() {
     if (!newItem.hebrewName || !newItem.scientificName || !newItem.size) {
@@ -163,12 +186,16 @@ function FishListManagementModal({
                           <input
                             type="text"
                             value={editItem.hebrewName}
-                            onChange={(e) =>
-                              setEditItem({ ...editItem, hebrewName: e.target.value })
-                            }
+                            onChange={(e) => handleHebrewNameChange(e.target.value, true)}
+                            list="edit-fish-names-list"
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
                             disabled={loading}
                           />
+                          <datalist id="edit-fish-names-list">
+                            {previousFishNames.map((fish) => (
+                              <option key={fish.hebrewName} value={fish.hebrewName} />
+                            ))}
+                          </datalist>
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-gray-700">שם מדעי</label>
@@ -341,10 +368,16 @@ function FishListManagementModal({
                   <input
                     type="text"
                     value={newItem.hebrewName}
-                    onChange={(e) => setNewItem({ ...newItem, hebrewName: e.target.value })}
+                    onChange={(e) => handleHebrewNameChange(e.target.value, false)}
+                    list="new-fish-names-list"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
                     disabled={loading}
                   />
+                  <datalist id="new-fish-names-list">
+                    {previousFishNames.map((fish) => (
+                      <option key={fish.hebrewName} value={fish.hebrewName} />
+                    ))}
+                  </datalist>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-700">שם מדעי*</label>

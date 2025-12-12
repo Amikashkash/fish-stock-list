@@ -6,6 +6,7 @@ import {
   getReceptionItems,
   getPreviousCountries,
   getPreviousSuppliers,
+  getPreviousFishNames,
   updatePlanStatus,
   lockReceptionPlan,
 } from '../../../services/reception.service'
@@ -42,6 +43,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
   // Lists for dropdowns
   const [previousCountries, setPreviousCountries] = useState([])
   const [previousSuppliers, setPreviousSuppliers] = useState([])
+  const [previousFishNames, setPreviousFishNames] = useState([])
   const [rooms, setRooms] = useState([])
 
   // Modals
@@ -69,12 +71,14 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
 
   async function loadPreviousData() {
     try {
-      const [countries, suppliers] = await Promise.all([
+      const [countries, suppliers, fishNames] = await Promise.all([
         getPreviousCountries(currentFarm.farmId),
         getPreviousSuppliers(currentFarm.farmId),
+        getPreviousFishNames(currentFarm.farmId),
       ])
       setPreviousCountries(countries)
       setPreviousSuppliers(suppliers)
+      setPreviousFishNames(fishNames)
     } catch (err) {
       console.error('Error loading previous data:', err)
     }
@@ -637,6 +641,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
           planId={currentPlan?.planId}
           items={planItems}
           plan={currentPlan}
+          previousFishNames={previousFishNames}
           onItemsChanged={handleFishListChanged}
         />
       )}
