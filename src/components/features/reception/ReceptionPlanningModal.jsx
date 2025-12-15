@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import {
   createReceptionPlan,
+  updateReceptionPlan,
   getReceptionPlan,
   getReceptionItems,
   getPreviousCountries,
@@ -153,23 +154,41 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
     setError('')
 
     try {
-      const result = await createReceptionPlan(currentFarm.farmId, {
-        expectedDate,
-        source: 'manual',
-        countryOfOrigin: countryOfOrigin.trim(),
-        supplierName: supplierName.trim(),
-        targetRoom: targetRoom.trim(),
-        shipmentReference: shipmentReference.trim() || undefined,
-        notes: planNotes,
-        expectedAquariumCount: expectedAquariumCount ? parseInt(expectedAquariumCount) : 0,
-      })
+      if (isEditing && currentPlan) {
+        // Update existing plan
+        await updateReceptionPlan(currentFarm.farmId, currentPlan.planId, {
+          expectedDate,
+          countryOfOrigin: countryOfOrigin.trim(),
+          supplierName: supplierName.trim(),
+          targetRoom: targetRoom.trim(),
+          shipmentReference: shipmentReference.trim() || undefined,
+          notes: planNotes,
+          expectedAquariumCount: expectedAquariumCount ? parseInt(expectedAquariumCount) : 0,
+        })
+        // Reload the plan to show updated data
+        const updatedPlan = await getReceptionPlan(currentFarm.farmId, currentPlan.planId)
+        setCurrentPlan(updatedPlan)
+        setStep(2)
+      } else {
+        // Create new plan
+        const result = await createReceptionPlan(currentFarm.farmId, {
+          expectedDate,
+          source: 'manual',
+          countryOfOrigin: countryOfOrigin.trim(),
+          supplierName: supplierName.trim(),
+          targetRoom: targetRoom.trim(),
+          shipmentReference: shipmentReference.trim() || undefined,
+          notes: planNotes,
+          expectedAquariumCount: expectedAquariumCount ? parseInt(expectedAquariumCount) : 0,
+        })
 
-      setCurrentPlan(result.plan)
-      await updatePlanStatus(currentFarm.farmId, result.plan.planId, 'proforma_received')
-      setStep(2)
+        setCurrentPlan(result.plan)
+        await updatePlanStatus(currentFarm.farmId, result.plan.planId, 'proforma_received')
+        setStep(2)
+      }
     } catch (err) {
-      console.error('Error creating reception plan:', err)
-      setError(err.message || 'שגיאה ביצירת תוכנית קליטה')
+      console.error('Error creating/updating reception plan:', err)
+      setError(err.message || 'שגיאה ביצירת/עדכון תוכנית קליטה')
     } finally {
       setLoading(false)
     }
