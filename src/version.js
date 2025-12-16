@@ -12,6 +12,6 @@
  *    - No need to notify users manually!
  */
 
-export const VERSION = '1.4.1'
+export const VERSION = '1.4.2'
 export const RELEASE_DATE = '2025-12-16'
-export const RELEASE_NAME = 'Show Box Portion Info When Assigning Aquariums'
+export const RELEASE_NAME = 'Fish Transfer Warning - Alert When Destination Has Fish'

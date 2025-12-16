@@ -290,31 +290,56 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
 
               {/* Destination Aquariums */}
               <h3 className="text-lg font-semibold text-gray-900 mb-4">בחר אקווריום יעד</h3>
+
+              {/* Warning if destination has fish */}
+              {selectedDestAquarium && selectedDestAquarium.totalFish > 0 && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+                  <div className="text-sm text-yellow-800">
+                    <span className="font-semibold">⚠️ שים לב:</span> באקווריום יעד זה כבר יש <span className="font-bold">{selectedDestAquarium.totalFish} דגים</span>
+                  </div>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    הדגים החדשים יצורפו לדגים הקיימים באקווריום
+                  </p>
+                </div>
+              )}
+
               <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
                 {availableDestinations.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     אין אקווריומים זמינים בסינון זה
                   </div>
                 ) : (
-                  availableDestinations.map((aquarium) => (
-                    <button
-                      key={aquarium.aquariumId}
-                      className={`rounded-lg px-4 py-3 text-right transition-colors border ${
-                        selectedDestAquarium?.aquariumId === aquarium.aquariumId
-                          ? 'bg-green-100 border-green-500'
-                          : 'bg-white border-gray-300 hover:bg-gray-50'
-                      }`}
-                      onClick={() => setSelectedDestAquarium(aquarium)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-gray-900">{aquarium.aquariumNumber}</span>
-                        <span className="text-sm text-gray-600">{aquarium.room}</span>
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        סטטוס: {aquarium.status} | {aquarium.totalFish} דגים | {aquarium.volume}L
-                      </div>
-                    </button>
-                  ))
+                  availableDestinations.map((aquarium) => {
+                    const hasExistingFish = aquarium.totalFish > 0
+                    return (
+                      <button
+                        key={aquarium.aquariumId}
+                        className={`rounded-lg px-4 py-3 text-right transition-colors border ${
+                          selectedDestAquarium?.aquariumId === aquarium.aquariumId
+                            ? 'bg-green-100 border-green-500'
+                            : hasExistingFish
+                            ? 'bg-yellow-50 border-yellow-300 hover:bg-yellow-100'
+                            : 'bg-white border-gray-300 hover:bg-gray-50'
+                        }`}
+                        onClick={() => setSelectedDestAquarium(aquarium)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">{aquarium.aquariumNumber}</span>
+                            {hasExistingFish && (
+                              <span className="text-xs bg-yellow-300 text-yellow-900 px-2 py-0.5 rounded font-semibold">
+                                🐠 יש דגים
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-sm text-gray-600">{aquarium.room}</span>
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          סטטוס: {aquarium.status} | {aquarium.totalFish} דגים | {aquarium.volume}L
+                        </div>
+                      </button>
+                    )
+                  })
                 )}
               </div>
             </div>
