@@ -28,7 +28,7 @@ function AquariumAssignmentModal({
       const data = await getAquariums(currentFarm.farmId)
       // Filter aquariums by target room if specified
       if (plan?.targetRoom) {
-        setAquariums(data.filter((aq) => aq.location === plan.targetRoom))
+        setAquariums(data.filter((aq) => aq.room === plan.targetRoom))
       } else {
         setAquariums(data)
       }
