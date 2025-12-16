@@ -134,11 +134,18 @@ function AquariumAssignmentModal({
                           }
                           className="cursor-pointer flex justify-between items-start mb-3"
                         >
-                          <div>
+                          <div className="flex-1">
                             <h4 className="font-bold text-gray-900">{item.hebrewName}</h4>
                             <p className="text-xs text-gray-600 italic">{item.scientificName}</p>
-                            <div className="text-xs text-gray-700 mt-1">
-                              <span className="font-semibold">{item.quantity} יח'</span> | גודל: {item.size}
+                            <div className="text-xs text-gray-700 mt-1 space-y-1">
+                              <div>
+                                <span className="font-semibold">{item.quantity} יח'</span> | גודל: {item.size}
+                              </div>
+                              {item.boxPortion && (
+                                <div className="text-yellow-700 font-semibold">
+                                  📦 חלק ארגז: {item.boxPortion}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="text-2xl">
@@ -212,8 +219,15 @@ function AquariumAssignmentModal({
                           <div className="flex-1">
                             <h4 className="font-bold text-gray-900">{item.hebrewName}</h4>
                             <p className="text-xs text-gray-600 italic">{item.scientificName}</p>
-                            <div className="text-xs text-gray-700 mt-1">
-                              <span className="font-semibold">{item.quantity} יח'</span> | גודל: {item.size}
+                            <div className="text-xs text-gray-700 mt-1 space-y-1">
+                              <div>
+                                <span className="font-semibold">{item.quantity} יח'</span> | גודל: {item.size}
+                              </div>
+                              {item.boxPortion && (
+                                <div className="text-yellow-700 font-semibold">
+                                  📦 חלק ארגז: {item.boxPortion}
+                                </div>
+                              )}
                             </div>
                             <div className="mt-2 p-2 bg-white rounded border border-green-200">
                               <div className="text-xs text-green-700">
