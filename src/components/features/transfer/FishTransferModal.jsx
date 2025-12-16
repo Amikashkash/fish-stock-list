@@ -183,25 +183,41 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 שלב 1: בחר אקווריום מקור
               </h3>
-              <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
-                {aquariums
-                  .filter((aq) => aq.totalFish > 0)
-                  .map((aquarium) => (
-                    <button
-                      key={aquarium.aquariumId}
-                      className="bg-blue-50 rounded-lg px-4 py-3 text-right hover:bg-blue-100 transition-colors border border-blue-200"
-                      onClick={() => handleSourceSelect(aquarium)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-gray-900">{aquarium.aquariumNumber}</span>
-                        <span className="text-sm text-gray-600">{aquarium.room}</span>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
+                  {aquariums.filter((aq) => aq.totalFish > 0).length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <div className="text-5xl mb-3">🐠</div>
+                      <div className="text-lg font-semibold text-gray-900 mb-1">אין אקווריומים עם דגים</div>
+                      <div className="text-sm text-gray-600">
+                        כל האקווריומים ריקים כרגע. אין אפשרות להעביר דגים.
                       </div>
-                      <div className="text-sm text-blue-600 mt-1">
-                        🐠 {aquarium.totalFish} דגים
-                      </div>
-                    </button>
-                  ))}
-              </div>
+                    </div>
+                  ) : (
+                    aquariums
+                      .filter((aq) => aq.totalFish > 0)
+                      .map((aquarium) => (
+                        <button
+                          key={aquarium.aquariumId}
+                          className="bg-blue-50 rounded-lg px-4 py-3 text-right hover:bg-blue-100 transition-colors border border-blue-200"
+                          onClick={() => handleSourceSelect(aquarium)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-gray-900">{aquarium.aquariumNumber}</span>
+                            <span className="text-sm text-gray-600">{aquarium.room}</span>
+                          </div>
+                          <div className="text-sm text-blue-600 mt-1">
+                            🐠 {aquarium.totalFish} דגים
+                          </div>
+                        </button>
+                      ))
+                  )}
+                </div>
+              )}
             </div>
           )}
 

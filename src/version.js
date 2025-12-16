@@ -12,6 +12,6 @@
  *    - No need to notify users manually!
  */
 
-export const VERSION = '1.4.2'
+export const VERSION = '1.4.3'
 export const RELEASE_DATE = '2025-12-16'
-export const RELEASE_NAME = 'Fish Transfer Warning - Alert When Destination Has Fish'
+export const RELEASE_NAME = 'Improve Fish Transfer UI - Show Message When No Fish Available'
