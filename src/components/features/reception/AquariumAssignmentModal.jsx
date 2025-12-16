@@ -3,6 +3,12 @@ import { useFarm } from '../../../contexts/FarmContext'
 import { getAquariums } from '../../../services/aquarium.service'
 import { updateReceptionItem } from '../../../services/reception.service'
 
+const SHELF_LABELS = {
+  bottom: 'תחתון',
+  middle: 'אמצעי',
+  top: 'עליון',
+}
+
 function AquariumAssignmentModal({
   isOpen,
   onClose,
@@ -150,30 +156,39 @@ function AquariumAssignmentModal({
                                 אין אקווריומים זמינים בחדר {plan?.targetRoom}
                               </div>
                             ) : (
-                              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                                {aquariums.map((aquarium) => (
-                                  <button
-                                    key={aquarium.aquariumId}
-                                    onClick={() =>
-                                      handleAssignAquarium(
-                                        item.itemId,
-                                        aquarium.aquariumId,
-                                        aquarium.aquariumNumber
-                                      )
-                                    }
-                                    className={`p-2 rounded text-xs font-semibold transition-all ${
-                                      aquarium.status === 'occupied'
-                                        ? 'bg-red-100 text-red-700 opacity-60 cursor-not-allowed'
-                                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                                    }`}
-                                    disabled={aquarium.status === 'occupied'}
-                                  >
-                                    {aquarium.aquariumNumber}
-                                    {aquarium.status === 'occupied' && (
-                                      <div className="text-xs">(תפוס)</div>
-                                    )}
-                                  </button>
-                                ))}
+                              <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {aquariums.map((aquarium) => {
+                                  const shelfLabel = SHELF_LABELS[aquarium.shelf] || aquarium.shelf
+                                  return (
+                                    <button
+                                      key={aquarium.aquariumId}
+                                      onClick={() =>
+                                        handleAssignAquarium(
+                                          item.itemId,
+                                          aquarium.aquariumId,
+                                          aquarium.aquariumNumber
+                                        )
+                                      }
+                                      className={`w-full p-2 rounded text-xs transition-all text-left ${
+                                        aquarium.status === 'occupied'
+                                          ? 'bg-red-100 text-red-700 opacity-60 cursor-not-allowed'
+                                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                      }`}
+                                      disabled={aquarium.status === 'occupied'}
+                                    >
+                                      <div className="font-semibold flex justify-between items-center">
+                                        <span>#{aquarium.aquariumNumber}</span>
+                                        {aquarium.status === 'occupied' && (
+                                          <span className="text-xs">(תפוס)</span>
+                                        )}
+                                      </div>
+                                      <div className="text-xs opacity-75 mt-1 flex gap-2">
+                                        <span>📏 {aquarium.volume}L</span>
+                                        <span>📍 {shelfLabel}</span>
+                                      </div>
+                                    </button>
+                                  )
+                                })}
                               </div>
                             )}
                           </div>

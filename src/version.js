@@ -12,6 +12,6 @@
  *    - No need to notify users manually!
  */
 
-export const VERSION = '1.3.9'
+export const VERSION = '1.4.0'
 export const RELEASE_DATE = '2025-12-16'
-export const RELEASE_NAME = 'Fix Aquarium Filtering - Show Available Aquariums in Plans'
+export const RELEASE_NAME = 'Enhanced Aquarium Selection - Show Volume & Shelf Position'
