@@ -99,6 +99,16 @@ service cloud.firestore {
       }
     }
 
+    // Farm fish collection (local/farm-sourced fish)
+    match /farmFish/{fishId} {
+      allow read: if isAuthenticated() &&
+                     isFarmMember(resource.data.farmId);
+      allow create: if isAuthenticated() &&
+                       isFarmMember(request.resource.data.farmId);
+      allow update, delete: if isAuthenticated() &&
+                               isFarmMember(resource.data.farmId);
+    }
+
     // Global invitations collection (for code-based invites)
     match /invitations/{invitationCode} {
       allow read: if isAuthenticated();
