@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import { getAquariums } from '../../../services/aquarium.service'
+import { getPreviousFishNames } from '../../../services/reception.service'
 import { getFarmFish, addFarmFish, updateFarmFishAquarium, deleteFarmFish } from '../../../services/farm-fish.service'
 
 const SOURCE_TYPES = {
@@ -19,6 +20,7 @@ function FarmFishModal({ isOpen, onClose }) {
   const { currentFarm } = useFarm()
   const [farmFish, setFarmFish] = useState([])
   const [aquariums, setAquariums] = useState([])
+  const [previousFishNames, setPreviousFishNames] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isAdding, setIsAdding] = useState(false)
@@ -42,16 +44,32 @@ function FarmFishModal({ isOpen, onClose }) {
   async function loadData() {
     try {
       setLoading(true)
-      const [fishData, aquariumsData] = await Promise.all([
+      const [fishData, aquariumsData, previousNames] = await Promise.all([
         getFarmFish(currentFarm.farmId),
         getAquariums(currentFarm.farmId),
+        getPreviousFishNames(currentFarm.farmId),
       ])
       setFarmFish(fishData)
       setAquariums(aquariumsData)
+      setPreviousFishNames(previousNames)
     } catch (err) {
       setError('שגיאה בטעינת הנתונים: ' + err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Create map for quick lookup: hebrewName -> scientificName
+  const fishNameMap = new Map(previousFishNames.map((f) => [f.hebrewName, f.scientificName]))
+
+  // Handle Hebrew name change and auto-fill scientific name
+  function handleHebrewNameChange(value) {
+    setNewFish({ ...newFish, hebrewName: value })
+
+    // Auto-fill scientific name if Hebrew name matches a previous entry
+    const scientificName = fishNameMap.get(value)
+    if (scientificName) {
+      setNewFish((prev) => ({ ...prev, scientificName }))
     }
   }
 
@@ -354,12 +372,16 @@ function FarmFishModal({ isOpen, onClose }) {
                       <input
                         type="text"
                         value={newFish.hebrewName}
-                        onChange={(e) =>
-                          setNewFish({ ...newFish, hebrewName: e.target.value })
-                        }
+                        onChange={(e) => handleHebrewNameChange(e.target.value)}
+                        list="fish-names-list"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
                         disabled={loading}
                       />
+                      <datalist id="fish-names-list">
+                        {previousFishNames.map((fish) => (
+                          <option key={fish.hebrewName} value={fish.hebrewName} />
+                        ))}
+                      </datalist>
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-700">שם מדעי*</label>
