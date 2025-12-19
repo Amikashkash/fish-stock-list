@@ -2,6 +2,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   query,
   where,
   updateDoc,
@@ -10,8 +11,40 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
+import { updateAquarium } from './aquarium.service'
 
 const COLLECTION_NAME = 'farmFish'
+
+/**
+ * Updates aquarium status based on fish count
+ * @param {string} farmId - Farm ID
+ * @param {string} aquariumId - Aquarium ID
+ * @returns {Promise<void>}
+ */
+async function updateAquariumStatus(farmId, aquariumId) {
+  try {
+    // Count fish in aquarium
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('farmId', '==', farmId),
+      where('aquariumId', '==', aquariumId)
+    )
+    const querySnapshot = await getDocs(q)
+    const totalFish = querySnapshot.docs.reduce((sum, doc) => {
+      return sum + (doc.data().quantity || 0)
+    }, 0)
+
+    // Update aquarium status
+    const newStatus = totalFish > 0 ? 'occupied' : 'empty'
+    await updateAquarium(farmId, aquariumId, {
+      status: newStatus,
+      totalFish: totalFish
+    })
+  } catch (err) {
+    console.error('Error updating aquarium status:', err)
+    // Don't throw - this is a side effect, not critical
+  }
+}
 
 /**
  * Get all farm fish for a specific farm
@@ -54,6 +87,12 @@ export async function addFarmFish(farmId, fishData) {
       aquariumId: fishData.aquariumId || null,
       createdAt: serverTimestamp(),
     })
+
+    // Update aquarium status if assigned
+    if (fishData.aquariumId) {
+      await updateAquariumStatus(farmId, fishData.aquariumId)
+    }
+
     return docRef.id
   } catch (err) {
     console.error('Error adding farm fish:', err)
@@ -71,10 +110,20 @@ export async function addFarmFish(farmId, fishData) {
 export async function updateFarmFish(farmId, fishId, updates) {
   try {
     const fishRef = doc(db, COLLECTION_NAME, fishId)
+
+    // Get current fish data to know its aquariumId
+    const fishDoc = await getDoc(fishRef)
+    const currentAquariumId = fishDoc.data()?.aquariumId
+
     await updateDoc(fishRef, {
       ...updates,
       updatedAt: serverTimestamp(),
     })
+
+    // Update aquarium status if fish is assigned to one
+    if (currentAquariumId) {
+      await updateAquariumStatus(farmId, currentAquariumId)
+    }
   } catch (err) {
     console.error('Error updating farm fish:', err)
     throw new Error('שגיאה בעדכון הדג')
@@ -109,7 +158,18 @@ export async function updateFarmFishAquarium(farmId, fishId, aquariumId) {
  */
 export async function deleteFarmFish(farmId, fishId) {
   try {
-    await deleteDoc(doc(db, COLLECTION_NAME, fishId))
+    const fishRef = doc(db, COLLECTION_NAME, fishId)
+
+    // Get fish data before deleting to know its aquariumId
+    const fishDoc = await getDoc(fishRef)
+    const aquariumId = fishDoc.data()?.aquariumId
+
+    await deleteDoc(fishRef)
+
+    // Update aquarium status if fish was assigned to one
+    if (aquariumId) {
+      await updateAquariumStatus(farmId, aquariumId)
+    }
   } catch (err) {
     console.error('Error deleting farm fish:', err)
     throw new Error('שגיאה במחיקת הדג')
