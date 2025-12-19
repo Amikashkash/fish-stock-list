@@ -5,6 +5,7 @@ import { getAquariums } from '../services/aquarium.service'
 import AquariumCard from '../components/features/aquarium/AquariumCard'
 import AquariumCreateModal from '../components/features/aquarium/AquariumCreateModal'
 import AquariumEditModal from '../components/features/aquarium/AquariumEditModal'
+import AquariumFishModal from '../components/features/aquarium/AquariumFishModal'
 import FishTransferModal from '../components/features/transfer/FishTransferModal'
 
 function AquariumsPage() {
@@ -14,8 +15,10 @@ function AquariumsPage() {
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showFishModal, setShowFishModal] = useState(false)
   const [showTransferModal, setShowTransferModal] = useState(false)
   const [selectedAquarium, setSelectedAquarium] = useState(null)
+  const [fishModalAquarium, setFishModalAquarium] = useState(null)
   const [transferSourceAquarium, setTransferSourceAquarium] = useState(null)
   const [filterRoom, setFilterRoom] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -66,6 +69,16 @@ function AquariumsPage() {
     setShowEditModal(false)
     setTransferSourceAquarium(aquarium)
     setShowTransferModal(true)
+  }
+
+  function handleManageFish(aquarium) {
+    setFishModalAquarium(aquarium)
+    setShowFishModal(true)
+  }
+
+  function handleFishModalSuccess() {
+    // Reload aquariums after fish changes
+    loadAquariums()
   }
 
   function handleTransferSuccess(result) {
@@ -225,6 +238,7 @@ function AquariumsPage() {
                       aquarium={aquarium}
                       statusLabel={getStatusLabel(aquarium.status)}
                       onClick={() => handleAquariumClick(aquarium)}
+                      onManageFish={handleManageFish}
                     />
                   ))}
                 </div>
@@ -251,6 +265,17 @@ function AquariumsPage() {
         onSuccess={handleAquariumUpdated}
         onTransferClick={handleTransferClick}
         aquarium={selectedAquarium}
+      />
+
+      {/* Fish Management Modal */}
+      <AquariumFishModal
+        isOpen={showFishModal}
+        onClose={() => {
+          setShowFishModal(false)
+          setFishModalAquarium(null)
+        }}
+        onSuccess={handleFishModalSuccess}
+        aquarium={fishModalAquarium}
       />
 
       {/* Transfer Modal */}

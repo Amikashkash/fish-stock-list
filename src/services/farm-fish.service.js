@@ -51,13 +51,33 @@ export async function addFarmFish(farmId, fishData) {
       quantity: fishData.quantity || 1,
       source: fishData.source,
       notes: fishData.notes || '',
-      aquariumId: null,
+      aquariumId: fishData.aquariumId || null,
       createdAt: serverTimestamp(),
     })
     return docRef.id
   } catch (err) {
     console.error('Error adding farm fish:', err)
     throw new Error('שגיאה בהוספת הדג')
+  }
+}
+
+/**
+ * Update farm fish
+ * @param {string} farmId - Farm ID
+ * @param {string} fishId - Fish ID
+ * @param {Object} updates - Updates to apply
+ * @returns {Promise<void>}
+ */
+export async function updateFarmFish(farmId, fishId, updates) {
+  try {
+    const fishRef = doc(db, COLLECTION_NAME, fishId)
+    await updateDoc(fishRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    })
+  } catch (err) {
+    console.error('Error updating farm fish:', err)
+    throw new Error('שגיאה בעדכון הדג')
   }
 }
 

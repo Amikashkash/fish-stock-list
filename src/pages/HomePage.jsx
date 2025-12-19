@@ -6,7 +6,6 @@ import { useFarm } from '../contexts/FarmContext'
 import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
 import FishTransferModal from '../components/features/transfer/FishTransferModal'
 import ReceptionPlansModal from '../components/features/reception/ReceptionPlansModal'
-import FarmFishModal from '../components/features/farm-fish/FarmFishModal'
 import { VERSION } from '../version'
 
 function HomePage() {
@@ -16,7 +15,6 @@ function HomePage() {
   const [showImportModal, setShowImportModal] = useState(false)
   const [showTransferModal, setShowTransferModal] = useState(false)
   const [showReceptionModal, setShowReceptionModal] = useState(false)
-  const [showFarmFishModal, setShowFarmFishModal] = useState(false)
 
   const handleSignOut = async () => {
     const confirmed = window.confirm('האם אתה בטוח שברצונך להתנתק?')
@@ -47,7 +45,6 @@ function HomePage() {
     { icon: '📥', label: 'ייבוא משלוח', color: '#4CAF50', action: 'import' },
     { icon: '🚚', label: 'משלוחים', color: '#FF9800', action: 'shipments' },
     { icon: '📦', label: 'דגים מיבוא', color: '#E91E63', action: 'reception' },
-    { icon: '🏠', label: 'דגים לאקווריום', color: '#795548', action: 'farm-fish' },
   ]
 
   const handleCardClick = (action) => {
@@ -57,8 +54,6 @@ function HomePage() {
       setShowTransferModal(true)
     } else if (action === 'reception') {
       setShowReceptionModal(true)
-    } else if (action === 'farm-fish') {
-      setShowFarmFishModal(true)
     } else if (action === 'aquariums') {
       navigate('/aquariums')
     } else {
@@ -172,12 +167,6 @@ function HomePage() {
       <ReceptionPlansModal
         isOpen={showReceptionModal}
         onClose={() => setShowReceptionModal(false)}
-      />
-
-      {/* Farm Fish Modal */}
-      <FarmFishModal
-        isOpen={showFarmFishModal}
-        onClose={() => setShowFarmFishModal(false)}
       />
     </div>
   )

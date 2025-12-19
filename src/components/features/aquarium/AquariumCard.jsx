@@ -18,15 +18,30 @@ const STATUS_BG_COLORS = {
   'in-transfer': 'bg-purple-50',
 }
 
-function AquariumCard({ aquarium, onClick, statusLabel }) {
+function AquariumCard({ aquarium, onClick, statusLabel, onManageFish }) {
   const statusColor = STATUS_COLORS[aquarium.status] || 'text-gray-500'
   const bgColor = STATUS_BG_COLORS[aquarium.status] || 'bg-gray-50'
   const shelfLabel = SHELF_LABELS[aquarium.shelf] || aquarium.shelf
 
+  const handleCardClick = (e) => {
+    // Only trigger onClick if not clicking on the manage fish button
+    if (e.target.closest('.manage-fish-btn')) {
+      return
+    }
+    onClick()
+  }
+
+  const handleManageFishClick = (e) => {
+    e.stopPropagation()
+    onManageFish(aquarium)
+  }
+
+  const isEmpty = aquarium.status === 'empty' || !aquarium.totalFish || aquarium.totalFish === 0
+
   return (
     <div
       className={`${bgColor} rounded-lg px-4 py-2.5 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 border border-gray-200`}
-      onClick={onClick}
+      onClick={handleCardClick}
     >
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="font-bold text-gray-900 min-w-[80px]">{aquarium.aquariumNumber}</span>
@@ -35,9 +50,15 @@ function AquariumCard({ aquarium, onClick, statusLabel }) {
         </span>
         <span className="text-gray-600 min-w-[50px]">{shelfLabel}</span>
         <span className="text-gray-900 font-medium">{aquarium.volume}L</span>
-        {aquarium.status === 'occupied' && aquarium.totalFish > 0 && (
+        {!isEmpty && (
           <span className="text-blue-600 font-medium">🐠 {aquarium.totalFish}</span>
         )}
+        <button
+          onClick={handleManageFishClick}
+          className="manage-fish-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600"
+        >
+          {isEmpty ? '➕ הוסף דג' : '🐠 ערוך דגים'}
+        </button>
       </div>
     </div>
   )
