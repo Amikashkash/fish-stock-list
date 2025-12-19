@@ -93,6 +93,8 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
         notes: newFish.notes,
         aquariumId: aquarium.aquariumId, // Assign to this aquarium immediately
       })
+
+      // Reset form
       setNewFish({
         hebrewName: '',
         scientificName: '',
@@ -102,8 +104,11 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
         notes: '',
       })
       setIsAdding(false)
-      await loadData()
+
       if (onSuccess) onSuccess()
+
+      // Close modal automatically after adding fish
+      onClose()
     } catch (err) {
       setError(err.message || 'שגיאה בהוספת דג')
     } finally {
