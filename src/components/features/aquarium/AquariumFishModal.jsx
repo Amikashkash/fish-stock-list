@@ -29,6 +29,8 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
 
   const [editData, setEditData] = useState({
     quantity: '',
+    source: '',
+    notes: '',
   })
 
   useEffect(() => {
@@ -109,7 +111,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
     }
   }
 
-  async function handleUpdateQuantity(fishId) {
+  async function handleUpdateFish(fishId) {
     if (!editData.quantity || editData.quantity < 0) {
       setError('כמות לא תקינה')
       return
@@ -120,13 +122,15 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
       setError('')
       await updateFarmFish(currentFarm.farmId, fishId, {
         quantity: parseInt(editData.quantity),
+        source: editData.source,
+        notes: editData.notes,
       })
       setEditingId(null)
-      setEditData({ quantity: '' })
+      setEditData({ quantity: '', source: '', notes: '' })
       await loadData()
       if (onSuccess) onSuccess()
     } catch (err) {
-      setError(err.message || 'שגיאה בעדכון כמות')
+      setError(err.message || 'שגיאה בעדכון דג')
     } finally {
       setLoading(false)
     }
@@ -150,7 +154,11 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
 
   function startEditing(fish) {
     setEditingId(fish.fishId)
-    setEditData({ quantity: fish.quantity })
+    setEditData({
+      quantity: fish.quantity,
+      source: fish.source,
+      notes: fish.notes || ''
+    })
   }
 
   if (!isOpen || !aquarium) return null
@@ -225,22 +233,56 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
 
                         {editingId === fish.fishId ? (
                           <div className="bg-white rounded-lg p-3 border border-blue-200 mb-2">
-                            <label className="text-xs font-semibold text-gray-700 block mb-2">
-                              עדכן כמות:
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={editData.quantity}
-                              onChange={(e) =>
-                                setEditData({ quantity: e.target.value })
-                              }
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                              disabled={loading}
-                            />
-                            <div className="flex gap-2 mt-2">
+                            <div className="mb-3">
+                              <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                כמות:
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={editData.quantity}
+                                onChange={(e) =>
+                                  setEditData({ ...editData, quantity: e.target.value })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                                disabled={loading}
+                              />
+                            </div>
+                            <div className="mb-3">
+                              <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                מקור:
+                              </label>
+                              <select
+                                value={editData.source}
+                                onChange={(e) =>
+                                  setEditData({ ...editData, source: e.target.value })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                                disabled={loading}
+                              >
+                                {Object.entries(SOURCE_TYPES).map(([key, label]) => (
+                                  <option key={key} value={key}>
+                                    {label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="mb-3">
+                              <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                הערות:
+                              </label>
+                              <textarea
+                                value={editData.notes}
+                                onChange={(e) =>
+                                  setEditData({ ...editData, notes: e.target.value })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 h-16 resize-none"
+                                disabled={loading}
+                              />
+                            </div>
+                            <div className="flex gap-2">
                               <button
-                                onClick={() => handleUpdateQuantity(fish.fishId)}
+                                onClick={() => handleUpdateFish(fish.fishId)}
                                 disabled={loading}
                                 className="flex-1 px-3 py-2 text-xs font-semibold bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
                               >
@@ -249,7 +291,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                               <button
                                 onClick={() => {
                                   setEditingId(null)
-                                  setEditData({ quantity: '' })
+                                  setEditData({ quantity: '', source: '', notes: '' })
                                 }}
                                 disabled={loading}
                                 className="px-3 py-2 text-xs font-semibold bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50"
@@ -272,7 +314,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                                 onClick={() => startEditing(fish)}
                                 className="flex-1 px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                               >
-                                ✏️ ערוך כמות
+                                ✏️ ערוך
                               </button>
                               <button
                                 onClick={() => handleDeleteFish(fish.fishId)}
