@@ -66,16 +66,40 @@ export async function getPreviousSuppliers(farmId) {
 }
 
 /**
- * Get list of fish names (Hebrew name + Scientific name pairs) used in previous receptions
- * Returns array of unique fish name pairs, sorted by frequency (most used first)
+ * Get list of fish names (Hebrew name + Scientific name) used in previous receptions and farm fish
+ * Returns array of unique fish data, sorted by frequency (most used first)
  */
 export async function getPreviousFishNames(farmId) {
   try {
-    const itemsRef = collection(db, 'farms', farmId, 'reception_items')
-    const snapshot = await getDocs(itemsRef)
     const fishMap = new Map() // hebrewName -> { hebrewName, scientificName, count }
 
-    snapshot.docs.forEach((doc) => {
+    // Get data from reception_items
+    const itemsRef = collection(db, 'farms', farmId, 'reception_items')
+    const itemsSnapshot = await getDocs(itemsRef)
+
+    itemsSnapshot.docs.forEach((doc) => {
+      const data = doc.data()
+      if (data.hebrewName && data.scientificName) {
+        const key = data.hebrewName
+        if (fishMap.has(key)) {
+          const entry = fishMap.get(key)
+          entry.count += 1
+        } else {
+          fishMap.set(key, {
+            hebrewName: data.hebrewName,
+            scientificName: data.scientificName,
+            count: 1,
+          })
+        }
+      }
+    })
+
+    // Also get data from farmFish collection
+    const farmFishRef = collection(db, 'farmFish')
+    const farmFishQuery = query(farmFishRef, where('farmId', '==', farmId))
+    const farmFishSnapshot = await getDocs(farmFishQuery)
+
+    farmFishSnapshot.docs.forEach((doc) => {
       const data = doc.data()
       if (data.hebrewName && data.scientificName) {
         const key = data.hebrewName

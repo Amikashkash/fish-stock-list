@@ -372,9 +372,15 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                         onChange={(e) =>
                           setNewFish({ ...newFish, scientificName: e.target.value })
                         }
+                        list="scientific-names-list"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
                         disabled={loading}
                       />
+                      <datalist id="scientific-names-list">
+                        {previousFishNames.map((fish) => (
+                          <option key={fish.scientificName} value={fish.scientificName} />
+                        ))}
+                      </datalist>
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-gray-700">גודל*</label>

@@ -1,5 +1,17 @@
 # יומן שינויים - Fish Stock Management System
 
+## [1.6.1] - 2025-12-19
+
+### שיפורים 🔧
+- **השלמה אוטומטית לשמות דגים**: נוסף autocomplete לשדות הקלדת פרטי דגים
+  - השלמה אוטומטית לשם עברי - על בסיס דגים קודמים
+  - השלמה אוטומטית לשם מדעי - מתעדכן אוטומטית בעת בחירת שם עברי מוכר
+  - מושך נתונים גם מפריטי קליטה (reception_items) וגם מדגי החווה (farmFish)
+  - הדגים הפופולריים ביותר מופיעים ראשונים ברשימה
+- פישוט של פונקציית `getPreviousFishNames` - מתמקדת רק בשמות ללא מעקב אחר גדלים
+
+---
+
 ## [1.6.0] - 2025-12-19
 
 ### שינויים משמעותיים 🚀
