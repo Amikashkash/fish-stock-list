@@ -150,15 +150,15 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-5 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-5"
       onClick={handleClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-[700px] w-full max-h-[90vh] overflow-y-auto relative"
+        className="bg-white rounded-2xl shadow-2xl max-w-[700px] w-full max-h-[90vh] flex flex-col relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="px-6 pt-6 pb-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
           <h2 className="m-0 text-[22px] font-semibold text-gray-900">
             העברת דגים בין אקווריומים
           </h2>
@@ -170,7 +170,8 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
           </button>
         </div>
 
-        <div className="p-6">
+        {/* Scrollable Content */}
+        <div className="p-6 overflow-y-auto flex-1">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-4">
               {error}
@@ -188,7 +189,7 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
                   <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
+                <div className="flex flex-col gap-2">
                   {aquariums.filter((aq) => aq.totalFish > 0).length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                       <div className="text-5xl mb-3">🐠</div>
@@ -242,7 +243,7 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
                   אין דגים באקווריום זה
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
+                <div className="flex flex-col gap-2">
                   {fishInSource.map((fish) => (
                     <button
                       key={fish.instanceId}
@@ -319,7 +320,7 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
                 </div>
               )}
 
-              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+              <div className="flex flex-col gap-2">
                 {availableDestinations.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     אין אקווריומים זמינים בסינון זה
@@ -361,40 +362,41 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex gap-3 justify-between mt-6 pt-5 border-t border-gray-200">
-            <div>
-              {step > 1 && !sourceAquarium && (
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-gray-100 text-gray-900 hover:bg-gray-200"
-                  disabled={loading}
-                >
-                  ← חזור
-                </button>
-              )}
-            </div>
-            <div className="flex gap-3">
+        </div>
+
+        {/* Fixed Footer with Actions */}
+        <div className="px-6 py-4 border-t border-gray-200 flex gap-3 justify-between flex-shrink-0 bg-white rounded-b-2xl">
+          <div>
+            {step > 1 && !sourceAquarium && (
               <button
                 type="button"
-                onClick={handleClose}
+                onClick={goBack}
                 className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-gray-100 text-gray-900 hover:bg-gray-200"
                 disabled={loading}
               >
-                ביטול
+                ← חזור
               </button>
-              {step === 3 && (
-                <button
-                  type="button"
-                  onClick={handleTransfer}
-                  className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={loading || !selectedDestAquarium || !transferQuantity}
-                >
-                  {loading ? 'מעביר...' : 'העבר דגים'}
-                </button>
-              )}
-            </div>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-gray-100 text-gray-900 hover:bg-gray-200"
+              disabled={loading}
+            >
+              ביטול
+            </button>
+            {step === 3 && (
+              <button
+                type="button"
+                onClick={handleTransfer}
+                className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading || !selectedDestAquarium || !transferQuantity}
+              >
+                {loading ? 'מעביר...' : 'העבר דגים'}
+              </button>
+            )}
           </div>
         </div>
       </div>

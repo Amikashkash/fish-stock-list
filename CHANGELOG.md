@@ -1,5 +1,21 @@
 # יומן שינויים - Fish Stock Management System
 
+## [1.6.2] - 2025-12-21
+
+### תיקוני באגים 🐛
+- **תוקן מודל העברת דגים**: תוקנה הבעיה שגרמה להצגת "אין דגים באקווריום זה" עבור אקווריומים מאוכלסים
+  - עודכן `transfer.service.js` לעבוד עם המבנה החדש של `farmFish` במקום המבנה הישן
+  - פונקציה `getFishInAquarium` עודכנה לסנן דגים לפי `aquariumId`
+  - פונקציה `transferFish` עודכנה לעבוד ישירות עם קולקציית `farmFish`
+
+### שיפורים 🔧
+- **שיפור עיצוב מודל העברת דגים**: המודל כעת מסודר יותר עם גלילה נכונה
+  - אזור התוכן מתגלגל בנפרד מהכותרת והכפתורים
+  - הכפתורים תמיד נראים בתחתית המודל
+  - חוויית משתמש משופרת עם רשימות ארוכות של אקווריומים
+
+---
+
 ## [1.6.1] - 2025-12-19
 
 ### שיפורים 🔧
