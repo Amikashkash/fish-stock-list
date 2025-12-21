@@ -60,10 +60,9 @@ export async function createAquarium(farmId, aquariumData) {
 export async function getAquariums(farmId) {
   try {
     const aquariumsRef = collection(db, 'farms', farmId, 'aquariums')
-    const q = query(aquariumsRef, orderBy('aquariumNumber', 'asc'))
-    const snapshot = await getDocs(q)
+    const snapshot = await getDocs(aquariumsRef)
 
-    return snapshot.docs.map((doc) => {
+    const aquariums = snapshot.docs.map((doc) => {
       const data = doc.data()
       return {
         ...data,
@@ -75,6 +74,15 @@ export async function getAquariums(farmId) {
         lastWaterChange: data.lastWaterChange?.toDate?.() || data.lastWaterChange,
       }
     })
+
+    // Sort by aquariumNumber as a number (not string)
+    aquariums.sort((a, b) => {
+      const numA = parseInt(a.aquariumNumber) || 0
+      const numB = parseInt(b.aquariumNumber) || 0
+      return numA - numB
+    })
+
+    return aquariums
   } catch (error) {
     console.error('Error getting aquariums:', error)
     throw error
@@ -156,10 +164,10 @@ export async function deleteAquarium(farmId, aquariumId) {
 export async function getEmptyAquariums(farmId) {
   try {
     const aquariumsRef = collection(db, 'farms', farmId, 'aquariums')
-    const q = query(aquariumsRef, where('status', '==', 'empty'), orderBy('aquariumNumber'))
+    const q = query(aquariumsRef, where('status', '==', 'empty'))
     const snapshot = await getDocs(q)
 
-    return snapshot.docs.map((doc) => {
+    const aquariums = snapshot.docs.map((doc) => {
       const data = doc.data()
       return {
         ...data,
@@ -168,6 +176,15 @@ export async function getEmptyAquariums(farmId) {
         updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
       }
     })
+
+    // Sort by aquariumNumber as a number (not string)
+    aquariums.sort((a, b) => {
+      const numA = parseInt(a.aquariumNumber) || 0
+      const numB = parseInt(b.aquariumNumber) || 0
+      return numA - numB
+    })
+
+    return aquariums
   } catch (error) {
     console.error('Error getting empty aquariums:', error)
     throw error
@@ -183,10 +200,10 @@ export async function getEmptyAquariums(farmId) {
 export async function getAquariumsByRoom(farmId, room) {
   try {
     const aquariumsRef = collection(db, 'farms', farmId, 'aquariums')
-    const q = query(aquariumsRef, where('room', '==', room), orderBy('aquariumNumber'))
+    const q = query(aquariumsRef, where('room', '==', room))
     const snapshot = await getDocs(q)
 
-    return snapshot.docs.map((doc) => {
+    const aquariums = snapshot.docs.map((doc) => {
       const data = doc.data()
       return {
         ...data,
@@ -195,6 +212,15 @@ export async function getAquariumsByRoom(farmId, room) {
         updatedAt: data.updatedAt?.toDate?.() || data.updatedAt,
       }
     })
+
+    // Sort by aquariumNumber as a number (not string)
+    aquariums.sort((a, b) => {
+      const numA = parseInt(a.aquariumNumber) || 0
+      const numB = parseInt(b.aquariumNumber) || 0
+      return numA - numB
+    })
+
+    return aquariums
   } catch (error) {
     console.error('Error getting aquariums by room:', error)
     throw error

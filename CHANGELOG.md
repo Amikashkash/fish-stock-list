@@ -10,6 +10,11 @@
   - הדגים הפופולריים ביותר מופיעים ראשונים ברשימה
 - פישוט של פונקציית `getPreviousFishNames` - מתמקדת רק בשמות ללא מעקב אחר גדלים
 
+### תיקוני באגים 🐛
+- **תוקן מיון רשימות אקווריומים**: מיון מספרי תקין (1, 2, 3... 10, 11) במקום מיון טקסטואלי (1, 10, 11... 2, 20)
+  - תוקן ב-`getAquariums`, `getEmptyAquariums`, `getAquariumsByRoom`
+  - המיון מבוצע בצד הלקוח לאחר קבלת הנתונים מ-Firestore
+
 ---
 
 ## [1.6.0] - 2025-12-19
