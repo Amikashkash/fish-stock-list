@@ -6,6 +6,8 @@ import { useFarm } from '../contexts/FarmContext'
 import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
 import FishTransferModal from '../components/features/transfer/FishTransferModal'
 import ReceptionPlansModal from '../components/features/reception/ReceptionPlansModal'
+import TransferPlanModal from '../components/features/transfer-plan/TransferPlanModal'
+import TransferExecutionModal from '../components/features/transfer-plan/TransferExecutionModal'
 import { VERSION } from '../version'
 
 function HomePage() {
@@ -15,6 +17,8 @@ function HomePage() {
   const [showImportModal, setShowImportModal] = useState(false)
   const [showTransferModal, setShowTransferModal] = useState(false)
   const [showReceptionModal, setShowReceptionModal] = useState(false)
+  const [showTransferPlanModal, setShowTransferPlanModal] = useState(false)
+  const [showTransferExecutionModal, setShowTransferExecutionModal] = useState(false)
 
   const handleSignOut = async () => {
     const confirmed = window.confirm('האם אתה בטוח שברצונך להתנתק?')
@@ -42,6 +46,8 @@ function HomePage() {
     { icon: '📋', label: 'משימות', color: '#2196F3', action: 'tasks' },
     { icon: '🐠', label: 'אקווריומים', color: '#00BCD4', action: 'aquariums' },
     { icon: '🔄', label: 'העברת דגים', color: '#9C27B0', action: 'transfer' },
+    { icon: '📝', label: 'תכנון העברות', color: '#673AB7', action: 'plan-transfers' },
+    { icon: '▶️', label: 'ביצוע העברות', color: '#3F51B5', action: 'execute-transfers' },
     { icon: '📥', label: 'ייבוא משלוח', color: '#4CAF50', action: 'import' },
     { icon: '🚚', label: 'משלוחים', color: '#FF9800', action: 'shipments' },
     { icon: '📦', label: 'דגים מיבוא', color: '#E91E63', action: 'reception' },
@@ -54,6 +60,10 @@ function HomePage() {
       setShowTransferModal(true)
     } else if (action === 'reception') {
       setShowReceptionModal(true)
+    } else if (action === 'plan-transfers') {
+      setShowTransferPlanModal(true)
+    } else if (action === 'execute-transfers') {
+      setShowTransferExecutionModal(true)
     } else if (action === 'aquariums') {
       navigate('/aquariums')
     } else {
@@ -167,6 +177,25 @@ function HomePage() {
       <ReceptionPlansModal
         isOpen={showReceptionModal}
         onClose={() => setShowReceptionModal(false)}
+      />
+
+      {/* Transfer Plan Modal */}
+      <TransferPlanModal
+        isOpen={showTransferPlanModal}
+        onClose={() => setShowTransferPlanModal(false)}
+        onSuccess={() => {
+          alert('תוכנית נשמרה בהצלחה!')
+          setShowTransferPlanModal(false)
+        }}
+      />
+
+      {/* Transfer Execution Modal */}
+      <TransferExecutionModal
+        isOpen={showTransferExecutionModal}
+        onClose={() => setShowTransferExecutionModal(false)}
+        onSuccess={() => {
+          // Refresh or do something after execution
+        }}
       />
     </div>
   )
