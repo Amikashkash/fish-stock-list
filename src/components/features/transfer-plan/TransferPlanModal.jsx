@@ -30,9 +30,11 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
   const [selectedFish, setSelectedFish] = useState(null)
   const [transferQuantity, setTransferQuantity] = useState('')
   const [selectedDestAquarium, setSelectedDestAquarium] = useState(null)
-  const [filterRoom, setFilterRoom] = useState('all')
+  const [filterSourceRoom, setFilterSourceRoom] = useState('all')
+  const [filterDestRoom, setFilterDestRoom] = useState('all')
   const [allowMixing, setAllowMixing] = useState(false)
   const [taskNotes, setTaskNotes] = useState('')
+  const [isShipment, setIsShipment] = useState(false)
 
   // Warning dialog
   const [showWarningDialog, setShowWarningDialog] = useState(false)
@@ -107,8 +109,14 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
   }
 
   async function handleAddTask() {
-    if (!selectedFish || !selectedDestAquarium || !transferQuantity) {
+    // Validate based on whether it's a shipment or transfer
+    if (!selectedFish || !transferQuantity) {
       setError('נא למלא את כל השדות')
+      return
+    }
+
+    if (!isShipment && !selectedDestAquarium) {
+      setError('נא לבחור אקווריום יעד או לסמן "העברה למשלוח"')
       return
     }
 
@@ -148,12 +156,13 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       sourceAquariumId: selectedSourceAquarium.aquariumId,
       sourceAquariumNumber: selectedSourceAquarium.aquariumNumber,
       sourceRoom: selectedSourceAquarium.room,
-      targetAquariumId: selectedDestAquarium.aquariumId,
-      targetAquariumNumber: selectedDestAquarium.aquariumNumber,
-      targetRoom: selectedDestAquarium.room,
+      targetAquariumId: isShipment ? 'SHIPMENT' : selectedDestAquarium.aquariumId,
+      targetAquariumNumber: isShipment ? 'משלוח' : selectedDestAquarium.aquariumNumber,
+      targetRoom: isShipment ? 'ארוז למשלוח' : selectedDestAquarium.room,
       order: tasks.length,
-      allowMixing: allowMixing,
+      allowMixing: isShipment ? false : allowMixing,
       notes: taskNotes,
+      isShipment: isShipment,
     }
 
     // Validate and check for warnings
@@ -189,6 +198,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       setTransferQuantity('')
       setAllowMixing(false)
       setTaskNotes('')
+      setIsShipment(false)
       setError('')
 
       // Go back to step 2 to add more fish from same source
@@ -268,9 +278,11 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
     setSelectedDestAquarium(null)
     setFishInSource([])
     setTransferQuantity('')
-    setFilterRoom('all')
+    setFilterSourceRoom('all')
+    setFilterDestRoom('all')
     setAllowMixing(false)
     setTaskNotes('')
+    setIsShipment(false)
     setError('')
     onClose()
   }
@@ -282,6 +294,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       setTransferQuantity(selectedFish?.quantity.toString() || '')
       setAllowMixing(false)
       setTaskNotes('')
+      setIsShipment(false)
       setError('')
     } else if (step === 2) {
       setStep(1)
@@ -296,9 +309,17 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
 
   const rooms = [...new Set(aquariums.map((aq) => aq.room))]
 
+  // Filter source aquariums
+  const availableSources = aquariums.filter((aq) => {
+    if (aq.totalFish === 0) return false
+    if (filterSourceRoom !== 'all' && aq.room !== filterSourceRoom) return false
+    return true
+  })
+
+  // Filter destination aquariums
   const availableDestinations = aquariums.filter((aq) => {
     if (selectedSourceAquarium && aq.aquariumId === selectedSourceAquarium.aquariumId) return false
-    if (filterRoom !== 'all' && aq.room !== filterRoom) return false
+    if (filterDestRoom !== 'all' && aq.room !== filterDestRoom) return false
     return true
   })
 
@@ -378,8 +399,15 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                   {tasks.map((task, index) => (
                     <div key={task.taskId} className="text-xs bg-white p-2 rounded border border-blue-100">
                       <span className="font-bold text-blue-700">#{index + 1}</span>{' '}
-                      {task.fishName} ({task.quantity}) →
-                      אקווריום {task.targetAquariumNumber} ({task.targetRoom})
+                      {task.fishName} ({task.quantity}) →{' '}
+                      {task.isShipment ? (
+                        <span className="font-semibold text-orange-600">📦 משלוח</span>
+                      ) : (
+                        <>אקווריום {task.targetAquariumNumber} ({task.targetRoom})</>
+                      )}
+                      {task.notes && (
+                        <div className="text-purple-700 mt-1 italic">📝 {task.notes}</div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -392,39 +420,57 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   שלב 1: בחר אקווריום מקור
                 </h3>
+
+                {/* Source Room Filter */}
+                <div className="mb-4">
+                  <label className="block mb-2 font-semibold text-gray-900 text-sm">
+                    סנן לפי אזור:
+                  </label>
+                  <select
+                    value={filterSourceRoom}
+                    onChange={(e) => setFilterSourceRoom(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="all">כל האזורים</option>
+                    {rooms.map((room) => (
+                      <option key={room} value={room}>
+                        {room}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {loading ? (
                   <div className="flex justify-center py-8">
                     <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {aquariums.filter((aq) => aq.totalFish > 0).length === 0 ? (
+                    {availableSources.length === 0 ? (
                       <div className="text-center py-12 text-gray-500">
                         <div className="text-5xl mb-3">🐠</div>
                         <div className="text-lg font-semibold text-gray-900 mb-1">
-                          אין אקווריומים עם דגים
+                          אין אקווריומים עם דגים באזור זה
                         </div>
                       </div>
                     ) : (
-                      aquariums
-                        .filter((aq) => aq.totalFish > 0)
-                        .map((aquarium) => (
-                          <button
-                            key={aquarium.aquariumId}
-                            className="bg-blue-50 rounded-lg px-4 py-3 text-right hover:bg-blue-100 transition-colors border border-blue-200"
-                            onClick={() => handleSourceSelect(aquarium)}
-                          >
-                            <div className="flex justify-between items-center">
-                              <span className="font-bold text-gray-900">
-                                אקווריום {aquarium.aquariumNumber}
-                              </span>
-                              <span className="text-sm text-gray-600">{aquarium.room}</span>
-                            </div>
-                            <div className="text-sm text-blue-600 mt-1">
-                              🐠 {aquarium.totalFish} דגים
-                            </div>
-                          </button>
-                        ))
+                      availableSources.map((aquarium) => (
+                        <button
+                          key={aquarium.aquariumId}
+                          className="bg-blue-50 rounded-lg px-4 py-3 text-right hover:bg-blue-100 transition-colors border border-blue-200"
+                          onClick={() => handleSourceSelect(aquarium)}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-gray-900">
+                              אקווריום {aquarium.aquariumNumber}
+                            </span>
+                            <span className="text-sm text-gray-600">{aquarium.room}</span>
+                          </div>
+                          <div className="text-sm text-blue-600 mt-1">
+                            🐠 {aquarium.totalFish} דגים
+                          </div>
+                        </button>
+                      ))
                     )}
                   </div>
                 )}
@@ -496,98 +542,139 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                   <p className="text-xs text-gray-500 mt-1">זמין: {selectedFish.quantity}</p>
                 </div>
 
-                {/* Notes */}
-                <div className="mb-5">
-                  <label className="block mb-2 font-semibold text-gray-900 text-sm">
-                    הערות (אופציונלי)
+                {/* Notes - Prominent */}
+                <div className="mb-5 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <label className="block mb-2 font-semibold text-purple-900 text-sm">
+                    📝 הערות להעברה (מומלץ)
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     value={taskNotes}
                     onChange={(e) => setTaskNotes(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                    placeholder="הערות על ההעברה..."
+                    className="w-full px-3 py-2.5 border border-purple-300 rounded-lg text-sm focus:outline-none focus:border-purple-500 resize-none"
+                    rows="3"
+                    placeholder='לדוגמה: "לארוז מחר בבוקר" / "לנקות פילטר אחרי פינוי" / "להחליף מים אחרי פינוי"'
                   />
+                  <p className="text-xs text-purple-700 mt-2">
+                    💡 הוסף הערות חשובות לעובד שיבצע את ההעברה
+                  </p>
                 </div>
 
-                {/* Room Filter */}
-                <div className="mb-4">
-                  <label className="block mb-2 font-semibold text-gray-900 text-sm">
-                    סנן לפי חדר:
-                  </label>
-                  <select
-                    value={filterRoom}
-                    onChange={(e) => setFilterRoom(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="all">כל החדרים</option>
-                    {rooms.map((room) => (
-                      <option key={room} value={room}>
-                        {room}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Destination Aquariums */}
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">בחר אקווריום יעד</h3>
-
-                <div className="flex flex-col gap-2">
-                  {availableDestinations.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      אין אקווריומים זמינים בסינון זה
-                    </div>
-                  ) : (
-                    availableDestinations.map((aquarium) => {
-                      const hasExistingFish = aquarium.totalFish > 0
-                      return (
-                        <button
-                          key={aquarium.aquariumId}
-                          className={`rounded-lg px-4 py-3 text-right transition-colors border ${
-                            selectedDestAquarium?.aquariumId === aquarium.aquariumId
-                              ? 'bg-green-100 border-green-500'
-                              : hasExistingFish
-                              ? 'bg-yellow-50 border-yellow-300 hover:bg-yellow-100'
-                              : 'bg-white border-gray-300 hover:bg-gray-50'
-                          }`}
-                          onClick={() => setSelectedDestAquarium(aquarium)}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-gray-900">
-                                אקווריום {aquarium.aquariumNumber}
-                              </span>
-                              {hasExistingFish && (
-                                <span className="text-xs bg-yellow-300 text-yellow-900 px-2 py-0.5 rounded font-semibold">
-                                  🐠 תפוס
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-sm text-gray-600">{aquarium.room}</span>
-                          </div>
-                          <div className="text-sm text-gray-600 mt-1">
-                            {aquarium.totalFish} דגים | {aquarium.volume}L
-                          </div>
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
-
-                {/* Allow Mixing Checkbox */}
-                {selectedDestAquarium && selectedDestAquarium.totalFish > 0 && (
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={allowMixing}
-                        onChange={(e) => setAllowMixing(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-sm text-yellow-900">
-                        אני מאשר לערבב דגים באקווריום זה
+                {/* Shipment Checkbox */}
+                <div className="mb-5 p-4 bg-orange-50 border-2 border-orange-300 rounded-lg">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isShipment}
+                      onChange={(e) => setIsShipment(e.target.checked)}
+                      className="w-5 h-5 mt-0.5 cursor-pointer"
+                    />
+                    <div>
+                      <span className="text-base font-bold text-orange-900 block">
+                        📦 העברה למשלוח
                       </span>
-                    </label>
+                      <span className="text-sm text-orange-700 block mt-1">
+                        סמן אם הדגים צריכים להיארז למשלוח במקום להעבירם לאקווריום אחר
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Show destination selection only if NOT shipment */}
+                {!isShipment && (
+                  <>
+                    {/* Destination Room Filter */}
+                    <div className="mb-4">
+                      <label className="block mb-2 font-semibold text-gray-900 text-sm">
+                        סנן לפי אזור יעד:
+                      </label>
+                      <select
+                        value={filterDestRoom}
+                        onChange={(e) => setFilterDestRoom(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
+                      >
+                        <option value="all">כל האזורים</option>
+                        {rooms.map((room) => (
+                          <option key={room} value={room}>
+                            {room}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Destination Aquariums */}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">בחר אקווריום יעד</h3>
+
+                    <div className="flex flex-col gap-2">
+                      {availableDestinations.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          אין אקווריומים זמינים בסינון זה
+                        </div>
+                      ) : (
+                        availableDestinations.map((aquarium) => {
+                          const hasExistingFish = aquarium.totalFish > 0
+                          return (
+                            <button
+                              key={aquarium.aquariumId}
+                              className={`rounded-lg px-4 py-3 text-right transition-colors border ${
+                                selectedDestAquarium?.aquariumId === aquarium.aquariumId
+                                  ? 'bg-green-100 border-green-500'
+                                  : hasExistingFish
+                                  ? 'bg-yellow-50 border-yellow-300 hover:bg-yellow-100'
+                                  : 'bg-white border-gray-300 hover:bg-gray-50'
+                              }`}
+                              onClick={() => setSelectedDestAquarium(aquarium)}
+                            >
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-gray-900">
+                                    אקווריום {aquarium.aquariumNumber}
+                                  </span>
+                                  {hasExistingFish && (
+                                    <span className="text-xs bg-yellow-300 text-yellow-900 px-2 py-0.5 rounded font-semibold">
+                                      🐠 תפוס
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-sm text-gray-600">{aquarium.room}</span>
+                              </div>
+                              <div className="text-sm text-gray-600 mt-1">
+                                {aquarium.totalFish} דגים | {aquarium.volume}L
+                              </div>
+                            </button>
+                          )
+                        })
+                      )}
+                    </div>
+
+                    {/* Allow Mixing Checkbox */}
+                    {selectedDestAquarium && selectedDestAquarium.totalFish > 0 && (
+                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={allowMixing}
+                            onChange={(e) => setAllowMixing(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-yellow-900">
+                            אני מאשר לערבב דגים באקווריום זה
+                          </span>
+                        </label>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Shipment message when isShipment is true */}
+                {isShipment && (
+                  <div className="p-6 bg-gradient-to-r from-orange-100 to-orange-50 border-2 border-orange-400 rounded-lg text-center">
+                    <div className="text-5xl mb-3">📦</div>
+                    <div className="text-xl font-bold text-orange-900 mb-2">
+                      הדגים יארזו למשלוח
+                    </div>
+                    <p className="text-sm text-orange-700">
+                      העובד יידע שצריך לארוז את הדגים במקום להעבירם לאקווריום אחר
+                    </p>
                   </div>
                 )}
               </div>
@@ -632,7 +719,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                   type="button"
                   onClick={handleAddTask}
                   className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
-                  disabled={loading || !selectedDestAquarium || !transferQuantity}
+                  disabled={loading || (!isShipment && !selectedDestAquarium) || !transferQuantity}
                 >
                   {loading ? 'מוסיף...' : '➕ הוסף למשימות'}
                 </button>

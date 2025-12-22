@@ -367,10 +367,18 @@ function TransferExecutionModal({ isOpen, onClose, onSuccess }) {
                             </span>
                             <span className="text-gray-500">({task.sourceRoom})</span>
                             <span className="text-blue-500">→</span>
-                            <span className="font-semibold">
-                              אקווריום {task.targetAquariumNumber}
-                            </span>
-                            <span className="text-gray-500">({task.targetRoom})</span>
+                            {task.isShipment ? (
+                              <span className="font-semibold text-orange-600 flex items-center gap-1">
+                                📦 משלוח
+                              </span>
+                            ) : (
+                              <>
+                                <span className="font-semibold">
+                                  אקווריום {task.targetAquariumNumber}
+                                </span>
+                                <span className="text-gray-500">({task.targetRoom})</span>
+                              </>
+                            )}
                           </div>
 
                           {/* Block reason */}
@@ -387,8 +395,11 @@ function TransferExecutionModal({ isOpen, onClose, onSuccess }) {
 
                           {/* Notes */}
                           {task.notes && (
-                            <div className="text-xs text-gray-600 mt-2 italic">
-                              הערות: {task.notes}
+                            <div className="mt-3 p-3 bg-purple-50 border border-purple-300 rounded text-sm">
+                              <div className="font-semibold text-purple-900 mb-1 flex items-center gap-1">
+                                📝 הערות
+                              </div>
+                              <div className="text-purple-700">{task.notes}</div>
                             </div>
                           )}
 
