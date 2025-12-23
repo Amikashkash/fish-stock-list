@@ -97,6 +97,20 @@ service cloud.firestore {
         allow create: if isFarmMember(farmId);
         allow update, delete: if isFarmMember(farmId);
       }
+
+      // Farm's transfer plans subcollection
+      match /transfer_plans/{planId} {
+        allow read: if isFarmMember(farmId);
+        allow create: if isFarmMember(farmId);
+        allow update, delete: if isFarmMember(farmId);
+
+        // Farm's transfer tasks subcollection (nested under transfer plans)
+        match /tasks/{taskId} {
+          allow read: if isFarmMember(farmId);
+          allow create: if isFarmMember(farmId);
+          allow update, delete: if isFarmMember(farmId);
+        }
+      }
     }
 
     // Farm fish collection (local/farm-sourced fish)

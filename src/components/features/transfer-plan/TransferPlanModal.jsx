@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import { getAquariums } from '../../../services/aquarium.service'
 import { getFishInAquarium } from '../../../services/transfer.service'
+import { getFarmFish } from '../../../services/farm-fish.service'
 import {
   createTransferPlan,
   addTransferTask,
@@ -25,6 +26,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
 
   // Selection state
   const [aquariums, setAquariums] = useState([])
+  const [allFish, setAllFish] = useState([]) // All fish in farm
   const [selectedSourceAquarium, setSelectedSourceAquarium] = useState(null)
   const [fishInSource, setFishInSource] = useState([])
   const [selectedFish, setSelectedFish] = useState(null)
@@ -48,6 +50,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
   useEffect(() => {
     if (currentFarm && isOpen) {
       loadAquariums()
+      loadAllFish()
       initializePlan()
     }
   }, [currentFarm, isOpen])
@@ -70,6 +73,20 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       console.error('Error loading aquariums:', err)
       setError('שגיאה בטעינת אקווריומים')
     }
+  }
+
+  async function loadAllFish() {
+    try {
+      const fish = await getFarmFish(currentFarm.farmId)
+      setAllFish(fish)
+    } catch (err) {
+      console.error('Error loading all fish:', err)
+    }
+  }
+
+  // Get fish for a specific aquarium
+  function getFishForAquarium(aquariumId) {
+    return allFish.filter(fish => fish.aquariumId === aquariumId)
   }
 
   async function loadFishInAquarium(aquariumId) {
@@ -454,23 +471,36 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                         </div>
                       </div>
                     ) : (
-                      availableSources.map((aquarium) => (
-                        <button
-                          key={aquarium.aquariumId}
-                          className="bg-blue-50 rounded-lg px-4 py-3 text-right hover:bg-blue-100 transition-colors border border-blue-200"
-                          onClick={() => handleSourceSelect(aquarium)}
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className="font-bold text-gray-900">
-                              אקווריום {aquarium.aquariumNumber}
-                            </span>
-                            <span className="text-sm text-gray-600">{aquarium.room}</span>
-                          </div>
-                          <div className="text-sm text-blue-600 mt-1">
-                            🐠 {aquarium.totalFish} דגים
-                          </div>
-                        </button>
-                      ))
+                      availableSources.map((aquarium) => {
+                        const fishInAq = getFishForAquarium(aquarium.aquariumId)
+                        return (
+                          <button
+                            key={aquarium.aquariumId}
+                            className="bg-blue-50 rounded-lg px-4 py-3 text-right hover:bg-blue-100 transition-colors border border-blue-200"
+                            onClick={() => handleSourceSelect(aquarium)}
+                          >
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-bold text-gray-900">
+                                אקווריום {aquarium.aquariumNumber}
+                              </span>
+                              <span className="text-sm text-gray-600">{aquarium.room}</span>
+                            </div>
+                            <div className="text-sm text-blue-600 mb-2">
+                              🐠 {aquarium.totalFish} דגים
+                            </div>
+                            {/* Fish list */}
+                            {fishInAq.length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-blue-200">
+                                {fishInAq.map((fish, idx) => (
+                                  <div key={idx} className="text-xs text-gray-700 py-0.5">
+                                    • {fish.hebrewName} ({fish.quantity}) - {fish.size}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </button>
+                        )
+                      })
                     )}
                   </div>
                 )}
