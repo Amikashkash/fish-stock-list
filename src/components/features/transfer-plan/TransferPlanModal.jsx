@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import { getAquariums } from '../../../services/aquarium.service'
-import { getFishInAquarium } from '../../../services/transfer.service'
+import { getFishInAquarium, transferFish } from '../../../services/transfer.service'
 import { getFarmFish } from '../../../services/farm-fish.service'
 import {
   createTransferPlan,
@@ -37,6 +37,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
   const [allowMixing, setAllowMixing] = useState(false)
   const [taskNotes, setTaskNotes] = useState('')
   const [isShipment, setIsShipment] = useState(false)
+  const [executeImmediately, setExecuteImmediately] = useState(false)
 
   // Warning dialog
   const [showWarningDialog, setShowWarningDialog] = useState(false)
@@ -143,6 +144,58 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       return
     }
 
+    // If executeImmediately is checked and not a shipment, execute transfer directly
+    if (executeImmediately && !isShipment && selectedDestAquarium) {
+      try {
+        setLoading(true)
+        setError('')
+
+        await transferFish(currentFarm.farmId, {
+          sourceAquariumId: selectedSourceAquarium.aquariumId,
+          destinationAquariumId: selectedDestAquarium.aquariumId,
+          fishInstanceId: selectedFish.instanceId,
+          quantity: quantity,
+          notes: taskNotes || '',
+        })
+
+        // Success - reload data and reset to step 1
+        await loadAquariums()
+        await loadAllFish()
+
+        // Reset all state to step 1
+        setSelectedSourceAquarium(null)
+        setFishInSource([])
+        setSelectedFish(null)
+        setSelectedDestAquarium(null)
+        setTransferQuantity('')
+        setAllowMixing(false)
+        setTaskNotes('')
+        setIsShipment(false)
+        setExecuteImmediately(false)
+        setFilterSourceRoom('all')
+        setFilterDestRoom('all')
+        setStep(1)
+        setError('')
+
+        // Show success message (you could add a success state here)
+        alert(`✓ העברה בוצעה בהצלחה!\n${quantity} ${selectedFish.commonName} הועברו מאקווריום ${selectedSourceAquarium.aquariumNumber} לאקווריום ${selectedDestAquarium.aquariumNumber}`)
+
+      } catch (err) {
+        console.error('Error executing immediate transfer:', err)
+        setError(`שגיאה בביצוע העברה: ${err.message}`)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // If shipment and executeImmediately - show error (can't execute shipment immediately)
+    if (executeImmediately && isShipment) {
+      setError('לא ניתן לבצע משלוח באופן מיידי - יש להוסיף למשימות')
+      return
+    }
+
+    // Otherwise, continue with plan creation
     // Create plan if doesn't exist
     let planId = currentPlan
     if (!planId) {
@@ -216,6 +269,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       setAllowMixing(false)
       setTaskNotes('')
       setIsShipment(false)
+      setExecuteImmediately(false)
       setError('')
 
       // Go back to step 2 to add more fish from same source
@@ -735,7 +789,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                 </button>
               )}
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
               <button
                 type="button"
                 onClick={handleClose}
@@ -744,6 +798,20 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
               >
                 ביטול
               </button>
+              {step === 3 && !isShipment && (
+                <label className="flex items-center gap-2 cursor-pointer bg-green-50 px-4 py-2.5 rounded-lg border border-green-300 hover:bg-green-100 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={executeImmediately}
+                    onChange={(e) => setExecuteImmediately(e.target.checked)}
+                    className="w-4 h-4 cursor-pointer accent-green-600"
+                    disabled={loading}
+                  />
+                  <span className="text-sm font-semibold text-green-800">
+                    ✓ העברה בוצעה (עדכון מיידי)
+                  </span>
+                </label>
+              )}
               {step === 3 && (
                 <button
                   type="button"
@@ -751,7 +819,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                   className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
                   disabled={loading || (!isShipment && !selectedDestAquarium) || !transferQuantity}
                 >
-                  {loading ? 'מוסיף...' : '➕ הוסף למשימות'}
+                  {loading ? (executeImmediately ? 'מבצע העברה...' : 'מוסיף...') : (executeImmediately ? '✓ בצע העברה' : '➕ הוסף למשימות')}
                 </button>
               )}
               {currentPlan && tasks.length > 0 && step < 3 && (
