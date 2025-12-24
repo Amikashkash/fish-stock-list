@@ -111,6 +111,13 @@ service cloud.firestore {
           allow update, delete: if isFarmMember(farmId);
         }
       }
+
+      // Farm's transfer tasks subcollection (top-level)
+      match /transfer_tasks/{taskId} {
+        allow read: if isFarmMember(farmId);
+        allow create: if isFarmMember(farmId);
+        allow update, delete: if isFarmMember(farmId);
+      }
     }
 
     // Farm fish collection (local/farm-sourced fish)
