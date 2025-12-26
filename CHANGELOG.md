@@ -1,5 +1,15 @@
 # יומן שינויים - Fish Stock Management System
 
+## [1.10.2] - 2025-12-26
+
+### תיקוני באגים 🐛
+- **נוסף אינדקס Firestore ל-transfer_tasks**: תוקנה שגיאת "The query requires an index"
+  - נוצר קובץ `firestore.indexes.json` עם אינדקס מורכב על `planId` + `order`
+  - האינדקס נדרש עבור שאילתות שמחפשות משימות לפי תוכנית וממיינות לפי סדר
+  - לאחר יצירת האינדקס ב-Firebase Console (כמה דקות), תכנון העברות יעבוד ללא שגיאות
+
+---
+
 ## [1.10.1] - 2025-12-24
 
 ### תיקוני באגים 🐛
