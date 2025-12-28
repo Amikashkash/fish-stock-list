@@ -61,8 +61,17 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       const date = new Date().toLocaleDateString('he-IL')
       const defaultName = `תוכנית העברה - ${date}`
       setPlanName(defaultName)
+
+      // Create plan immediately when opening modal
+      const result = await createTransferPlan(currentFarm.farmId, {
+        planName: defaultName,
+        createdBy: user?.email || 'unknown',
+      })
+      setCurrentPlan(result.planId)
     } catch (err) {
       console.error('Error initializing plan:', err)
+      // If plan creation fails, just set the name (plan will be created on first task)
+      setError('')
     }
   }
 
@@ -195,24 +204,11 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       return
     }
 
-    // Otherwise, continue with plan creation
-    // Create plan if doesn't exist
-    let planId = currentPlan
+    // Plan should already exist from initializePlan
+    const planId = currentPlan
     if (!planId) {
-      try {
-        setLoading(true)
-        const result = await createTransferPlan(currentFarm.farmId, {
-          planName: planName || `תוכנית העברה - ${new Date().toLocaleDateString('he-IL')}`,
-          createdBy: user?.email || 'unknown',
-        })
-        planId = result.planId
-        setCurrentPlan(planId)
-      } catch (err) {
-        console.error('Error creating plan:', err)
-        setError('שגיאה ביצירת תוכנית')
-        setLoading(false)
-        return
-      }
+      setError('לא נמצאה תוכנית פעילה')
+      return
     }
 
     // Prepare task data
@@ -235,7 +231,15 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       isShipment: isShipment,
     }
 
-    // Validate and check for warnings
+    // Skip validation if plan is empty (no existing tasks)
+    // This avoids the index error when creating the first task
+    if (tasks.length === 0) {
+      // First task - no need to validate conflicts
+      await addTaskToPlan(taskData)
+      return
+    }
+
+    // Validate and check for warnings (only if there are existing tasks)
     try {
       const taskWarnings = await validateTaskWarnings(currentFarm.farmId, planId, taskData)
 
