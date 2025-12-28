@@ -115,12 +115,8 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
 
   async function loadTasks() {
     if (!currentPlan) return
-    try {
-      const taskList = await getTransferTasks(currentFarm.farmId, currentPlan)
-      setTasks(taskList)
-    } catch (err) {
-      console.error('Error loading tasks:', err)
-    }
+    const taskList = await getTransferTasks(currentFarm.farmId, currentPlan)
+    setTasks(taskList)
   }
 
   function handleSourceSelect(aquarium) {
@@ -265,7 +261,15 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
     try {
       setLoading(true)
       await addTransferTask(currentFarm.farmId, taskData)
-      await loadTasks()
+
+      // Try to reload tasks from server
+      try {
+        await loadTasks()
+      } catch (loadErr) {
+        // If loadTasks fails (no index), manually add task to local state
+        console.warn('loadTasks failed, adding task manually to state:', loadErr)
+        setTasks(prevTasks => [...prevTasks, taskData])
+      }
 
       // Reset step 3 selections
       setSelectedDestAquarium(null)
