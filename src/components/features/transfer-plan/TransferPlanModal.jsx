@@ -256,8 +256,10 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       await addTaskToPlan(taskData)
     } catch (err) {
       console.error('Error validating task:', err)
-      setError('שגיאה בבדיקת התנגשויות')
-      setLoading(false)
+      // If validation fails (no index), just add the task anyway
+      // We can't validate conflicts, but we shouldn't block the user
+      console.warn('Skipping validation due to error, adding task anyway')
+      await addTaskToPlan(taskData)
     }
   }
 
