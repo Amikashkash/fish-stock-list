@@ -69,7 +69,7 @@ function TransferExecutionModal({ isOpen, onClose, onSuccess }) {
       setError('')
     } catch (err) {
       console.error('Error loading tasks:', err)
-      setError('שגיאה בטעינת משימות')
+      setError('שגיאה בטעינת משימות - חסר אינדקס Firebase. אנא צור את האינדקס או חכה כמה דקות.')
     } finally {
       setLoading(false)
     }

@@ -153,6 +153,16 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       return
     }
 
+    // Check if this fish is already in the transfer plan (local validation)
+    const existingTask = tasks.find(
+      task => task.fishId === selectedFish.instanceId &&
+              task.sourceAquariumId === selectedSourceAquarium.aquariumId
+    )
+    if (existingTask) {
+      setError(`דג ${selectedFish.commonName} מאקווריום ${selectedSourceAquarium.aquariumNumber} כבר נמצא בתוכנית ההעברות`)
+      return
+    }
+
     // If executeImmediately is checked and not a shipment, execute transfer directly
     if (executeImmediately && !isShipment && selectedDestAquarium) {
       try {
@@ -321,8 +331,14 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
   }
 
   function handleDestinationSelect(aquarium) {
-    // Check if aquarium has existing fish
-    if (aquarium.totalFish > 0 && !isShipment) {
+    // Check if aquarium has existing fish OR is planned to receive fish (local validation)
+    const hasPendingAdditions = tasks.some(
+      task => task.targetAquariumId === aquarium.aquariumId && task.status === 'pending'
+    )
+
+    const needsConfirmation = (aquarium.totalFish > 0 || hasPendingAdditions) && !isShipment
+
+    if (needsConfirmation) {
       // Show mixing confirmation dialog
       setPendingDestAquarium(aquarium)
       setShowMixingDialog(true)
@@ -880,35 +896,46 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       />
 
       {/* Mixing Confirmation Dialog */}
-      {showMixingDialog && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100]">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 mx-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
-              ⚠️ אקווריום תפוס
-            </h3>
-            <p className="text-gray-700 text-center mb-6 leading-relaxed">
-              אקווריום <span className="font-bold text-blue-600">{pendingDestAquarium?.aquariumNumber}</span> כבר מכיל דגים.
-              <br />
-              <br />
-              האם אתה בטוח שברצונך לערבב דגים באקווריום זה?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleMixingCancel}
-                className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-              >
-                ביטול
-              </button>
-              <button
-                onClick={handleMixingConfirm}
-                className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
-              >
-                ✓ אישור ערבוב
-              </button>
+      {showMixingDialog && (() => {
+        const hasPendingAdditions = tasks.some(
+          task => task.targetAquariumId === pendingDestAquarium?.aquariumId && task.status === 'pending'
+        )
+        const hasExistingFish = pendingDestAquarium?.totalFish > 0
+
+        return (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100]">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 mx-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+                ⚠️ אקווריום תפוס
+              </h3>
+              <p className="text-gray-700 text-center mb-6 leading-relaxed">
+                אקווריום <span className="font-bold text-blue-600">{pendingDestAquarium?.aquariumNumber}</span>
+                {hasExistingFish && ' כבר מכיל דגים'}
+                {hasExistingFish && hasPendingAdditions && ' וגם'}
+                {hasPendingAdditions && ' מתוכנן לקבל דגים נוספים בתוכנית זו'}
+                .
+                <br />
+                <br />
+                האם אתה בטוח שברצונך לערבב דגים באקווריום זה?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleMixingCancel}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  ביטול
+                </button>
+                <button
+                  onClick={handleMixingConfirm}
+                  className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
+                >
+                  ✓ אישור ערבוב
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </>
   )
 }
