@@ -44,6 +44,10 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
   const [warnings, setWarnings] = useState([])
   const [pendingTaskData, setPendingTaskData] = useState(null)
 
+  // Mixing confirmation dialog
+  const [showMixingDialog, setShowMixingDialog] = useState(false)
+  const [pendingDestAquarium, setPendingDestAquarium] = useState(null)
+
   // Virtual state for aquarium status
   const [virtualState, setVirtualState] = useState(new Map())
 
@@ -268,10 +272,20 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       } catch (loadErr) {
         // If loadTasks fails (no index), manually add task to local state
         console.warn('loadTasks failed, adding task manually to state:', loadErr)
-        setTasks(prevTasks => [...prevTasks, taskData])
+        const taskWithMetadata = {
+          ...taskData,
+          taskId: `temp_${Date.now()}`, // Temporary ID
+          status: 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+        setTasks(prevTasks => [...prevTasks, taskWithMetadata])
       }
 
-      // Reset step 3 selections
+      // Reset all selections
+      setSelectedSourceAquarium(null)
+      setFishInSource([])
+      setSelectedFish(null)
       setSelectedDestAquarium(null)
       setTransferQuantity('')
       setAllowMixing(false)
@@ -280,8 +294,8 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
       setExecuteImmediately(false)
       setError('')
 
-      // Go back to step 2 to add more fish from same source
-      setStep(2)
+      // Go back to step 1 to select new source aquarium
+      setStep(1)
     } catch (err) {
       console.error('Error adding task:', err)
       setError('שגיאה בהוספת משימה')
@@ -302,6 +316,33 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
     setShowWarningDialog(false)
     setPendingTaskData(null)
     setLoading(false)
+  }
+
+  function handleDestinationSelect(aquarium) {
+    // Check if aquarium has existing fish
+    if (aquarium.totalFish > 0 && !isShipment) {
+      // Show mixing confirmation dialog
+      setPendingDestAquarium(aquarium)
+      setShowMixingDialog(true)
+    } else {
+      // Empty aquarium or shipment - select directly
+      setSelectedDestAquarium(aquarium)
+      setAllowMixing(false)
+    }
+  }
+
+  function handleMixingConfirm() {
+    setShowMixingDialog(false)
+    if (pendingDestAquarium) {
+      setSelectedDestAquarium(pendingDestAquarium)
+      setAllowMixing(true) // User confirmed mixing
+      setPendingDestAquarium(null)
+    }
+  }
+
+  function handleMixingCancel() {
+    setShowMixingDialog(false)
+    setPendingDestAquarium(null)
   }
 
   async function handleFinalizePlan() {
@@ -714,7 +755,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                                   ? 'bg-yellow-50 border-yellow-300 hover:bg-yellow-100'
                                   : 'bg-white border-gray-300 hover:bg-gray-50'
                               }`}
-                              onClick={() => setSelectedDestAquarium(aquarium)}
+                              onClick={() => handleDestinationSelect(aquarium)}
                             >
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
@@ -737,23 +778,6 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                         })
                       )}
                     </div>
-
-                    {/* Allow Mixing Checkbox */}
-                    {selectedDestAquarium && selectedDestAquarium.totalFish > 0 && (
-                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={allowMixing}
-                            onChange={(e) => setAllowMixing(e.target.checked)}
-                            className="w-4 h-4"
-                          />
-                          <span className="text-sm text-yellow-900">
-                            אני מאשר לערבב דגים באקווריום זה
-                          </span>
-                        </label>
-                      </div>
-                    )}
                   </>
                 )}
 
@@ -852,6 +876,37 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
         onConfirm={handleWarningConfirm}
         onCancel={handleWarningCancel}
       />
+
+      {/* Mixing Confirmation Dialog */}
+      {showMixingDialog && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">
+              ⚠️ אקווריום תפוס
+            </h3>
+            <p className="text-gray-700 text-center mb-6 leading-relaxed">
+              אקווריום <span className="font-bold text-blue-600">{pendingDestAquarium?.aquariumNumber}</span> כבר מכיל דגים.
+              <br />
+              <br />
+              האם אתה בטוח שברצונך לערבב דגים באקווריום זה?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleMixingCancel}
+                className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={handleMixingConfirm}
+                className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
+              >
+                ✓ אישור ערבוב
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
