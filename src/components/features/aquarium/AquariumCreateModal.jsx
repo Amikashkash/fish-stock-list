@@ -4,7 +4,7 @@ import { useFarm } from '../../../contexts/FarmContext'
 import { createAquarium } from '../../../services/aquarium.service'
 import { validateAquarium } from '../../../models/Aquarium'
 
-function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
+function AquariumCreateModal({ isOpen, onClose, onSuccess, existingAquariums = [] }) {
   const navigate = useNavigate()
   const { currentFarm } = useFarm()
   const [loading, setLoading] = useState(false)
@@ -35,6 +35,17 @@ function AquariumCreateModal({ isOpen, onClose, onSuccess }) {
 
     if (!validation.valid) {
       setError(validation.errors.join(', '))
+      return
+    }
+
+    // Check for duplicate aquarium number in the same room
+    const duplicate = existingAquariums.find(
+      aq => aq.aquariumNumber === formData.aquariumNumber &&
+            aq.room === formData.room
+    )
+
+    if (duplicate) {
+      setError(`אקווריום ${formData.aquariumNumber} כבר קיים ב${formData.room}. בחר מספר אחר.`)
       return
     }
 

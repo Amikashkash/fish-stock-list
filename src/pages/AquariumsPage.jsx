@@ -253,6 +253,7 @@ function AquariumsPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleAquariumCreated}
+        existingAquariums={aquariums}
       />
 
       {/* Edit Modal */}
