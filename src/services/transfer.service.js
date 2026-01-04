@@ -73,6 +73,7 @@ export async function transferFish(farmId, transferData) {
 
     if (remainingInSource === 0) {
       // Move all fish - just update aquariumId
+      // updateFarmFish will automatically update both source and destination aquarium statuses
       await updateFarmFish(farmId, fishInstanceId, {
         aquariumId: destinationAquariumId,
         updatedAt: now,
@@ -87,7 +88,10 @@ export async function transferFish(farmId, transferData) {
         updatedAt: now,
       })
 
+      await batch.commit()
+
       // Create new fish entry in destination
+      // addFarmFish will automatically update destination aquarium status
       await addFarmFish(farmId, {
         hebrewName: fishData.hebrewName,
         scientificName: fishData.scientificName,
@@ -98,10 +102,12 @@ export async function transferFish(farmId, transferData) {
         aquariumId: destinationAquariumId,
       })
 
-      await batch.commit()
+      // Manually update source aquarium status since we used batch.update
+      const { updateAquariumStatus } = await import('./farm-fish.service')
+      await updateAquariumStatus(farmId, sourceAquariumId)
     }
 
-    // Aquarium statuses will be updated automatically by farm-fish.service
+    // Aquarium statuses are now updated automatically by farm-fish.service functions
 
     return {
       success: true,

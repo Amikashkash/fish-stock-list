@@ -21,7 +21,7 @@ const COLLECTION_NAME = 'farmFish'
  * @param {string} aquariumId - Aquarium ID
  * @returns {Promise<void>}
  */
-async function updateAquariumStatus(farmId, aquariumId) {
+export async function updateAquariumStatus(farmId, aquariumId) {
   try {
     // Count fish in aquarium
     const q = query(
@@ -113,16 +113,27 @@ export async function updateFarmFish(farmId, fishId, updates) {
 
     // Get current fish data to know its aquariumId
     const fishDoc = await getDoc(fishRef)
-    const currentAquariumId = fishDoc.data()?.aquariumId
+    const oldAquariumId = fishDoc.data()?.aquariumId
+    const newAquariumId = updates.aquariumId
 
     await updateDoc(fishRef, {
       ...updates,
       updatedAt: serverTimestamp(),
     })
 
-    // Update aquarium status if fish is assigned to one
-    if (currentAquariumId) {
-      await updateAquariumStatus(farmId, currentAquariumId)
+    // If aquariumId changed, update BOTH old and new aquarium statuses
+    if (newAquariumId !== undefined && oldAquariumId !== newAquariumId) {
+      // Update old aquarium status (now has one less fish)
+      if (oldAquariumId) {
+        await updateAquariumStatus(farmId, oldAquariumId)
+      }
+      // Update new aquarium status (now has one more fish)
+      if (newAquariumId) {
+        await updateAquariumStatus(farmId, newAquariumId)
+      }
+    } else if (oldAquariumId) {
+      // For other updates (quantity change, etc.), update current aquarium
+      await updateAquariumStatus(farmId, oldAquariumId)
     }
   } catch (err) {
     console.error('Error updating farm fish:', err)
