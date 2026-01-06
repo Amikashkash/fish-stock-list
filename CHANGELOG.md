@@ -1,5 +1,52 @@
 # יומן שינויים - Fish Stock Management System
 
+## [1.16.0] - 2026-01-06
+
+### 🎨 עיצוב חדש - Ocean Theme
+
+**שדרוג מלא לעיצוב חזותי מודרני בצבעי כחול ים וקורל!**
+
+#### שינויים בעיצוב
+- **פלטת צבעים חדשה מלאה**:
+  - 🌊 Ocean Blue (`#1E88E5`) - צבע ראשי לפעולות עיקריות
+  - 🐠 Coral (`#FF6B6B`) - צבע משני למבטאים
+  - 🌅 Sunset Orange (`#FFA726`) - צבע נוסף להדגשות
+  - ⚪ Aqua Backgrounds (`#F5F7FA`) - רקע רך ונעים לעין
+
+- **דף הבית (HomePage)**:
+  - רקע גרדיאנט עדין עם אפקט זכוכית (glass effect)
+  - כרטיסי פעולה עם גרדיאנטים צבעוניים
+  - אפקט hover משופר עם הרמת כרטיס ב-3D
+  - אנימציית bounce לסטטוס המערכת
+  - כותרת עם gradient text effect
+  - Header שקוף עם backdrop blur
+
+- **דף התחברות (LoginPage)**:
+  - רקע גרדיאנט דינמי מכחול לתכלת
+  - כדורים מטושטשים נעים ברקע (animated blobs)
+  - אנימציית float לאייקון הדג
+  - שדות קלט מעוצבים עם border gradient
+  - כפתורים עם אפקטי hover משודרגים
+  - קופסת התחברות שקופה עם backdrop blur
+
+#### שיפורים טכניים
+- **Tailwind Config**: הוספת פלטת צבעים מלאה עם 9 גוונים לכל צבע
+- **Animations**:
+  - `wave` - אנימציית גלים
+  - `shimmer` - אפקט ברק
+  - `float` משופר
+- **Shadows**: צללים מותאמים אישית (`shadow-card`, `shadow-card-hover`, `shadow-soft`)
+- **CSS Variables**: משתנים חדשים ב-`:root` לשימוש קל
+- **Gradient Classes**: `gradient-ocean`, `gradient-coral`, `gradient-sunset`
+
+#### קבצים שעודכנו
+- [tailwind.config.js](fish-stock-list/tailwind.config.js) - הגדרת פלטת צבעים ואנימציות
+- [src/index.css](fish-stock-list/src/index.css) - משתני CSS ומחלקות גלובליות
+- [src/pages/HomePage.jsx](fish-stock-list/src/pages/HomePage.jsx) - עיצוב מלא מחדש
+- [src/pages/LoginPage.jsx](fish-stock-list/src/pages/LoginPage.jsx) - עיצוב מלא מחדש
+
+---
+
 ## [1.15.0] - 2026-01-06
 
 ### תכונות חדשות ✨
