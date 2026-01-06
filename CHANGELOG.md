@@ -1,5 +1,26 @@
 # יומן שינויים - Fish Stock Management System
 
+## [1.13.3] - 2026-01-04
+
+### שיפורים 🔧
+- **פישוט ייבוא Excel**: הוסרה דרישת עמודת מטבע (Currency)
+  - המטבע תמיד יהיה שקלים (ILS) באופן אוטומטי
+  - עכשיו רק 9 עמודות במקום 10
+  - חוויית שימוש פשוטה יותר - פחות טעויות
+  - העמודות הנדרשות:
+    1. Code (אופציונלי)
+    2. Cart
+    3. Scientific Name
+    4. Common Name
+    5. Size
+    6. Bags
+    7. Qty/Bag
+    8. Total
+    9. Price
+  - נוצר קובץ לדוגמה חדש: fish-import-simple.xlsx
+
+---
+
 ## [1.13.2] - 2026-01-04
 
 ### תיקוני באגים 🐛

@@ -68,11 +68,7 @@ function validateRow(row) {
     warnings.push({ field: 'price', message: 'Price seems unusually high' })
   }
 
-  // Currency validation
-  const currency = row.currency?.toUpperCase()
-  if (!['ILS', 'USD'].includes(currency)) {
-    errors.push({ field: 'currency', message: 'Currency must be ILS or USD' })
-  }
+  // Currency - always ILS (no validation needed)
 
   // Calculation check: bags × qtyPerBag should equal total
   if (!isNaN(row.bags) && !isNaN(row.qtyPerBag) && !isNaN(row.total)) {
@@ -142,7 +138,7 @@ export async function parseShipmentExcel(file) {
         qtyPerBag: parseInt(row['Qty/Bag']),
         total: parseInt(row['Total']),
         price: parseFloat(row['Price']),
-        currency: row['Currency']?.toUpperCase(),
+        currency: 'ILS', // Always ILS - no need for user to specify
 
         // Optional fields
         packingRatio: row['Packing Ratio'] || null,
