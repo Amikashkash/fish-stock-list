@@ -23,6 +23,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
     scientificName: '',
     size: '',
     quantity: '',
+    price: '',
     source: 'local_delivery',
     notes: '',
   })
@@ -89,6 +90,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
         scientificName: newFish.scientificName,
         size: newFish.size,
         quantity: newFish.quantity || 1,
+        price: newFish.price ? parseFloat(newFish.price) : null,
         source: newFish.source,
         notes: newFish.notes,
         aquariumId: aquarium.aquariumId, // Assign to this aquarium immediately
@@ -100,6 +102,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
         scientificName: '',
         size: '',
         quantity: '',
+        price: '',
         source: 'local_delivery',
         notes: '',
       })
@@ -399,6 +402,19 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                         min="1"
                         value={newFish.quantity}
                         onChange={(e) => setNewFish({ ...newFish, quantity: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                        disabled={loading}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-700">מחיר ליחידה (₪)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={newFish.price}
+                        onChange={(e) => setNewFish({ ...newFish, price: e.target.value })}
+                        placeholder="אופציונלי"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
                         disabled={loading}
                       />

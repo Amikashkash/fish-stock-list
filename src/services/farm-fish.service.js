@@ -82,6 +82,7 @@ export async function addFarmFish(farmId, fishData) {
       scientificName: fishData.scientificName,
       size: fishData.size,
       quantity: fishData.quantity || 1,
+      price: fishData.price || null,
       source: fishData.source,
       notes: fishData.notes || '',
       aquariumId: fishData.aquariumId || null,
