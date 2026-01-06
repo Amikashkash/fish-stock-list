@@ -1,5 +1,7 @@
 # Fish Farm Management System - Architecture
 
+
+
 ## Technology Stack
 
 ### Frontend

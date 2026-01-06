@@ -10,10 +10,11 @@ import {
   validateTaskWarnings,
   finalizeTransferPlan,
   deleteTransferPlan,
+  deleteTransferTask,
 } from '../../../services/transfer-plan.service'
 import WarningDialog from './WarningDialog'
 
-function TransferPlanModal({ isOpen, onClose, onSuccess }) {
+function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) {
   const { currentFarm, user } = useFarm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -23,6 +24,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
   const [currentPlan, setCurrentPlan] = useState(null)
   const [planName, setPlanName] = useState('')
   const [tasks, setTasks] = useState([])
+  const [isEditMode, setIsEditMode] = useState(false)
 
   // Selection state
   const [aquariums, setAquariums] = useState([])
@@ -56,12 +58,34 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
     if (currentFarm && isOpen) {
       loadAquariums()
       loadAllFish()
-      initializePlan()
+
+      // If existingPlan provided, load it for editing
+      if (existingPlan) {
+        loadExistingPlan()
+      } else {
+        initializePlan()
+      }
     }
-  }, [currentFarm, isOpen])
+  }, [currentFarm, isOpen, existingPlan])
+
+  async function loadExistingPlan() {
+    try {
+      setIsEditMode(true)
+      setCurrentPlan(existingPlan.planId)
+      setPlanName(existingPlan.planName || 'תוכנית ללא שם')
+
+      // Load existing tasks
+      const taskList = await getTransferTasks(currentFarm.farmId, existingPlan.planId)
+      setTasks(taskList)
+    } catch (err) {
+      console.error('Error loading existing plan:', err)
+      setError('שגיאה בטעינת התוכנית')
+    }
+  }
 
   async function initializePlan() {
     try {
+      setIsEditMode(false)
       const date = new Date().toLocaleDateString('he-IL')
       const defaultName = `תוכנית העברה - ${date}`
       setPlanName(defaultName)
@@ -406,11 +430,36 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
     }
   }
 
+  async function handleDeleteTask(taskId) {
+    if (!currentPlan) return
+
+    if (!confirm('האם אתה בטוח שברצונך למחוק משימה זו?')) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      await deleteTransferTask(currentFarm.farmId, currentPlan, taskId)
+
+      // Reload tasks to update the list
+      const updatedTasks = await getTransferTasks(currentFarm.farmId, currentPlan)
+      setTasks(updatedTasks)
+
+      setError('')
+    } catch (err) {
+      console.error('Error deleting task:', err)
+      setError('שגיאה במחיקת המשימה')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   function handleClose() {
     setStep(1)
     setCurrentPlan(null)
     setPlanName('')
     setTasks([])
+    setIsEditMode(false)
     setSelectedSourceAquarium(null)
     setSelectedFish(null)
     setSelectedDestAquarium(null)
@@ -487,11 +536,11 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
           <div className="px-6 pt-6 pb-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
             <div>
               <h2 className="m-0 text-[22px] font-semibold text-gray-900">
-                תכנון העברות דגים
+                {isEditMode ? 'עריכת תוכנית העברות' : 'תכנון העברות דגים'}
               </h2>
               {currentPlan && (
                 <p className="text-sm text-gray-600 mt-1">
-                  {tasks.length} משימות בתוכנית
+                  {isEditMode && '📝 '}{tasks.length} משימות בתוכנית
                 </p>
               )}
             </div>
@@ -535,16 +584,28 @@ function TransferPlanModal({ isOpen, onClose, onSuccess }) {
                 </h3>
                 <div className="space-y-2 max-h-[150px] overflow-y-auto">
                   {tasks.map((task, index) => (
-                    <div key={task.taskId} className="text-xs bg-white p-2 rounded border border-blue-100">
-                      <span className="font-bold text-blue-700">#{index + 1}</span>{' '}
-                      {task.fishName} ({task.quantity}) →{' '}
-                      {task.isShipment ? (
-                        <span className="font-semibold text-orange-600">📦 משלוח</span>
-                      ) : (
-                        <>אקווריום {task.targetAquariumNumber} ({task.targetRoom})</>
-                      )}
-                      {task.notes && (
-                        <div className="text-purple-700 mt-1 italic">📝 {task.notes}</div>
+                    <div key={task.taskId} className="text-xs bg-white p-2 rounded border border-blue-100 flex justify-between items-start">
+                      <div className="flex-1">
+                        <span className="font-bold text-blue-700">#{index + 1}</span>{' '}
+                        {task.fishName} ({task.quantity}) →{' '}
+                        {task.isShipment ? (
+                          <span className="font-semibold text-orange-600">📦 משלוח</span>
+                        ) : (
+                          <>אקווריום {task.targetAquariumNumber} ({task.targetRoom})</>
+                        )}
+                        {task.notes && (
+                          <div className="text-purple-700 mt-1 italic">📝 {task.notes}</div>
+                        )}
+                      </div>
+                      {isEditMode && (
+                        <button
+                          onClick={() => handleDeleteTask(task.taskId)}
+                          className="mr-2 text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
+                          title="מחק משימה"
+                          disabled={loading}
+                        >
+                          🗑️
+                        </button>
                       )}
                     </div>
                   ))}
