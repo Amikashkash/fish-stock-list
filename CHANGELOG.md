@@ -1,5 +1,25 @@
 # יומן שינויים - Fish Stock Management System
 
+## [1.14.1] - 2026-01-04
+
+### תיקוני באגים 🐛
+- **תוקן: שגיאה בביצוע העברות**: תוקנה שגיאת "Unsupported field value: undefined"
+  - בעיה: שדה `shipmentReference` עם ערך undefined נשמר ל-Firestore
+  - Firestore לא מאפשר ערכי undefined
+  - פתרון: מסננים ומוחקים שדות undefined לפני שמירה
+  - reception.service.js: הוספת בדיקה למחיקת undefined values
+  - עכשיו ביצוע העברות עובד ללא שגיאות
+- **פרסום אינדקסים**: פורסם אינדקס Firebase לשאילתות transfer_tasks
+  - פותר שגיאת "The query requires an index"
+  - אינדקס מורכב על planId + order
+  - טעינת משימות בביצוע העברות עובדת
+
+### שיפורים 🔧
+- שיפור טיפול בשדות אופציונליים ב-updateReceptionPlan
+- מניעת שגיאות Firestore עם ערכים לא חוקיים
+
+---
+
 ## [1.14.0] - 2026-01-04
 
 ### תכונות חדשות ✨

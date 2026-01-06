@@ -232,6 +232,13 @@ export async function updateReceptionPlan(farmId, planId, updates) {
       updatedAt: Timestamp.now(),
     }
 
+    // Remove undefined values - Firestore doesn't allow them
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key]
+      }
+    })
+
     if (updates.expectedDate) {
       updateData.expectedDate = Timestamp.fromDate(new Date(updates.expectedDate))
     }
