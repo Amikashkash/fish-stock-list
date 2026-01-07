@@ -166,33 +166,59 @@ function AquariumAssignmentModal({
                               <div className="space-y-2 max-h-48 overflow-y-auto">
                                 {aquariums.map((aquarium) => {
                                   const shelfLabel = SHELF_LABELS[aquarium.shelf] || aquarium.shelf
+
+                                  // Check if this aquarium is already assigned to another fish in this plan
+                                  const assignedItem = assignedItems.find(
+                                    (i) => i.targetAquariumId === aquarium.aquariumId
+                                  )
+                                  const isAssignedInPlan = !!assignedItem
+                                  const isOccupied = aquarium.status === 'occupied'
+
                                   return (
                                     <button
                                       key={aquarium.aquariumId}
-                                      onClick={() =>
+                                      onClick={() => {
+                                        if (isAssignedInPlan) {
+                                          const confirmMsg = `⚠️ אזהרה: אקווריום ${aquarium.aquariumNumber} כבר מיועד ל-${assignedItem.hebrewName}!\n\nהאם אתה בטוח שברצונך להקצות אותו גם ל-${item.hebrewName}?\n(שני דגים באותו אקווריום)`
+                                          if (!confirm(confirmMsg)) {
+                                            return
+                                          }
+                                        }
                                         handleAssignAquarium(
                                           item.itemId,
                                           aquarium.aquariumId,
                                           aquarium.aquariumNumber
                                         )
-                                      }
+                                      }}
                                       className={`w-full p-2 rounded text-xs transition-all text-left ${
-                                        aquarium.status === 'occupied'
+                                        isOccupied
                                           ? 'bg-red-100 text-red-700 opacity-60 cursor-not-allowed'
+                                          : isAssignedInPlan
+                                          ? 'bg-orange-100 text-orange-800 border-2 border-orange-400 hover:bg-orange-200'
                                           : 'bg-green-100 text-green-700 hover:bg-green-200'
                                       }`}
-                                      disabled={aquarium.status === 'occupied'}
+                                      disabled={isOccupied}
                                     >
                                       <div className="font-semibold flex justify-between items-center">
                                         <span>#{aquarium.aquariumNumber}</span>
-                                        {aquarium.status === 'occupied' && (
+                                        {isOccupied && (
                                           <span className="text-xs">(תפוס)</span>
+                                        )}
+                                        {isAssignedInPlan && (
+                                          <span className="text-xs bg-orange-200 px-1.5 py-0.5 rounded">
+                                            ⚠️ מיועד
+                                          </span>
                                         )}
                                       </div>
                                       <div className="text-xs opacity-75 mt-1 flex gap-2">
                                         <span>📏 {aquarium.volume}L</span>
                                         <span>📍 {shelfLabel}</span>
                                       </div>
+                                      {isAssignedInPlan && (
+                                        <div className="text-xs mt-1 font-semibold">
+                                          → {assignedItem.hebrewName}
+                                        </div>
+                                      )}
                                     </button>
                                   )
                                 })}
