@@ -95,15 +95,11 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
       const defaultName = `תוכנית העברה - ${date}`
       setPlanName(defaultName)
 
-      // Create plan immediately when opening modal
-      const result = await createTransferPlan(currentFarm.farmId, {
-        planName: defaultName,
-        createdBy: user?.email || 'unknown',
-      })
-      setCurrentPlan(result.planId)
+      // Don't create plan immediately - wait until first task is added
+      // This prevents creating empty plans when user just opens and closes the modal
+      setCurrentPlan(null)
     } catch (err) {
       console.error('Error initializing plan:', err)
-      // If plan creation fails, just set the name (plan will be created on first task)
       setError('')
     }
   }
@@ -257,11 +253,23 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
       return
     }
 
-    // Plan should already exist from initializePlan
-    const planId = currentPlan
+    // Create plan if it doesn't exist yet (first task being added)
+    let planId = currentPlan
     if (!planId) {
-      setError('לא נמצאה תוכנית פעילה')
-      return
+      try {
+        setLoading(true)
+        const result = await createTransferPlan(currentFarm.farmId, {
+          planName: planName || `תוכנית העברה - ${new Date().toLocaleDateString('he-IL')}`,
+          createdBy: user?.email || 'unknown',
+        })
+        planId = result.planId
+        setCurrentPlan(planId)
+      } catch (err) {
+        console.error('Error creating plan:', err)
+        setError('שגיאה ביצירת תוכנית')
+        setLoading(false)
+        return
+      }
     }
 
     // Prepare task data
@@ -473,7 +481,18 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
     }
   }
 
-  function handleClose() {
+  async function handleClose() {
+    // Auto-delete empty plans to prevent clutter
+    if (currentPlan && tasks.length === 0 && !isEditMode) {
+      try {
+        await deleteTransferPlan(currentFarm.farmId, currentPlan)
+        console.log('Auto-deleted empty plan:', currentPlan)
+      } catch (err) {
+        console.error('Error auto-deleting empty plan:', err)
+        // Don't show error to user - just log it
+      }
+    }
+
     setStep(1)
     setCurrentPlan(null)
     setPlanName('')
