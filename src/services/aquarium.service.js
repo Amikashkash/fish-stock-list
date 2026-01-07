@@ -141,6 +141,41 @@ export async function updateAquarium(farmId, aquariumId, updates) {
 }
 
 /**
+ * Fix all aquarium statuses - one-time repair function
+ * Recalculates status for ALL aquariums based on actual fish count
+ * @param {string} farmId - Farm ID
+ * @returns {Promise<{fixed: number, errors: number}>}
+ */
+export async function fixAllAquariumStatuses(farmId) {
+  try {
+    // Import updateAquariumStatus from farm-fish service
+    const { updateAquariumStatus } = await import('./farm-fish.service')
+
+    // Get all aquariums
+    const aquariums = await getAquariums(farmId)
+
+    let fixed = 0
+    let errors = 0
+
+    // Update status for each aquarium
+    for (const aquarium of aquariums) {
+      try {
+        await updateAquariumStatus(farmId, aquarium.aquariumId)
+        fixed++
+      } catch (err) {
+        console.error(`Error fixing aquarium ${aquarium.aquariumNumber}:`, err)
+        errors++
+      }
+    }
+
+    return { fixed, errors, total: aquariums.length }
+  } catch (error) {
+    console.error('Error fixing all aquarium statuses:', error)
+    throw error
+  }
+}
+
+/**
  * Deletes an aquarium
  * @param {string} farmId - Farm ID
  * @param {string} aquariumId - Aquarium ID

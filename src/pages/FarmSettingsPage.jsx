@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFarm } from '../contexts/FarmContext'
 import { updateFarm } from '../services/farm.service'
-import { getAquariums } from '../services/aquarium.service'
+import { getAquariums, fixAllAquariumStatuses } from '../services/aquarium.service'
 import { getCurrentVersion, clearCacheAndReload, isNewVersionAvailable } from '../services/version.service'
 
 function FarmSettingsPage() {
@@ -17,6 +17,7 @@ function FarmSettingsPage() {
   const [message, setMessage] = useState({ type: '', text: '' })
   const [checkingUpdates, setCheckingUpdates] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState(false)
+  const [fixingAquariums, setFixingAquariums] = useState(false)
 
   // Load aquariums to check for location usage
   useEffect(() => {
@@ -52,6 +53,37 @@ function FarmSettingsPage() {
 
   async function handleUpdateNow() {
     await clearCacheAndReload()
+  }
+
+  async function handleFixAquariumStatuses() {
+    if (!confirm('פעולה זו תתקן את סטטוס כל האקווריומים בחווה על בסיס ספירת דגים בפועל.\n\nהאם להמשיך?')) {
+      return
+    }
+
+    setFixingAquariums(true)
+    setMessage({ type: '', text: '' })
+
+    try {
+      const result = await fixAllAquariumStatuses(currentFarm.farmId)
+
+      // Reload aquariums to show updated statuses
+      await loadAquariums()
+
+      setMessage({
+        type: 'success',
+        text: `✓ תוקנו ${result.fixed} אקווריומים בהצלחה! (${result.errors} שגיאות)`
+      })
+
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
+    } catch (error) {
+      console.error('Error fixing aquarium statuses:', error)
+      setMessage({
+        type: 'error',
+        text: 'שגיאה בתיקון סטטוס אקווריומים. נסה שוב.'
+      })
+    } finally {
+      setFixingAquariums(false)
+    }
   }
 
   async function loadAquariums() {
@@ -346,6 +378,37 @@ function FarmSettingsPage() {
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">הגדרות אפליקציה</h2>
           <p className="text-[15px] text-gray-600">
             בדוק עדכונים והגדרות כלליות
+          </p>
+        </div>
+
+        {/* Aquarium Status Fix */}
+        <div className="bg-orange-50 rounded-xl p-5 mb-6 border-2 border-orange-200">
+          <div className="mb-4">
+            <p className="text-sm font-semibold text-orange-800 mb-1">🔧 תיקון סטטוס אקווריומים</p>
+            <p className="text-sm text-orange-700">
+              אם יש אקווריומים המוצגים כ"תפוסים" למרות שהם ריקים, לחץ על הכפתור למטה לתקן אוטומטית.
+            </p>
+          </div>
+
+          <button
+            onClick={handleFixAquariumStatuses}
+            disabled={fixingAquariums}
+            className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          >
+            {fixingAquariums ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                מתקן סטטוס אקווריומים...
+              </>
+            ) : (
+              <>
+                🔄 תקן סטטוס כל האקווריומים
+              </>
+            )}
+          </button>
+
+          <p className="text-xs text-orange-600 mt-3">
+            פעולה זו תספור את הדגים בכל אקווריום ותעדכן את הסטטוס בהתאם (ריק/תפוס)
           </p>
         </div>
 
