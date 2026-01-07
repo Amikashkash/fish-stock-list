@@ -1,5 +1,25 @@
 # יומן שינויים - Fish Stock Management System
 
+## [1.18.3] - 2026-01-07
+
+### תיקוני באגים 🐛
+- **תיקון: סטטוס אקווריום נשאר "תפוס" אחרי סיום משימות העברה**:
+  - **הבעיה**: כשמבצעים משימת העברה מתוכנית העברות, הדגים עוברים אבל סטטוס האקווריום נשאר "תפוס" למרות שהוא ריק
+  - **הסיבה**: הפונקציה `executeTransferTask` השתמשה ב-`batch.update` ישירות, שלא מפעיל את העדכון האוטומטי של סטטוס האקווריום
+  - **הפתרון**:
+    - הוספת קריאה ידנית ל-`updateAquariumStatus` עבור **שני** האקווריומים (מקור ויעד)
+    - האקווריום מקור מתעדכן ל-`empty` כשאין בו יותר דגים
+    - האקווריום יעד מתעדכן ל-`occupied` כשיש בו דגים
+  - עכשיו הסטטוס מתעדכן **אוטומטית ונכון** בכל ביצוע משימת העברה
+
+### שינויים טכניים 🔧
+- שינוי `executeTransferTask()` - הוספת עדכון סטטוס אקווריומים אחרי batch.commit
+- קריאה ל-`updateAquariumStatus` עבור source aquarium (אקווריום מקור)
+- קריאה ל-`updateAquariumStatus` עבור target aquarium (אקווריום יעד, רק אם לא משלוח)
+- התגובות בקוד עודכנו להיות מדויקות
+
+---
+
 ## [1.18.2] - 2026-01-07
 
 ### תיקוני UX 🔧

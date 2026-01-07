@@ -451,7 +451,19 @@ export async function executeTransferTask(farmId, taskId) {
 
     await batch.commit()
 
-    // Note: Aquarium status will be updated automatically by the farm-fish service
+    // Update aquarium statuses manually since we used batch.update
+    // (batch.update doesn't trigger the automatic status update in farm-fish service)
+    const { updateAquariumStatus } = await import('./farm-fish.service')
+
+    // Update source aquarium status (now has one less fish or empty)
+    if (task.sourceAquariumId) {
+      await updateAquariumStatus(farmId, task.sourceAquariumId)
+    }
+
+    // Update destination aquarium status (now has one more fish or occupied)
+    if (task.targetAquariumId && task.targetAquariumId !== 'SHIPMENT') {
+      await updateAquariumStatus(farmId, task.targetAquariumId)
+    }
 
     return { success: true }
   } catch (error) {
