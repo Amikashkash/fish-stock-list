@@ -877,13 +877,13 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
           </div>
 
           {/* Fixed Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex gap-3 justify-between flex-shrink-0 bg-white rounded-b-2xl">
-            <div className="flex gap-2">
+          <div className="px-4 sm:px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3 sm:justify-between flex-shrink-0 bg-white rounded-b-2xl">
+            <div className="flex gap-2 flex-wrap">
               {step > 1 && (
                 <button
                   type="button"
                   onClick={goBack}
-                  className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-gray-100 text-gray-900 hover:bg-gray-200"
+                  className="px-4 sm:px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-gray-100 text-gray-900 hover:bg-gray-200"
                   disabled={loading}
                 >
                   ← חזור
@@ -893,29 +893,29 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
                 <button
                   type="button"
                   onClick={handleDeletePlan}
-                  className="px-4 py-3 rounded-lg text-[15px] font-semibold transition-all bg-red-50 text-red-600 hover:bg-red-100"
+                  className="px-3 sm:px-4 py-3 rounded-lg text-[15px] font-semibold transition-all bg-red-50 text-red-600 hover:bg-red-100"
                   disabled={loading}
                 >
                   🗑️ מחק תוכנית
                 </button>
               )}
             </div>
-            <div className="flex gap-3 items-center">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-gray-100 text-gray-900 hover:bg-gray-200"
+                className="px-4 sm:px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-gray-100 text-gray-900 hover:bg-gray-200 order-last sm:order-none"
                 disabled={loading}
               >
                 ביטול
               </button>
               {step === 3 && !isShipment && (
-                <label className="flex items-center gap-2 cursor-pointer bg-green-50 px-4 py-2.5 rounded-lg border border-green-300 hover:bg-green-100 transition-colors">
+                <label className="flex items-center gap-2 cursor-pointer bg-green-50 px-3 sm:px-4 py-2.5 rounded-lg border border-green-300 hover:bg-green-100 transition-colors">
                   <input
                     type="checkbox"
                     checked={executeImmediately}
                     onChange={(e) => setExecuteImmediately(e.target.checked)}
-                    className="w-4 h-4 cursor-pointer accent-green-600"
+                    className="w-4 h-4 cursor-pointer accent-green-600 flex-shrink-0"
                     disabled={loading}
                   />
                   <span className="text-sm font-semibold text-green-800">
@@ -927,7 +927,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
                 <button
                   type="button"
                   onClick={handleAddTask}
-                  className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                  className="px-4 sm:px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
                   disabled={loading || (!isShipment && !selectedDestAquarium) || !transferQuantity}
                 >
                   {loading ? (executeImmediately ? 'מבצע העברה...' : 'מוסיף...') : (executeImmediately ? '✓ בצע העברה' : '➕ הוסף למשימות')}
@@ -937,7 +937,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
                 <button
                   type="button"
                   onClick={handleFinalizePlan}
-                  className="px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+                  className="px-4 sm:px-6 py-3 rounded-lg text-[15px] font-semibold transition-all bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
                   disabled={loading}
                 >
                   {loading ? 'משלים...' : '✓ סיים תכנון'}
