@@ -76,7 +76,7 @@ export async function getFarmFish(farmId) {
  */
 export async function addFarmFish(farmId, fishData) {
   try {
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), {
+    const fishDoc = {
       farmId,
       hebrewName: fishData.hebrewName,
       scientificName: fishData.scientificName,
@@ -87,7 +87,14 @@ export async function addFarmFish(farmId, fishData) {
       notes: fishData.notes || '',
       aquariumId: fishData.aquariumId || null,
       createdAt: serverTimestamp(),
-    })
+    }
+
+    // Add priceUpdatedAt if price is provided
+    if (fishData.priceUpdatedAt) {
+      fishDoc.priceUpdatedAt = fishData.priceUpdatedAt
+    }
+
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), fishDoc)
 
     // Update aquarium status if assigned
     if (fishData.aquariumId) {

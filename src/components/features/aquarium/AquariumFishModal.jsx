@@ -91,6 +91,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
         size: newFish.size,
         quantity: newFish.quantity || 1,
         price: newFish.price ? parseFloat(newFish.price) : null,
+        priceUpdatedAt: newFish.price ? new Date().toISOString() : null,
         source: newFish.source,
         notes: newFish.notes,
         aquariumId: aquarium.aquariumId, // Assign to this aquarium immediately
@@ -315,6 +316,16 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                                 {fish.quantity} יח'
                               </div>
                               <div>גודל: {fish.size}</div>
+                              {fish.price && (
+                                <div className="text-green-700 font-semibold mt-1">
+                                  ₪{fish.price.toFixed(2)} ליחידה
+                                </div>
+                              )}
+                              {fish.priceUpdatedAt && (
+                                <div className="text-xs text-gray-500">
+                                  מחיר עודכן: {new Date(fish.priceUpdatedAt).toLocaleDateString('he-IL')}
+                                </div>
+                              )}
                               {fish.notes && <div className="text-gray-600 mt-1">📝 {fish.notes}</div>}
                             </div>
                             <div className="flex gap-2">
@@ -418,6 +429,9 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
                         disabled={loading}
                       />
+                      <div className="text-xs text-gray-500 mt-1">
+                        תאריך העדכון יירשם אוטומטית
+                      </div>
                     </div>
                   </div>
                   <div className="mb-3">

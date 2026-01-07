@@ -1,5 +1,39 @@
 # יומן שינויים - Fish Stock Management System
 
+## [1.17.0] - 2026-01-07
+
+### תכונות חדשות ✨
+- **מעקב מחיר עם תאריך עדכון**: כעת ניתן לרשום מחיר לכל דג עם מעקב אחר תאריך העדכון
+  - שדה "מחיר ליחידה (₪)" בטופס הוספת דג לתוכנית קליטה
+  - שדה "מחיר ליחידה (₪)" בטופס הוספת דג באקווריום
+  - תאריך העדכון נשמר אוטומטית בכל פעם שמעדכנים מחיר
+  - תצוגת מחיר ותאריך עדכון בכל רשימות הדגים
+  - שימושי לחישובי תמחור - למשל דג שגדל 2 ס"מ במשך חודשיים, ניתן להוסיף את עלות הגידול והשהייה
+
+- **UI לעריכת תוכניות העברות**: הוספת גישה נוחה לעריכת תוכניות העברות
+  - כפתור חדש "רשימת תוכניות" בדף הבית
+  - רשימה מלאה של כל תוכניות ההעברות הקיימות
+  - אפשרות לערוך או למחוק תוכניות
+  - תצוגת סטטוס, מספר משימות, וסטטיסטיקות לכל תוכנית
+
+### שיפורים טכניים 🔧
+- **FishListManagementModal**: הוספת שדה מחיר ותאריך עדכון
+- **AquariumFishModal**: הוספת תאריך עדכון למחיר קיים
+- **reception.service**: עדכון לטיפול בשדות `price` ו-`priceUpdatedAt`
+- **farm-fish.service**: עדכון לשמירת תאריך עדכון מחיר
+- **TransferPlansListModal**: קומפוננטה חדשה לניהול תוכניות העברות
+- **HomePage**: הוספת קישור לרשימת תוכניות העברות
+
+### קבצים שעודכנו
+- [src/components/features/reception/FishListManagementModal.jsx](src/components/features/reception/FishListManagementModal.jsx)
+- [src/components/features/aquarium/AquariumFishModal.jsx](src/components/features/aquarium/AquariumFishModal.jsx)
+- [src/services/reception.service.js](src/services/reception.service.js)
+- [src/services/farm-fish.service.js](src/services/farm-fish.service.js)
+- [src/components/features/transfer-plan/TransferPlansListModal.jsx](src/components/features/transfer-plan/TransferPlansListModal.jsx) - חדש
+- [src/pages/HomePage.jsx](src/pages/HomePage.jsx)
+
+---
+
 ## [1.16.0] - 2026-01-06
 
 ### 🎨 עיצוב חדש - Ocean Theme

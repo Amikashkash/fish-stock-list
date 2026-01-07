@@ -307,6 +307,14 @@ export async function addReceptionItem(farmId, itemData) {
       updatedAt: Timestamp.now(),
     }
 
+    // Add optional price fields
+    if (itemData.price !== null && itemData.price !== undefined) {
+      item.price = itemData.price
+    }
+    if (itemData.priceUpdatedAt) {
+      item.priceUpdatedAt = Timestamp.fromDate(new Date(itemData.priceUpdatedAt))
+    }
+
     await setDoc(itemRef, item)
 
     // Update plan item count
@@ -346,6 +354,7 @@ export async function getReceptionItems(farmId, planId) {
         ...data,
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate(),
+        priceUpdatedAt: data.priceUpdatedAt?.toDate(),
       })
     })
 
@@ -366,10 +375,17 @@ export async function updateReceptionItem(farmId, itemId, updates) {
   try {
     const itemRef = doc(db, 'farms', farmId, 'reception_items', itemId)
 
-    await updateDoc(itemRef, {
+    const updateData = {
       ...updates,
       updatedAt: Timestamp.now(),
-    })
+    }
+
+    // Convert priceUpdatedAt to Timestamp if present
+    if (updates.priceUpdatedAt) {
+      updateData.priceUpdatedAt = Timestamp.fromDate(new Date(updates.priceUpdatedAt))
+    }
+
+    await updateDoc(itemRef, updateData)
   } catch (error) {
     console.error('Error updating reception item:', error)
     throw error
@@ -427,7 +443,7 @@ export async function receiveItem(farmId, itemId) {
     }
 
     // Create fish instance
-    const fishInstance = await createFishInstance(farmId, {
+    const fishInstanceData = {
       code: item.code,
       scientificName: item.scientificName,
       commonName: item.hebrewName,
@@ -436,7 +452,17 @@ export async function receiveItem(farmId, itemId) {
       quantity: item.quantity,
       arrivalDate: new Date(),
       notes: item.notes,
-    })
+    }
+
+    // Add price data if available
+    if (item.price !== null && item.price !== undefined) {
+      fishInstanceData.price = item.price
+    }
+    if (item.priceUpdatedAt) {
+      fishInstanceData.priceUpdatedAt = item.priceUpdatedAt.toDate()
+    }
+
+    const fishInstance = await createFishInstance(farmId, fishInstanceData)
 
     // Update aquarium with new fish
     const aquarium = await getAquarium(farmId, item.targetAquariumId)

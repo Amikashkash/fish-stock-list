@@ -29,6 +29,7 @@ function FishListManagementModal({
     code: '',
     boxNumber: '',
     boxPortion: '',
+    price: '',
   })
 
   const [editItem, setEditItem] = useState(null)
@@ -73,6 +74,8 @@ function FishListManagementModal({
         code: newItem.code,
         boxNumber: newItem.boxNumber,
         boxPortion: newItem.boxPortion,
+        price: newItem.price ? parseFloat(newItem.price) : null,
+        priceUpdatedAt: newItem.price ? new Date().toISOString() : null,
         targetRoom: plan?.targetRoom || '',
         targetAquariumId: null,
         targetAquariumNumber: '',
@@ -86,6 +89,7 @@ function FishListManagementModal({
         code: '',
         boxNumber: '',
         boxPortion: '',
+        price: '',
       })
       setIsAdding(false)
       if (onItemsChanged) onItemsChanged()
@@ -114,6 +118,8 @@ function FishListManagementModal({
         code: editItem.code,
         boxNumber: editItem.boxNumber,
         boxPortion: editItem.boxPortion,
+        price: editItem.price ? parseFloat(editItem.price) : null,
+        priceUpdatedAt: editItem.price ? new Date().toISOString() : editItem.priceUpdatedAt || null,
       })
       setEditingId(null)
       setEditItem(null)
@@ -236,6 +242,26 @@ function FishListManagementModal({
                       </div>
                       <div className="grid grid-cols-2 gap-3 mb-3">
                         <div>
+                          <label className="text-xs font-semibold text-gray-700">מחיר ליחידה (₪)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={editItem.price || ''}
+                            onChange={(e) => setEditItem({ ...editItem, price: e.target.value })}
+                            placeholder="אופציונלי"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                            disabled={loading}
+                          />
+                          {editItem.priceUpdatedAt && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              עודכן: {new Date(editItem.priceUpdatedAt).toLocaleDateString('he-IL')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
                           <label className="text-xs font-semibold text-gray-700">קוד/מספר קטלוג</label>
                           <input
                             type="text"
@@ -323,10 +349,20 @@ function FishListManagementModal({
                       </div>
                       <div className="flex gap-2 text-xs text-gray-600 mb-2">
                         <span>גודל: {item.size}</span>
+                        {item.price && (
+                          <span className="text-green-700 font-semibold">
+                            | ₪{item.price.toFixed(2)}
+                          </span>
+                        )}
                         {item.boxNumber && <span>| 📦 {item.boxNumber}</span>}
                         {item.boxPortion && <span>| 📊 {item.boxPortion}</span>}
                         {item.notes && <span>| 💡 {item.notes}</span>}
                       </div>
+                      {item.priceUpdatedAt && (
+                        <div className="text-xs text-gray-500 mb-2">
+                          מחיר עודכן: {new Date(item.priceUpdatedAt).toLocaleDateString('he-IL')}
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
@@ -409,6 +445,21 @@ function FishListManagementModal({
                       const num = parseInt(e.target.value) || ''
                       setNewItem({ ...newItem, quantity: num })
                     }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-700">מחיר ליחידה (₪)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
+                    placeholder="אופציונלי"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
                     disabled={loading}
                   />
