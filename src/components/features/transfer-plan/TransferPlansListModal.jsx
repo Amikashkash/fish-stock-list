@@ -21,9 +21,9 @@ function TransferPlansListModal({ isOpen, onClose }) {
     try {
       setLoading(true)
       const allPlans = await getTransferPlans(currentFarm.farmId)
-      // Show only planning and ready status plans
+      // Show all plans that are not completed or cancelled
       const editablePlans = allPlans.filter(
-        (plan) => plan.status === 'planning' || plan.status === 'ready'
+        (plan) => plan.status !== 'completed' && plan.status !== 'cancelled'
       )
       setPlans(editablePlans)
       setError('')
