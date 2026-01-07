@@ -8,7 +8,6 @@ import FishTransferModal from '../components/features/transfer/FishTransferModal
 import ReceptionPlansModal from '../components/features/reception/ReceptionPlansModal'
 import TransferPlanModal from '../components/features/transfer-plan/TransferPlanModal'
 import TransferExecutionModal from '../components/features/transfer-plan/TransferExecutionModal'
-import TransferPlansListModal from '../components/features/transfer-plan/TransferPlansListModal'
 import { VERSION } from '../version'
 
 function HomePage() {
@@ -20,7 +19,6 @@ function HomePage() {
   const [showReceptionModal, setShowReceptionModal] = useState(false)
   const [showTransferPlanModal, setShowTransferPlanModal] = useState(false)
   const [showTransferExecutionModal, setShowTransferExecutionModal] = useState(false)
-  const [showTransferPlansListModal, setShowTransferPlansListModal] = useState(false)
 
   const handleSignOut = async () => {
     const confirmed = window.confirm('האם אתה בטוח שברצונך להתנתק?')
@@ -49,7 +47,6 @@ function HomePage() {
     { icon: '🐠', label: 'אקווריומים', gradient: 'from-aqua-400 to-aqua-600', action: 'aquariums' },
     { icon: '🔄', label: 'העברת דגים', gradient: 'from-coral-300 to-coral-500', action: 'transfer' },
     { icon: '📝', label: 'תכנון העברות', gradient: 'from-ocean-500 to-ocean-700', action: 'plan-transfers' },
-    { icon: '📋', label: 'רשימת תוכניות', gradient: 'from-purple-400 to-purple-600', action: 'view-plans' },
     { icon: '▶️', label: 'ביצוע העברות', gradient: 'from-aqua-500 to-ocean-500', action: 'execute-transfers' },
     { icon: '📥', label: 'ייבוא משלוח', gradient: 'from-green-400 to-green-600', action: 'import' },
     { icon: '🚚', label: 'משלוחים', gradient: 'from-sunset-300 to-sunset-500', action: 'shipments' },
@@ -65,8 +62,6 @@ function HomePage() {
       setShowReceptionModal(true)
     } else if (action === 'plan-transfers') {
       setShowTransferPlanModal(true)
-    } else if (action === 'view-plans') {
-      setShowTransferPlansListModal(true)
     } else if (action === 'execute-transfers') {
       setShowTransferExecutionModal(true)
     } else if (action === 'aquariums') {
@@ -201,12 +196,6 @@ function HomePage() {
         onSuccess={() => {
           // Refresh or do something after execution
         }}
-      />
-
-      {/* Transfer Plans List Modal */}
-      <TransferPlansListModal
-        isOpen={showTransferPlansListModal}
-        onClose={() => setShowTransferPlansListModal(false)}
       />
     </div>
   )

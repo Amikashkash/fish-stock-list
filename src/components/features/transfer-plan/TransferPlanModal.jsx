@@ -7,6 +7,7 @@ import {
   createTransferPlan,
   addTransferTask,
   getTransferTasks,
+  getTransferPlans,
   validateTaskWarnings,
   finalizeTransferPlan,
   deleteTransferPlan,
@@ -18,6 +19,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
   const { currentFarm, user } = useFarm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [viewMode, setViewMode] = useState('new') // new, open-plans, history
   const [step, setStep] = useState(1) // 1: select source, 2: select fish, 3: select destination
 
   // Plan state
@@ -25,6 +27,9 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
   const [planName, setPlanName] = useState('')
   const [tasks, setTasks] = useState([])
   const [isEditMode, setIsEditMode] = useState(false)
+
+  // Plans list state
+  const [allPlans, setAllPlans] = useState([])
 
   // Selection state
   const [aquariums, setAquariums] = useState([])
@@ -119,6 +124,20 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
       setAllFish(fish)
     } catch (err) {
       console.error('Error loading all fish:', err)
+    }
+  }
+
+  async function loadAllPlans() {
+    try {
+      setLoading(true)
+      const plans = await getTransferPlans(currentFarm.farmId)
+      setAllPlans(plans)
+      setError('')
+    } catch (err) {
+      console.error('Error loading plans:', err)
+      setError('שגיאה בטעינת תוכניות')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -533,23 +552,65 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-6 pt-6 pb-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
-            <div>
-              <h2 className="m-0 text-[22px] font-semibold text-gray-900">
-                {isEditMode ? 'עריכת תוכנית העברות' : 'תכנון העברות דגים'}
-              </h2>
-              {currentPlan && (
-                <p className="text-sm text-gray-600 mt-1">
-                  {isEditMode && '📝 '}{tasks.length} משימות בתוכנית
-                </p>
-              )}
+          <div className="px-6 pt-6 pb-2 border-b border-gray-200 flex-shrink-0">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="m-0 text-[22px] font-semibold text-gray-900">
+                  תכנון העברות דגים
+                </h2>
+                {currentPlan && viewMode === 'new' && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    {isEditMode && '📝 '}{tasks.length} משימות בתוכנית
+                  </p>
+                )}
+              </div>
+              <button
+                className="bg-transparent border-none text-[28px] leading-none text-gray-400 cursor-pointer p-0 w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-gray-100 hover:text-gray-700"
+                onClick={handleClose}
+              >
+                ×
+              </button>
             </div>
-            <button
-              className="bg-transparent border-none text-[28px] leading-none text-gray-400 cursor-pointer p-0 w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-gray-100 hover:text-gray-700"
-              onClick={handleClose}
-            >
-              ×
-            </button>
+
+            {/* Tabs */}
+            <div className="flex gap-1 border-b-2 border-gray-100">
+              <button
+                onClick={() => setViewMode('new')}
+                className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 ${
+                  viewMode === 'new'
+                    ? 'border-ocean-500 text-ocean-600'
+                    : 'border-transparent text-gray-600 hover:text-ocean-500'
+                }`}
+              >
+                ➕ תוכנית חדשה
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode('open-plans')
+                  loadAllPlans()
+                }}
+                className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 ${
+                  viewMode === 'open-plans'
+                    ? 'border-ocean-500 text-ocean-600'
+                    : 'border-transparent text-gray-600 hover:text-ocean-500'
+                }`}
+              >
+                📋 תוכניות פתוחות
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode('history')
+                  loadAllPlans()
+                }}
+                className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 ${
+                  viewMode === 'history'
+                    ? 'border-ocean-500 text-ocean-600'
+                    : 'border-transparent text-gray-600 hover:text-ocean-500'
+                }`}
+              >
+                📜 היסטוריה
+              </button>
+            </div>
           </div>
 
           {/* Scrollable Content */}
