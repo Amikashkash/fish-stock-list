@@ -621,8 +621,251 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
               </div>
             )}
 
-            {/* Plan name input (only if no plan yet) */}
-            {!currentPlan && step === 1 && (
+            {/* View Mode: Open Plans */}
+            {viewMode === 'open-plans' && (
+              <>
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+                  </div>
+                ) : (
+                  <>
+                    {allPlans.filter(
+                      (plan) => plan.status !== 'completed' && plan.status !== 'cancelled'
+                    ).length === 0 ? (
+                      <div className="text-center py-12 text-gray-500">
+                        <div className="text-5xl mb-3">📝</div>
+                        <div className="text-lg font-semibold text-gray-900 mb-1">
+                          אין תוכניות פתוחות
+                        </div>
+                        <p className="text-sm">צור תוכנית חדשה כדי להתחיל</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {allPlans
+                          .filter(
+                            (plan) => plan.status !== 'completed' && plan.status !== 'cancelled'
+                          )
+                          .map((plan) => (
+                            <div
+                              key={plan.planId}
+                              className="bg-white border-2 border-aqua-200 rounded-xl p-4 hover:shadow-card transition-all"
+                            >
+                              <div className="flex justify-between items-start mb-3">
+                                <div className="flex-1">
+                                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                                    {plan.planName}
+                                  </h3>
+                                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <span>📅 {new Date(plan.createdAt).toLocaleDateString('he-IL')}</span>
+                                    <span>•</span>
+                                    <span>👤 {plan.createdBy}</span>
+                                  </div>
+                                </div>
+                                <div
+                                  className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                                    plan.status === 'planning'
+                                      ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                                      : plan.status === 'ready'
+                                      ? 'bg-green-100 text-green-800 border-green-300'
+                                      : plan.status === 'in-progress'
+                                      ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                      : 'bg-gray-100 text-gray-800 border-gray-300'
+                                  }`}
+                                >
+                                  {plan.status === 'planning'
+                                    ? 'בתכנון'
+                                    : plan.status === 'ready'
+                                    ? 'מוכן לביצוע'
+                                    : plan.status === 'in-progress'
+                                    ? 'בביצוע'
+                                    : plan.status}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-4 text-sm mb-4">
+                                <div className="flex items-center gap-1">
+                                  <span className="font-semibold text-gray-700">משימות:</span>
+                                  <span className="text-gray-900">{plan.taskCount || 0}</span>
+                                </div>
+                                {plan.completedTaskCount > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-semibold text-green-700">הושלמו:</span>
+                                    <span className="text-green-900">{plan.completedTaskCount}</span>
+                                  </div>
+                                )}
+                                {plan.blockedTaskCount > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-semibold text-red-700">חסומות:</span>
+                                    <span className="text-red-900">{plan.blockedTaskCount}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {plan.notes && (
+                                <div className="text-sm text-gray-600 mb-4 italic">
+                                  {plan.notes}
+                                </div>
+                              )}
+
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      setLoading(true)
+                                      setIsEditMode(true)
+                                      setCurrentPlan(plan.planId)
+                                      setPlanName(plan.planName || 'תוכנית ללא שם')
+
+                                      // Load existing tasks
+                                      const taskList = await getTransferTasks(
+                                        currentFarm.farmId,
+                                        plan.planId
+                                      )
+                                      setTasks(taskList)
+
+                                      // Switch to new mode
+                                      setViewMode('new')
+                                      setStep(1)
+                                      setError('')
+                                    } catch (err) {
+                                      console.error('Error loading plan for editing:', err)
+                                      setError('שגיאה בטעינת התוכנית לעריכה')
+                                    } finally {
+                                      setLoading(false)
+                                    }
+                                  }}
+                                  className="flex-1 px-4 py-2 bg-gradient-to-r from-ocean-500 to-ocean-600 text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-all hover:from-ocean-600 hover:to-ocean-700 hover:shadow-md"
+                                  disabled={loading}
+                                >
+                                  ✏️ ערוך תוכנית
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    if (
+                                      !confirm(
+                                        'האם אתה בטוח שברצונך למחוק את התוכנית? כל המשימות יימחקו.'
+                                      )
+                                    ) {
+                                      return
+                                    }
+                                    try {
+                                      setLoading(true)
+                                      await deleteTransferPlan(currentFarm.farmId, plan.planId)
+                                      await loadAllPlans()
+                                      setError('')
+                                    } catch (err) {
+                                      console.error('Error deleting plan:', err)
+                                      setError('שגיאה במחיקת התוכנית')
+                                    } finally {
+                                      setLoading(false)
+                                    }
+                                  }}
+                                  className="px-4 py-2 bg-white text-red-600 border-2 border-red-300 rounded-lg text-sm font-semibold cursor-pointer transition-all hover:bg-red-50 hover:border-red-400"
+                                  disabled={loading}
+                                >
+                                  🗑️ מחק
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+
+            {/* View Mode: History */}
+            {viewMode === 'history' && (
+              <>
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+                  </div>
+                ) : (
+                  <>
+                    {allPlans.filter(
+                      (plan) => plan.status === 'completed' || plan.status === 'cancelled'
+                    ).length === 0 ? (
+                      <div className="text-center py-12 text-gray-500">
+                        <div className="text-5xl mb-3">📜</div>
+                        <div className="text-lg font-semibold text-gray-900 mb-1">
+                          אין היסטוריה
+                        </div>
+                        <p className="text-sm">תוכניות שהושלמו או בוטלו יופיעו כאן</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {allPlans
+                          .filter(
+                            (plan) => plan.status === 'completed' || plan.status === 'cancelled'
+                          )
+                          .map((plan) => (
+                            <div
+                              key={plan.planId}
+                              className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:shadow-card transition-all opacity-80"
+                            >
+                              <div className="flex justify-between items-start mb-3">
+                                <div className="flex-1">
+                                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                                    {plan.planName}
+                                  </h3>
+                                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <span>📅 {new Date(plan.createdAt).toLocaleDateString('he-IL')}</span>
+                                    <span>•</span>
+                                    <span>👤 {plan.createdBy}</span>
+                                  </div>
+                                </div>
+                                <div
+                                  className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                                    plan.status === 'completed'
+                                      ? 'bg-gray-100 text-gray-800 border-gray-300'
+                                      : 'bg-red-100 text-red-800 border-red-300'
+                                  }`}
+                                >
+                                  {plan.status === 'completed' ? 'הושלם' : 'בוטל'}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-4 text-sm mb-4">
+                                <div className="flex items-center gap-1">
+                                  <span className="font-semibold text-gray-700">משימות:</span>
+                                  <span className="text-gray-900">{plan.taskCount || 0}</span>
+                                </div>
+                                {plan.completedTaskCount > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-semibold text-green-700">הושלמו:</span>
+                                    <span className="text-green-900">{plan.completedTaskCount}</span>
+                                  </div>
+                                )}
+                                {plan.blockedTaskCount > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-semibold text-red-700">חסומות:</span>
+                                    <span className="text-red-900">{plan.blockedTaskCount}</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {plan.notes && (
+                                <div className="text-sm text-gray-600 mb-4 italic">
+                                  {plan.notes}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+
+            {/* View Mode: New Plan (existing functionality) */}
+            {viewMode === 'new' && (
+              <>
+                {/* Plan name input (only if no plan yet) */}
+                {!currentPlan && step === 1 && (
               <div className="mb-6">
                 <label className="block mb-2 font-semibold text-gray-900 text-sm">
                   שם התוכנית
@@ -934,6 +1177,8 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
                   </div>
                 )}
               </div>
+            )}
+              </>
             )}
           </div>
 
