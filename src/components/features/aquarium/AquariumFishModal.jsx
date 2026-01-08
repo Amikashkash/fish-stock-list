@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import { getPreviousFishNames } from '../../../services/reception.service'
 import { getFarmFish, addFarmFish, updateFarmFish, deleteFarmFish } from '../../../services/farm-fish.service'
+import { getFishByAquarium } from '../../../services/fish.service'
 
 const SOURCE_TYPES = {
   local_delivery: 'משלוח מקומי',
@@ -12,6 +13,7 @@ const SOURCE_TYPES = {
 function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   const { currentFarm } = useFarm()
   const [fishList, setFishList] = useState([])
+  const [receptionFishList, setReceptionFishList] = useState([])
   const [previousFishNames, setPreviousFishNames] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -47,13 +49,15 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   async function loadData() {
     try {
       setLoading(true)
-      const [fishData, previousNames] = await Promise.all([
+      const [fishData, receptionFish, previousNames] = await Promise.all([
         getFarmFish(currentFarm.farmId),
+        getFishByAquarium(currentFarm.farmId, aquarium.aquariumId),
         getPreviousFishNames(currentFarm.farmId),
       ])
       // Filter only fish in this aquarium
       const aquariumFish = fishData.filter((f) => f.aquariumId === aquarium.aquariumId)
       setFishList(aquariumFish)
+      setReceptionFishList(receptionFish)
       setPreviousFishNames(previousNames)
     } catch (err) {
       setError('שגיאה בטעינת הנתונים: ' + err.message)
@@ -172,7 +176,8 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
 
   if (!isOpen || !aquarium) return null
 
-  const totalFish = fishList.reduce((sum, fish) => sum + (fish.quantity || 0), 0)
+  const totalFish = fishList.reduce((sum, fish) => sum + (fish.quantity || 0), 0) +
+                    receptionFishList.reduce((sum, fish) => sum + (fish.currentQuantity || 0), 0)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1001] p-5 overflow-y-auto">
@@ -207,23 +212,61 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
             <div className="text-sm text-blue-800">
               <span className="font-semibold">סה"כ דגים באקווריום:</span> {totalFish}
             </div>
-            {fishList.length > 0 && (
+            {(fishList.length > 0 || receptionFishList.length > 0) && (
               <div className="text-xs text-blue-700 mt-1">
-                {fishList.length} {fishList.length === 1 ? 'מין' : 'מינים'}
+                {fishList.length + receptionFishList.length} {(fishList.length + receptionFishList.length) === 1 ? 'מין' : 'מינים'}
               </div>
             )}
           </div>
 
-          {loading && fishList.length === 0 ? (
+          {loading && fishList.length === 0 && receptionFishList.length === 0 ? (
             <div className="flex justify-center py-12">
               <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
             </div>
           ) : (
             <>
+              {/* Reception Fish List */}
+              {receptionFishList.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">דגים שנקלטו ({receptionFishList.length})</h3>
+                  <div className="space-y-3">
+                    {receptionFishList.map((fish) => (
+                      <div
+                        key={fish.instanceId}
+                        className="bg-purple-50 border border-purple-300 rounded-lg p-3"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-gray-900">{fish.commonName}</h4>
+                            <p className="text-xs text-gray-600 italic">{fish.scientificName}</p>
+                          </div>
+                          <div className="text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-1 rounded">
+                            קליטה
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-700">
+                          <div className="font-semibold text-lg text-purple-600">
+                            {fish.currentQuantity} יח'
+                          </div>
+                          <div>גודל: {fish.size}</div>
+                          {fish.code && <div>קוד: {fish.code}</div>}
+                          {fish.arrivalDate && (
+                            <div className="text-gray-600 mt-1">
+                              תאריך הגעה: {new Date(fish.arrivalDate).toLocaleDateString('he-IL')}
+                            </div>
+                          )}
+                          {fish.notes && <div className="text-gray-600 mt-1">📝 {fish.notes}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Fish List */}
               {fishList.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">דגים באקווריום</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">דגים מקומיים ({fishList.length})</h3>
                   <div className="space-y-3">
                     {fishList.map((fish) => (
                       <div
@@ -481,7 +524,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
               )}
 
               {/* Empty State */}
-              {fishList.length === 0 && !isAdding && (
+              {fishList.length === 0 && receptionFishList.length === 0 && !isAdding && (
                 <div className="text-center py-12 text-gray-500">
                   <div className="text-4xl mb-2">🐠</div>
                   <div>אין דגים באקווריום זה</div>
