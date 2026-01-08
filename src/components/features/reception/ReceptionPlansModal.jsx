@@ -101,11 +101,11 @@ function ReceptionPlansModal({ isOpen, onClose }) {
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-5 overflow-y-auto"
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-0 sm:p-5 overflow-y-auto"
         onClick={handleClose}
       >
         <div
-          className="bg-white rounded-2xl shadow-2xl max-w-[900px] w-full max-h-[90vh] overflow-y-auto relative"
+          className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full sm:max-w-[600px] h-full sm:h-auto max-h-[90vh] overflow-y-auto relative"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

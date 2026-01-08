@@ -180,8 +180,8 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                     receptionFishList.reduce((sum, fish) => sum + (fish.currentQuantity || 0), 0)
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1001] p-5 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1001] p-0 sm:p-5 overflow-y-auto">
+      <div className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto relative">
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
           <div>

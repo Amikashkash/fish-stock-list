@@ -109,11 +109,11 @@ function AquariumEditModal({ isOpen, onClose, onSuccess, aquarium, onTransferCli
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-5 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-0 sm:p-5 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-[600px] w-full sm:w-[95%] max-h-[90vh] overflow-y-auto relative"
+        className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full sm:max-w-[600px] h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 pt-6 pb-4 border-b border-gray-200 flex justify-between items-center">
