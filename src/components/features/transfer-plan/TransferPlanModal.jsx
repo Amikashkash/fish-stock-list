@@ -41,6 +41,8 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
   const [selectedDestAquarium, setSelectedDestAquarium] = useState(null)
   const [filterSourceRoom, setFilterSourceRoom] = useState('all')
   const [filterDestRoom, setFilterDestRoom] = useState('all')
+  const [searchSourceNumber, setSearchSourceNumber] = useState('')
+  const [searchDestNumber, setSearchDestNumber] = useState('')
   const [allowMixing, setAllowMixing] = useState(false)
   const [taskNotes, setTaskNotes] = useState('')
   const [isShipment, setIsShipment] = useState(false)
@@ -148,6 +150,14 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
       const fish = await getFishInAquarium(currentFarm.farmId, aquariumId)
       setFishInSource(fish)
       setError('')
+
+      // Auto-select if only one fish in aquarium
+      if (fish.length === 1) {
+        const singleFish = fish[0]
+        setSelectedFish(singleFish)
+        setTransferQuantity(singleFish.quantity.toString())
+        setStep(3) // Skip step 2, go directly to destination selection
+      }
     } catch (err) {
       console.error('Error loading fish:', err)
       setError('שגיאה בטעינת דגים')
@@ -538,6 +548,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
   const availableSources = aquariums.filter((aq) => {
     if (aq.totalFish === 0) return false
     if (filterSourceRoom !== 'all' && aq.room !== filterSourceRoom) return false
+    if (searchSourceNumber && !aq.aquariumNumber.toString().includes(searchSourceNumber)) return false
     return true
   })
 
@@ -545,6 +556,7 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
   const availableDestinations = aquariums.filter((aq) => {
     if (selectedSourceAquarium && aq.aquariumId === selectedSourceAquarium.aquariumId) return false
     if (filterDestRoom !== 'all' && aq.room !== filterDestRoom) return false
+    if (searchDestNumber && !aq.aquariumNumber.toString().includes(searchDestNumber)) return false
     return true
   })
 
@@ -962,6 +974,20 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
                   </select>
                 </div>
 
+                {/* Source Aquarium Number Search */}
+                <div className="mb-4">
+                  <label className="block mb-2 font-semibold text-gray-900 text-sm">
+                    חפש לפי מספר אקווריום:
+                  </label>
+                  <input
+                    type="text"
+                    value={searchSourceNumber}
+                    onChange={(e) => setSearchSourceNumber(e.target.value)}
+                    placeholder="הקלד מספר אקווריום..."
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
                 {loading ? (
                   <div className="flex justify-center py-8">
                     <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
@@ -1134,6 +1160,20 @@ function TransferPlanModal({ isOpen, onClose, onSuccess, existingPlan = null }) 
                           </option>
                         ))}
                       </select>
+                    </div>
+
+                    {/* Destination Aquarium Number Search */}
+                    <div className="mb-4">
+                      <label className="block mb-2 font-semibold text-gray-900 text-sm">
+                        חפש לפי מספר אקווריום:
+                      </label>
+                      <input
+                        type="text"
+                        value={searchDestNumber}
+                        onChange={(e) => setSearchDestNumber(e.target.value)}
+                        placeholder="הקלד מספר אקווריום..."
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                      />
                     </div>
 
                     {/* Destination Aquariums */}

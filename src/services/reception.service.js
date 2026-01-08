@@ -587,3 +587,85 @@ export async function updatePlanStatus(farmId, planId, newStatus) {
     throw error
   }
 }
+
+/**
+ * Remove an item from reception (DOA or not received)
+ */
+export async function removeItem(farmId, itemId, reason = 'not-received') {
+  try {
+    const itemRef = doc(db, 'farms', farmId, 'reception_items', itemId)
+    const itemDoc = await getDoc(itemRef)
+
+    if (!itemDoc.exists()) {
+      throw new Error('Item not found')
+    }
+
+    const itemData = itemDoc.data()
+
+    // Delete the item
+    await deleteDoc(itemRef)
+
+    // Update plan counts
+    const planRef = doc(db, 'farms', farmId, 'reception_plans', itemData.planId)
+    const planDoc = await getDoc(planRef)
+
+    if (planDoc.exists()) {
+      const planData = planDoc.data()
+      const newItemCount = Math.max(0, (planData.itemCount || 0) - 1)
+
+      await updateDoc(planRef, {
+        itemCount: newItemCount,
+        updatedAt: Timestamp.now(),
+      })
+    }
+
+    return { success: true, reason }
+  } catch (error) {
+    console.error('Error removing item:', error)
+    throw error
+  }
+}
+
+/**
+ * Complete reception and update all aquarium statuses
+ */
+export async function completeReception(farmId, planId) {
+  try {
+    // Get all items in the plan
+    const itemsRef = collection(db, 'farms', farmId, 'reception_items')
+    const q = query(itemsRef, where('planId', '==', planId))
+    const itemsSnapshot = await getDocs(q)
+
+    // Import updateAquariumStatus dynamically to avoid circular dependency
+    const { updateAquariumStatus } = await import('./farm-fish.service')
+
+    // Get unique aquarium IDs
+    const aquariumIds = new Set()
+    itemsSnapshot.docs.forEach((doc) => {
+      const data = doc.data()
+      if (data.targetAquariumId && data.status === 'received') {
+        aquariumIds.add(data.targetAquariumId)
+      }
+    })
+
+    // Update status for each aquarium
+    const updatePromises = Array.from(aquariumIds).map((aquariumId) =>
+      updateAquariumStatus(farmId, aquariumId)
+    )
+
+    await Promise.all(updatePromises)
+
+    // Update plan status to completed
+    const planRef = doc(db, 'farms', farmId, 'reception_plans', planId)
+    await updateDoc(planRef, {
+      status: 'completed',
+      completedAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    })
+
+    return { success: true, aquariumsUpdated: aquariumIds.size }
+  } catch (error) {
+    console.error('Error completing reception:', error)
+    throw error
+  }
+}
