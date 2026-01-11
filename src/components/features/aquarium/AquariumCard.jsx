@@ -40,10 +40,36 @@ function AquariumCard({ aquarium, onClick, statusLabel, onManageFish }) {
 
   return (
     <div
-      className={`${bgColor} rounded-lg px-4 py-2.5 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 border border-gray-200`}
+      className={`${bgColor} rounded-lg px-3 sm:px-4 py-2.5 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 border border-gray-200`}
       onClick={handleCardClick}
     >
-      <div className="flex items-center justify-between gap-3 text-sm">
+      {/* Mobile Layout - Stacked */}
+      <div className="sm:hidden">
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-bold text-gray-900 text-base">{aquarium.aquariumNumber}</span>
+          <span className={`font-semibold text-sm ${statusColor}`}>
+            {statusLabel || aquarium.status}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+          <div className="flex items-center gap-3">
+            <span>{shelfLabel}</span>
+            <span className="text-gray-900 font-medium">{aquarium.volume}L</span>
+            {!isEmpty && (
+              <span className="text-blue-600 font-medium">🐠 {aquarium.totalFish}</span>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={handleManageFishClick}
+          className="manage-fish-btn w-full px-3 py-2 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600"
+        >
+          {isEmpty ? '➕ הוסף דג' : '🐠 ערוך דגים'}
+        </button>
+      </div>
+
+      {/* Desktop Layout - Horizontal */}
+      <div className="hidden sm:flex items-center justify-between gap-3 text-sm">
         <span className="font-bold text-gray-900 min-w-[80px]">{aquarium.aquariumNumber}</span>
         <span className={`font-semibold ${statusColor} min-w-[60px]`}>
           {statusLabel || aquarium.status}

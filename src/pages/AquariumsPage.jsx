@@ -128,52 +128,54 @@ function AquariumsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-5 md:p-4">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-5">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6 gap-4 flex-wrap md:flex-nowrap">
-        <button
-          className="px-5 py-2.5 bg-white border border-gray-300 rounded-lg cursor-pointer text-sm font-semibold text-gray-900 transition-all hover:bg-gray-50 hover:border-gray-400"
-          onClick={() => navigate('/home')}
-        >
-          ← חזרה
-        </button>
-        <h1 className="text-[28px] md:text-[22px] font-bold text-gray-900 m-0 flex-1 text-center">ניהול אקווריומים</h1>
-        <button
-          className="px-5 py-2.5 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-          onClick={() => setShowCreateModal(true)}
-        >
-          + אקווריום חדש
-        </button>
+      <div className="mb-4 sm:mb-6">
+        <div className="flex justify-between items-center mb-3 gap-2">
+          <button
+            className="px-3 py-2 sm:px-5 sm:py-2.5 bg-white border border-gray-300 rounded-lg cursor-pointer text-xs sm:text-sm font-semibold text-gray-900 transition-all hover:bg-gray-50 hover:border-gray-400"
+            onClick={() => navigate('/home')}
+          >
+            ← חזרה
+          </button>
+          <h1 className="text-xl sm:text-2xl md:text-[28px] font-bold text-gray-900 m-0 flex-1 text-center">ניהול אקווריומים</h1>
+          <button
+            className="px-3 py-2 sm:px-5 sm:py-2.5 bg-blue-500 text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-600 transition-colors whitespace-nowrap"
+            onClick={() => setShowCreateModal(true)}
+          >
+            + חדש
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-5 rounded-xl shadow-md text-center">
-          <div className="text-[32px] font-bold text-blue-500 mb-1">{stats.total}</div>
-          <div className="text-sm text-gray-500 font-medium">סה"כ אקווריומים</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
+          <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.total}</div>
+          <div className="text-xs sm:text-sm text-gray-500 font-medium">סה"כ</div>
         </div>
-        <div className="bg-white p-5 rounded-xl shadow-md text-center">
-          <div className="text-[32px] font-bold text-blue-500 mb-1">{stats.occupied}</div>
-          <div className="text-sm text-gray-500 font-medium">תפוסים</div>
+        <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
+          <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.occupied}</div>
+          <div className="text-xs sm:text-sm text-gray-500 font-medium">תפוסים</div>
         </div>
-        <div className="bg-white p-5 rounded-xl shadow-md text-center">
-          <div className="text-[32px] font-bold text-blue-500 mb-1">{stats.empty}</div>
-          <div className="text-sm text-gray-500 font-medium">ריקים</div>
+        <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
+          <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.empty}</div>
+          <div className="text-xs sm:text-sm text-gray-500 font-medium">ריקים</div>
         </div>
-        <div className="bg-white p-5 rounded-xl shadow-md text-center">
-          <div className="text-[32px] font-bold text-blue-500 mb-1">{stats.maintenance}</div>
-          <div className="text-sm text-gray-500 font-medium">בתחזוקה</div>
+        <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
+          <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.maintenance}</div>
+          <div className="text-xs sm:text-sm text-gray-500 font-medium">תחזוקה</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-white rounded-xl shadow-md">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-semibold text-gray-900">חדר:</label>
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6 p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-md">
+        <div className="flex items-center gap-2 flex-1">
+          <label className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">חדר:</label>
           <select
             value={filterRoom}
             onChange={(e) => setFilterRoom(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
+            className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
           >
             <option value="all">הכל</option>
             {/* Get unique rooms from actual aquariums */}
@@ -185,12 +187,12 @@ function AquariumsPage() {
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-semibold text-gray-900">סטטוס:</label>
+        <div className="flex items-center gap-2 flex-1">
+          <label className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">סטטוס:</label>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
+            className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
           >
             <option value="all">הכל</option>
             {currentFarm?.settings?.aquariumStatuses?.map((status) => (
@@ -204,28 +206,28 @@ function AquariumsPage() {
 
       {/* Aquariums List */}
       {filteredAquariums.length === 0 ? (
-        <div className="text-center py-[60px] px-5 bg-white rounded-xl shadow-md">
-          <div className="text-[80px] mb-4 opacity-50">🏊</div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">אין אקווריומים</h3>
-          <p className="text-base text-gray-500 mb-6">
+        <div className="text-center py-10 sm:py-[60px] px-4 sm:px-5 bg-white rounded-lg sm:rounded-xl shadow-md">
+          <div className="text-5xl sm:text-[80px] mb-3 sm:mb-4 opacity-50">🏊</div>
+          <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2">אין אקווריומים</h3>
+          <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">
             {aquariums.length === 0
-              ? 'התחל על ידי יצירת האקווריום הראשון שלך (לחץ על "אקווריום חדש" למעלה)'
+              ? 'התחל על ידי יצירת האקווריום הראשון שלך'
               : 'לא נמצאו אקווריומים התואמים את הסינון'}
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3 sm:gap-6">
           {Object.entries(aquariumsByRoom).map(([room, roomAquariums]) => {
             const emptyCount = roomAquariums.filter(aq => aq.status === 'empty').length
             return (
-              <div key={room} className="bg-white p-6 md:p-5 rounded-xl shadow-md">
-                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-gray-100 flex items-center justify-between">
+              <div key={room} className="bg-white p-3 sm:p-6 rounded-lg sm:rounded-xl shadow-md">
+                <h2 className="text-base sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 pb-2 sm:pb-3 border-b-2 border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <span>{room}</span>
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                     <span className="text-gray-500 font-medium">
                       סה"כ: {roomAquariums.length}
                     </span>
-                    <span className="text-green-600 font-semibold bg-green-50 px-3 py-1 rounded-lg">
+                    <span className="text-green-600 font-semibold bg-green-50 px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg">
                       ריקים: {emptyCount}
                     </span>
                   </div>
