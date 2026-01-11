@@ -3,6 +3,7 @@ import { useFarm } from '../../../contexts/FarmContext'
 import { getPreviousFishNames } from '../../../services/reception.service'
 import { getFarmFish, addFarmFish, updateFarmFish, deleteFarmFish } from '../../../services/farm-fish.service'
 import { getFishByAquarium } from '../../../services/fish.service'
+import MortalityRecordModal from '../health/MortalityRecordModal'
 
 const SOURCE_TYPES = {
   local_delivery: 'משלוח מקומי',
@@ -19,6 +20,8 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   const [error, setError] = useState('')
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [mortalityModalOpen, setMortalityModalOpen] = useState(false)
+  const [selectedFishForMortality, setSelectedFishForMortality] = useState(null)
 
   const [newFish, setNewFish] = useState({
     hebrewName: '',
@@ -174,6 +177,20 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
     })
   }
 
+  function handleOpenMortalityModal(fish, fishSource) {
+    setSelectedFishForMortality({
+      ...fish,
+      fishSource,
+      aquariumNumber: aquarium.aquariumNumber,
+    })
+    setMortalityModalOpen(true)
+  }
+
+  function handleMortalityRecorded() {
+    loadData()
+    if (onSuccess) onSuccess()
+  }
+
   if (!isOpen || !aquarium) return null
 
   const totalFish = fishList.reduce((sum, fish) => sum + (fish.quantity || 0), 0) +
@@ -256,6 +273,14 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                             </div>
                           )}
                           {fish.notes && <div className="text-gray-600 mt-1">📝 {fish.notes}</div>}
+                        </div>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => handleOpenMortalityModal(fish, 'reception')}
+                            className="flex-1 px-3 py-2 text-xs font-semibold bg-red-100 text-red-700 rounded hover:bg-red-200"
+                          >
+                            💀 רשום תמותה
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -373,6 +398,12 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                             </div>
                             <div className="flex gap-2">
                               <button
+                                onClick={() => handleOpenMortalityModal(fish, 'local')}
+                                className="flex-1 px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded hover:bg-red-200"
+                              >
+                                💀 רשום תמותה
+                              </button>
+                              <button
                                 onClick={() => startEditing(fish)}
                                 className="flex-1 px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                               >
@@ -380,7 +411,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                               </button>
                               <button
                                 onClick={() => handleDeleteFish(fish.fishId)}
-                                className="px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded hover:bg-red-200"
+                                className="px-3 py-1 text-xs font-semibold bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
                               >
                                 🗑️ מחק
                               </button>
@@ -545,6 +576,17 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
           </div>
         </div>
       </div>
+
+      {/* Mortality Recording Modal */}
+      <MortalityRecordModal
+        isOpen={mortalityModalOpen}
+        onClose={() => {
+          setMortalityModalOpen(false)
+          setSelectedFishForMortality(null)
+        }}
+        fishData={selectedFishForMortality}
+        onMortalityRecorded={handleMortalityRecorded}
+      />
     </div>
   )
 }

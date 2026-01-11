@@ -27,6 +27,24 @@ export async function createFishInstance(farmId, fishData) {
       arrivalDate: fishData.arrivalDate ? Timestamp.fromDate(fishData.arrivalDate) : Timestamp.now(),
       notes: fishData.notes || '',
       status: 'active',
+      // Mortality tracking fields
+      mortalityTracking: {
+        totalDeaths: 0,
+        doaCount: 0,
+        receptionDeaths: 0,
+        regularDeaths: 0,
+        lastMortalityEvent: null,
+        mortalityRate: 0,
+      },
+      // Reception monitoring (14-day window)
+      receptionMonitoring: {
+        isInReceptionPeriod: true,
+        receptionStartDate: fishData.arrivalDate ? Timestamp.fromDate(fishData.arrivalDate) : Timestamp.now(),
+        receptionEndDate: Timestamp.fromDate(
+          new Date((fishData.arrivalDate || new Date()).getTime() + 14 * 24 * 60 * 60 * 1000)
+        ),
+        daysInReception: 0,
+      },
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     }
