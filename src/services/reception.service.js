@@ -669,3 +669,50 @@ export async function completeReception(farmId, planId) {
     throw error
   }
 }
+
+/**
+ * Reset a completed reception plan to allow re-receiving
+ * This resets all items back to 'planned' status and removes the plan completion
+ */
+export async function resetReceptionPlan(farmId, planId) {
+  try {
+    const batch = writeBatch(db)
+
+    // Get all items in the plan
+    const itemsRef = collection(db, 'farms', farmId, 'reception_items')
+    const q = query(itemsRef, where('planId', '==', planId))
+    const itemsSnapshot = await getDocs(q)
+
+    // Reset each item to 'planned' status
+    itemsSnapshot.docs.forEach((itemDoc) => {
+      const itemRef = doc(db, 'farms', farmId, 'reception_items', itemDoc.id)
+      batch.update(itemRef, {
+        status: 'planned',
+        receivedAt: null,
+        updatedAt: Timestamp.now(),
+      })
+    })
+
+    // Reset plan status back to 'ready' and clear completion data
+    const planRef = doc(db, 'farms', farmId, 'reception_plans', planId)
+    batch.update(planRef, {
+      status: 'ready',
+      receivedCount: 0,
+      completedAt: null,
+      updatedAt: Timestamp.now(),
+    })
+
+    await batch.commit()
+
+    console.log(`✅ Reset reception plan ${planId} - ${itemsSnapshot.docs.length} items reset to planned status`)
+
+    return {
+      success: true,
+      itemsReset: itemsSnapshot.docs.length,
+      message: `תוכנית הקליטה אופסה. ${itemsSnapshot.docs.length} פריטים חזרו לסטטוס מתוכנן`,
+    }
+  } catch (error) {
+    console.error('Error resetting reception plan:', error)
+    throw error
+  }
+}

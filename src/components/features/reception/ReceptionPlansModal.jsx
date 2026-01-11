@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
-import { getReceptionPlans, deleteReceptionPlan } from '../../../services/reception.service'
+import { getReceptionPlans, deleteReceptionPlan, resetReceptionPlan } from '../../../services/reception.service'
 import ReceptionPlanningModal from './ReceptionPlanningModal'
 import ReceiveFishModal from './ReceiveFishModal'
 import { formatDateDDMMYYYY } from '../../../utils/dateFormatter'
@@ -45,6 +45,28 @@ function ReceptionPlansModal({ isOpen, onClose }) {
     } catch (err) {
       console.error('Error deleting plan:', err)
       alert('שגיאה במחיקת התוכנית')
+    }
+  }
+
+  async function handleResetPlan(planId) {
+    const confirmed = window.confirm(
+      'האם אתה בטוח שברצונך לאפס את תוכנית הקליטה?\n\n' +
+        'פעולה זו תחזיר את כל הפריטים לסטטוס "מתוכנן" ותאפשר לך לקלוט אותם מחדש.\n' +
+        'הדגים שכבר נוצרו במערכת יישארו במקומם.'
+    )
+    if (!confirmed) return
+
+    try {
+      setLoading(true)
+      await resetReceptionPlan(currentFarm.farmId, planId)
+      await loadPlans() // Reload to show updated status
+      setSelectedPlanId(planId)
+      setShowReceiveModal(true) // Open receive modal immediately
+    } catch (err) {
+      console.error('Error resetting plan:', err)
+      alert('שגיאה באיפוס התוכנית: ' + err.message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -259,12 +281,21 @@ function ReceptionPlansModal({ isOpen, onClose }) {
                       )}
 
                       {plan.status === 'completed' && (
-                        <button
-                          onClick={() => handleOpenReceive(plan.planId)}
-                          className="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-blue-500 text-white hover:bg-blue-600"
-                        >
-                          👁️ צפה
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleOpenReceive(plan.planId)}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-blue-500 text-white hover:bg-blue-600"
+                          >
+                            👁️ צפה
+                          </button>
+                          <button
+                            onClick={() => handleResetPlan(plan.planId)}
+                            className="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-orange-500 text-white hover:bg-orange-600"
+                            title="אפס את התוכנית וקלוט מחדש"
+                          >
+                            🔄 קלוט מחדש
+                          </button>
+                        </>
                       )}
 
                       {plan.status !== 'completed' && (
