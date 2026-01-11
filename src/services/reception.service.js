@@ -20,7 +20,6 @@ import {
 } from 'firebase/firestore'
 import { createFishInstance } from './fish.service'
 import { getAquarium, updateAquarium } from './aquarium.service'
-import { addFarmFish } from './farm-fish.service'
 
 /**
  * Get list of countries used in previous reception plans
@@ -464,27 +463,6 @@ export async function receiveItem(farmId, itemId) {
     }
 
     const fishInstance = await createFishInstance(farmId, fishInstanceData)
-
-    // Create farmFish record for inventory tracking
-    const farmFishData = {
-      hebrewName: item.hebrewName,
-      scientificName: item.scientificName,
-      size: item.size,
-      quantity: item.quantity,
-      source: 'import',
-      aquariumId: item.targetAquariumId,
-      notes: item.notes,
-    }
-
-    // Add price data if available
-    if (item.price !== null && item.price !== undefined) {
-      farmFishData.price = item.price
-    }
-    if (item.priceUpdatedAt) {
-      farmFishData.priceUpdatedAt = item.priceUpdatedAt.toDate()
-    }
-
-    await addFarmFish(farmId, farmFishData)
 
     // Update aquarium with new fish
     const aquarium = await getAquarium(farmId, item.targetAquariumId)
