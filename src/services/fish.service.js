@@ -4,7 +4,7 @@
  */
 
 import { db } from '../firebase/config'
-import { collection, doc, setDoc, getDoc, getDocs, updateDoc, query, where, Timestamp } from 'firebase/firestore'
+import { collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, where, Timestamp } from 'firebase/firestore'
 
 /**
  * Create a new fish instance
@@ -122,6 +122,19 @@ export async function updateFishInstance(farmId, instanceId, updates) {
     })
   } catch (error) {
     console.error('Error updating fish instance:', error)
+    throw error
+  }
+}
+
+/**
+ * Delete fish instance
+ */
+export async function deleteFishInstance(farmId, instanceId) {
+  try {
+    const instanceRef = doc(db, 'farms', farmId, 'fish_instances', instanceId)
+    await deleteDoc(instanceRef)
+  } catch (error) {
+    console.error('Error deleting fish instance:', error)
     throw error
   }
 }

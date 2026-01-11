@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import { getPreviousFishNames } from '../../../services/reception.service'
 import { getFarmFish, addFarmFish, updateFarmFish, deleteFarmFish } from '../../../services/farm-fish.service'
-import { getFishByAquarium, updateFishInstance } from '../../../services/fish.service'
+import { getFishByAquarium, updateFishInstance, deleteFishInstance } from '../../../services/fish.service'
 import MortalityRecordModal from '../health/MortalityRecordModal'
 
 const SOURCE_TYPES = {
@@ -192,6 +192,22 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
     }
   }
 
+  async function handleDeleteReceptionFish(instanceId) {
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק דג מיובא זה?')) return
+
+    try {
+      setLoading(true)
+      setError('')
+      await deleteFishInstance(currentFarm.farmId, instanceId)
+      await loadData()
+      if (onSuccess) onSuccess()
+    } catch (err) {
+      setError(err.message || 'שגיאה במחיקת הדג המיובא')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   function startEditing(fish) {
     setEditingId(fish.fishId)
     setEditData({
@@ -366,9 +382,15 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                               </button>
                               <button
                                 onClick={() => handleOpenMortalityModal(fish, 'reception')}
-                                className="flex-1 px-3 py-2 text-xs font-semibold bg-red-100 text-red-700 rounded hover:bg-red-200"
+                                className="flex-1 px-3 py-2 text-xs font-semibold bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
                               >
-                                💀 רשום תמותה
+                                💀 תמותה
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReceptionFish(fish.instanceId)}
+                                className="px-3 py-2 text-xs font-semibold bg-red-100 text-red-700 rounded hover:bg-red-200"
+                              >
+                                🗑️
                               </button>
                             </div>
                           </>
