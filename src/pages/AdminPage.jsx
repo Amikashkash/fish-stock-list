@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import DebugPanel from '../components/features/admin/DebugPanel'
 import CleanupPanel from '../components/features/admin/CleanupPanel'
 
 function AdminPage() {
@@ -23,7 +24,8 @@ function AdminPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <DebugPanel />
         <CleanupPanel />
       </div>
     </div>

@@ -20,7 +20,7 @@ function AquariumsPage() {
   const [selectedAquarium, setSelectedAquarium] = useState(null)
   const [fishModalAquarium, setFishModalAquarium] = useState(null)
   const [transferSourceAquarium, setTransferSourceAquarium] = useState(null)
-  const [filterRoom, setFilterRoom] = useState('all')
+  const [selectedRoom, setSelectedRoom] = useState(null) // null = room selection screen
   const [filterStatus, setFilterStatus] = useState('all')
 
   useEffect(() => {
@@ -94,19 +94,20 @@ function AquariumsPage() {
     return status?.label || statusId
   }
 
+  // Get unique rooms
+  const rooms = [...new Set(aquariums.map((aq) => aq.room))].sort()
+
   // Filter aquariums
   const filteredAquariums = aquariums.filter((aq) => {
-    if (filterRoom !== 'all' && aq.room !== filterRoom) return false
+    if (selectedRoom && aq.room !== selectedRoom) return false
     if (filterStatus !== 'all' && aq.status !== filterStatus) return false
     return true
   })
 
-  // Group by room
-  const aquariumsByRoom = filteredAquariums.reduce((acc, aq) => {
-    if (!acc[aq.room]) acc[aq.room] = []
-    acc[aq.room].push(aq)
-    return acc
-  }, {})
+  // Group by room (only when room is selected)
+  const aquariumsByRoom = selectedRoom ? {
+    [selectedRoom]: filteredAquariums
+  } : {}
 
   // Stats
   const stats = {
