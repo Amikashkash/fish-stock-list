@@ -3,6 +3,6 @@
  * Update this file before each release
  */
 
-export const VERSION = '19.5.0'
+export const VERSION = '19.5.1'
 export const RELEASE_DATE = '2026-01-11'
-export const RELEASE_NAME = 'Feature Release'
+export const RELEASE_NAME = 'Bugfix Release'

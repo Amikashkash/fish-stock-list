@@ -673,43 +673,95 @@ export async function completeReception(farmId, planId) {
 /**
  * Reset a completed reception plan to allow re-receiving
  * This resets all items back to 'planned' status and removes the plan completion
+ * IMPORTANT: Also deletes all fish_instances created from this plan to avoid duplicates
  */
 export async function resetReceptionPlan(farmId, planId) {
   try {
-    const batch = writeBatch(db)
-
     // Get all items in the plan
     const itemsRef = collection(db, 'farms', farmId, 'reception_items')
     const q = query(itemsRef, where('planId', '==', planId))
     const itemsSnapshot = await getDocs(q)
 
-    // Reset each item to 'planned' status
-    itemsSnapshot.docs.forEach((itemDoc) => {
-      const itemRef = doc(db, 'farms', farmId, 'reception_items', itemDoc.id)
-      batch.update(itemRef, {
-        status: 'planned',
-        receivedAt: null,
-        updatedAt: Timestamp.now(),
+    // Get all fish instances for this farm to find matching ones
+    const fishInstancesRef = collection(db, 'farms', farmId, 'fish_instances')
+    const fishSnapshot = await getDocs(fishInstancesRef)
+
+    // Collect item data to match against fish instances
+    const items = itemsSnapshot.docs.map((itemDoc) => ({
+      id: itemDoc.id,
+      ...itemDoc.data(),
+      receivedAt: itemDoc.data().receivedAt?.toDate(),
+    }))
+
+    // Find fish instances that match these reception items
+    const fishToDelete = []
+    fishSnapshot.docs.forEach((fishDoc) => {
+      const fishData = fishDoc.data()
+      const arrivalDate = fishData.arrivalDate?.toDate()
+
+      // Try to match fish instance with reception item
+      const matchingItem = items.find(
+        (item) =>
+          item.status === 'received' &&
+          fishData.commonName === item.hebrewName &&
+          fishData.scientificName === item.scientificName &&
+          arrivalDate &&
+          item.receivedAt &&
+          Math.abs(arrivalDate.getTime() - item.receivedAt.getTime()) < 60000 // Within 1 minute
+      )
+
+      if (matchingItem) {
+        fishToDelete.push(fishDoc.id)
+      }
+    })
+
+    console.log(`🗑️ Found ${fishToDelete.length} fish instances to delete for plan ${planId}`)
+
+    // Use batched deletes (max 500 per batch)
+    const batchSize = 500
+    for (let i = 0; i < fishToDelete.length; i += batchSize) {
+      const batch = writeBatch(db)
+      const batchFish = fishToDelete.slice(i, i + batchSize)
+
+      // Delete fish instances
+      batchFish.forEach((fishId) => {
+        const fishRef = doc(db, 'farms', farmId, 'fish_instances', fishId)
+        batch.delete(fishRef)
       })
-    })
 
-    // Reset plan status back to 'ready' and clear completion data
-    const planRef = doc(db, 'farms', farmId, 'reception_plans', planId)
-    batch.update(planRef, {
-      status: 'ready',
-      receivedCount: 0,
-      completedAt: null,
-      updatedAt: Timestamp.now(),
-    })
+      // Reset items in first batch only
+      if (i === 0) {
+        itemsSnapshot.docs.forEach((itemDoc) => {
+          const itemRef = doc(db, 'farms', farmId, 'reception_items', itemDoc.id)
+          batch.update(itemRef, {
+            status: 'planned',
+            receivedAt: null,
+            updatedAt: Timestamp.now(),
+          })
+        })
 
-    await batch.commit()
+        // Reset plan status
+        const planRef = doc(db, 'farms', farmId, 'reception_plans', planId)
+        batch.update(planRef, {
+          status: 'ready',
+          receivedCount: 0,
+          completedAt: null,
+          updatedAt: Timestamp.now(),
+        })
+      }
 
-    console.log(`✅ Reset reception plan ${planId} - ${itemsSnapshot.docs.length} items reset to planned status`)
+      await batch.commit()
+    }
+
+    console.log(
+      `✅ Reset reception plan ${planId} - ${itemsSnapshot.docs.length} items reset, ${fishToDelete.length} fish instances deleted`
+    )
 
     return {
       success: true,
       itemsReset: itemsSnapshot.docs.length,
-      message: `תוכנית הקליטה אופסה. ${itemsSnapshot.docs.length} פריטים חזרו לסטטוס מתוכנן`,
+      fishDeleted: fishToDelete.length,
+      message: `תוכנית הקליטה אופסה. ${itemsSnapshot.docs.length} פריטים חזרו לסטטוס מתוכנן, ${fishToDelete.length} רשומות דגים נמחקו`,
     }
   } catch (error) {
     console.error('Error resetting reception plan:', error)

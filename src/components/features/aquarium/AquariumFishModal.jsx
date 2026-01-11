@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import { getPreviousFishNames } from '../../../services/reception.service'
 import { getFarmFish, addFarmFish, updateFarmFish, deleteFarmFish } from '../../../services/farm-fish.service'
-import { getFishByAquarium } from '../../../services/fish.service'
+import { getFishByAquarium, updateFishInstance } from '../../../services/fish.service'
 import MortalityRecordModal from '../health/MortalityRecordModal'
 
 const SOURCE_TYPES = {
@@ -152,6 +152,30 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
     }
   }
 
+  async function handleUpdateReceptionFish(instanceId) {
+    if (!editData.quantity || editData.quantity < 0) {
+      setError('כמות לא תקינה')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+      await updateFishInstance(currentFarm.farmId, instanceId, {
+        currentQuantity: parseInt(editData.quantity),
+        notes: editData.notes,
+      })
+      setEditingId(null)
+      setEditData({ quantity: '', notes: '' })
+      await loadData()
+      if (onSuccess) onSuccess()
+    } catch (err) {
+      setError(err.message || 'שגיאה בעדכון דג מיובא')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function handleDeleteFish(fishId) {
     if (!window.confirm('האם אתה בטוח שברצונך למחוק דג זה?')) return
 
@@ -173,6 +197,14 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
     setEditData({
       quantity: fish.quantity,
       source: fish.source,
+      notes: fish.notes || ''
+    })
+  }
+
+  function startEditingReceptionFish(fish) {
+    setEditingId(fish.instanceId)
+    setEditData({
+      quantity: fish.currentQuantity,
       notes: fish.notes || ''
     })
   }
@@ -261,27 +293,86 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                             קליטה
                           </div>
                         </div>
-                        <div className="text-xs text-gray-700">
-                          <div className="font-semibold text-lg text-purple-600">
-                            {fish.currentQuantity} יח'
-                          </div>
-                          <div>גודל: {fish.size}</div>
-                          {fish.code && <div>קוד: {fish.code}</div>}
-                          {fish.arrivalDate && (
-                            <div className="text-gray-600 mt-1">
-                              תאריך הגעה: {new Date(fish.arrivalDate).toLocaleDateString('he-IL')}
+
+                        {editingId === fish.instanceId ? (
+                          <div className="bg-white rounded-lg p-3 border border-purple-200 mb-2">
+                            <div className="mb-3">
+                              <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                כמות:
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={editData.quantity}
+                                onChange={(e) =>
+                                  setEditData({ ...editData, quantity: e.target.value })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                              />
                             </div>
-                          )}
-                          {fish.notes && <div className="text-gray-600 mt-1">📝 {fish.notes}</div>}
-                        </div>
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={() => handleOpenMortalityModal(fish, 'reception')}
-                            className="flex-1 px-3 py-2 text-xs font-semibold bg-red-100 text-red-700 rounded hover:bg-red-200"
-                          >
-                            💀 רשום תמותה
-                          </button>
-                        </div>
+                            <div className="mb-3">
+                              <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                הערות:
+                              </label>
+                              <textarea
+                                value={editData.notes}
+                                onChange={(e) =>
+                                  setEditData({ ...editData, notes: e.target.value })
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                                rows="2"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleUpdateReceptionFish(fish.instanceId)}
+                                disabled={loading}
+                                className="flex-1 px-3 py-2 text-xs font-semibold bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                              >
+                                {loading ? 'שומר...' : '💾 שמור'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingId(null)
+                                  setEditData({ quantity: '', notes: '' })
+                                }}
+                                className="px-3 py-2 text-xs font-semibold bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                              >
+                                ביטול
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-xs text-gray-700">
+                              <div className="font-semibold text-lg text-purple-600">
+                                {fish.currentQuantity} יח'
+                              </div>
+                              <div>גודל: {fish.size}</div>
+                              {fish.code && <div>קוד: {fish.code}</div>}
+                              {fish.arrivalDate && (
+                                <div className="text-gray-600 mt-1">
+                                  תאריך הגעה: {new Date(fish.arrivalDate).toLocaleDateString('he-IL')}
+                                </div>
+                              )}
+                              {fish.notes && <div className="text-gray-600 mt-1">📝 {fish.notes}</div>}
+                            </div>
+                            <div className="mt-3 flex gap-2">
+                              <button
+                                onClick={() => startEditingReceptionFish(fish)}
+                                className="flex-1 px-3 py-2 text-xs font-semibold bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                              >
+                                ✏️ ערוך
+                              </button>
+                              <button
+                                onClick={() => handleOpenMortalityModal(fish, 'reception')}
+                                className="flex-1 px-3 py-2 text-xs font-semibold bg-red-100 text-red-700 rounded hover:bg-red-200"
+                              >
+                                💀 רשום תמותה
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
