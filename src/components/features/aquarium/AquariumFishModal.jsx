@@ -158,15 +158,40 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
       return
     }
 
+    if (!editData.commonName || !editData.scientificName) {
+      setError('שם עברי ושם מדעי הם שדות חובה')
+      return
+    }
+
     try {
       setLoading(true)
       setError('')
-      await updateFishInstance(currentFarm.farmId, instanceId, {
+
+      const updates = {
+        commonName: editData.commonName,
+        scientificName: editData.scientificName,
+        code: editData.code,
+        size: editData.size,
         currentQuantity: parseInt(editData.quantity),
         notes: editData.notes,
-      })
+      }
+
+      // Add price if provided
+      if (editData.price) {
+        updates.price = parseFloat(editData.price)
+      }
+
+      await updateFishInstance(currentFarm.farmId, instanceId, updates)
       setEditingId(null)
-      setEditData({ quantity: '', notes: '' })
+      setEditData({
+        commonName: '',
+        scientificName: '',
+        code: '',
+        size: '',
+        quantity: '',
+        price: '',
+        notes: ''
+      })
       await loadData()
       if (onSuccess) onSuccess()
     } catch (err) {
@@ -220,7 +245,12 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   function startEditingReceptionFish(fish) {
     setEditingId(fish.instanceId)
     setEditData({
+      commonName: fish.commonName || '',
+      scientificName: fish.scientificName || '',
+      code: fish.code || '',
+      size: fish.size || '',
       quantity: fish.currentQuantity,
+      price: fish.price || '',
       notes: fish.notes || ''
     })
   }
@@ -312,16 +342,87 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
 
                         {editingId === fish.instanceId ? (
                           <div className="bg-white rounded-lg p-3 border border-purple-200 mb-2">
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  שם עברי: *
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editData.commonName}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, commonName: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  שם מדעי: *
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editData.scientificName}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, scientificName: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 mb-3">
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  קוד:
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editData.code}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, code: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  גודל:
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editData.size}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, size: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  כמות: *
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editData.quantity}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, quantity: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                                />
+                              </div>
+                            </div>
                             <div className="mb-3">
                               <label className="text-xs font-semibold text-gray-700 block mb-2">
-                                כמות:
+                                מחיר (₪):
                               </label>
                               <input
                                 type="number"
                                 min="0"
-                                value={editData.quantity}
+                                step="0.01"
+                                value={editData.price}
                                 onChange={(e) =>
-                                  setEditData({ ...editData, quantity: e.target.value })
+                                  setEditData({ ...editData, price: e.target.value })
                                 }
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-purple-500"
                               />
@@ -350,7 +451,15 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                               <button
                                 onClick={() => {
                                   setEditingId(null)
-                                  setEditData({ quantity: '', notes: '' })
+                                  setEditData({
+                                    commonName: '',
+                                    scientificName: '',
+                                    code: '',
+                                    size: '',
+                                    quantity: '',
+                                    price: '',
+                                    notes: ''
+                                  })
                                 }}
                                 className="px-3 py-2 text-xs font-semibold bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                               >
@@ -366,6 +475,11 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                               </div>
                               <div>גודל: {fish.size}</div>
                               {fish.code && <div>קוד: {fish.code}</div>}
+                              {fish.price && (
+                                <div className="font-semibold text-green-700">
+                                  💰 מחיר: ₪{fish.price.toFixed(2)}
+                                </div>
+                              )}
                               {fish.arrivalDate && (
                                 <div className="text-gray-600 mt-1">
                                   תאריך הגעה: {new Date(fish.arrivalDate).toLocaleDateString('he-IL')}
