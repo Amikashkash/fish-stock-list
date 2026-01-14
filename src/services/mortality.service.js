@@ -52,8 +52,10 @@ export async function recordMortalityEvent(farmId, eventData) {
   // Add reception-specific data
   if (fishSource === 'reception' && receptionDate) {
     event.receptionDate = receptionDate
+    // Handle both Firestore Timestamp and JavaScript Date objects
+    const dateObj = receptionDate.toDate ? receptionDate.toDate() : new Date(receptionDate)
     event.daysFromReception = Math.floor(
-      (Date.now() - receptionDate.toDate().getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - dateObj.getTime()) / (1000 * 60 * 60 * 24)
     )
   }
 

@@ -1,5 +1,17 @@
 # יומן שינויים - Fish Stock Management System
 
+## [19.5.8] - 2026-01-14
+
+### תיקוני באגים קריטיים 🐛
+- **תיקון שגיאת "toDate is not a function" ברישום תמותה**:
+  - **הבעיה**: שגיאה "toDate is not a function" בעת רישום תמותה לדגים
+  - **הסיבה**: הקוד הניח ש-`receptionDate` הוא תמיד Firestore Timestamp, אך לפעמים הוא JavaScript Date
+  - **הפתרון**:
+    - הוספת בדיקת טיפוס ב-`mortality.service.js`
+    - טיפול בשני סוגי האובייקטים: Firestore Timestamp וגם JavaScript Date
+  - **קבצים ששונו**:
+    - `src/services/mortality.service.js` - תיקון המרת תאריכים
+
 ## [19.5.7] - 2026-01-14
 
 ### תיקוני באגים קריטיים 🐛
