@@ -1,5 +1,18 @@
 # יומן שינויים - Fish Stock Management System
 
+## [19.5.4] - 2026-01-14
+
+### תיקוני באגים 🐛
+- **תיקון רישום תמותה באקווריומים**:
+  - **הבעיה הראשונה**: שגיאה "toDate is not a function" בעת שמירת תמותה
+  - **הפתרון**: תיקון טיפול בתאריכים - תמיכה ב-Date, Firestore Timestamp, ו-string
+  - **הבעיה השנייה**: כמות ברירת מחדל של 1 שקשה לשנות (לא נמחקת, צריך לדרוס)
+  - **הפתרון**: ביטול ערך ברירת מחדל - השדה כעת מתחיל ריק עם placeholder
+  - **קבצים ששונו**:
+    - `src/components/features/health/MortalityRecordModal.jsx` - תיקון טיפול בתאריכים וביטול ברירת מחדל לכמות
+
+---
+
 ## [19.5.3] - 2026-01-13
 
 ### שיפורים 🎨

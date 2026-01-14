@@ -26,7 +26,7 @@ function MortalityRecordModal({ isOpen, onClose, fishData, onMortalityRecorded =
 
   const [formData, setFormData] = useState({
     mortalityType: 'regular',
-    quantity: 1,
+    quantity: '',
     cause: 'unknown',
     notes: '',
   })
@@ -45,7 +45,7 @@ function MortalityRecordModal({ isOpen, onClose, fishData, onMortalityRecorded =
 
       setFormData({
         mortalityType: defaultType,
-        quantity: 1,
+        quantity: '',
         cause: 'unknown',
         notes: '',
       })
@@ -56,7 +56,18 @@ function MortalityRecordModal({ isOpen, onClose, fishData, onMortalityRecorded =
 
   function calculateDaysFromReception() {
     if (!fishData?.arrivalDate) return 999
-    const arrival = fishData.arrivalDate instanceof Date ? fishData.arrivalDate : fishData.arrivalDate.toDate()
+
+    let arrival
+    if (fishData.arrivalDate instanceof Date) {
+      arrival = fishData.arrivalDate
+    } else if (typeof fishData.arrivalDate.toDate === 'function') {
+      arrival = fishData.arrivalDate.toDate()
+    } else if (typeof fishData.arrivalDate === 'string') {
+      arrival = new Date(fishData.arrivalDate)
+    } else {
+      return 999
+    }
+
     return Math.floor((Date.now() - arrival.getTime()) / (1000 * 60 * 60 * 24))
   }
 
@@ -72,13 +83,15 @@ function MortalityRecordModal({ isOpen, onClose, fishData, onMortalityRecorded =
       return
     }
 
-    if (formData.quantity < 1) {
-      setError('כמות חייבת להיות לפחות 1')
+    const quantity = parseInt(formData.quantity)
+
+    if (!formData.quantity || isNaN(quantity) || quantity < 1) {
+      setError('יש להזין כמות תקינה (לפחות 1)')
       return
     }
 
-    if (formData.quantity > fishData.currentQuantity) {
-      setError(`לא ניתן לרשום ${formData.quantity} מתים - יש רק ${fishData.currentQuantity} דגים`)
+    if (quantity > fishData.currentQuantity) {
+      setError(`לא ניתן לרשום ${quantity} מתים - יש רק ${fishData.currentQuantity} דגים`)
       return
     }
 
@@ -94,7 +107,7 @@ function MortalityRecordModal({ isOpen, onClose, fishData, onMortalityRecorded =
         aquariumId: fishData.aquariumId,
         aquariumNumber: fishData.aquariumNumber,
         mortalityType: formData.mortalityType,
-        quantity: formData.quantity,
+        quantity: quantity,
         cause: formData.cause,
         notes: formData.notes,
         receptionDate: fishData.arrivalDate,
@@ -129,7 +142,8 @@ function MortalityRecordModal({ isOpen, onClose, fishData, onMortalityRecorded =
   if (!isOpen || !fishData) return null
 
   const daysFromReception = calculateDaysFromReception()
-  const remainingQuantity = fishData.currentQuantity - formData.quantity
+  const enteredQuantity = parseInt(formData.quantity) || 0
+  const remainingQuantity = fishData.currentQuantity - enteredQuantity
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1001] p-0 sm:p-5 overflow-y-auto">
@@ -241,9 +255,10 @@ function MortalityRecordModal({ isOpen, onClose, fishData, onMortalityRecorded =
                   min="1"
                   max={fishData.currentQuantity}
                   value={formData.quantity}
-                  onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+                  onChange={(e) => handleInputChange('quantity', e.target.value)}
                   className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   required
+                  placeholder="הזן כמות"
                 />
                 <div className="mt-1 text-sm text-gray-600">
                   יישאר: <span className="font-semibold">{remainingQuantity}</span> דגים
