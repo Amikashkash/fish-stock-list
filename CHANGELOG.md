@@ -1,5 +1,21 @@
 # יומן שינויים - Fish Stock Management System
 
+## [19.5.6] - 2026-01-14
+
+### תיקוני באגים 🐛
+- **תיקון שגיאות ברישום תמותה ותצוגת דגים**:
+  - **בעיה 1**: שגיאה "fishId is undefined" בדגים מקומיים בעת רישום תמותה
+    - **הסיבה**: המזהה של דגים מקומיים הוא `fishId` ולא `farmFishId`
+    - **הפתרון**: הוספת `fishId` לרשימת השדות האפשריים במודל התמותה
+  - **בעיה 2**: שמות דגים לא מופיעים ליד מספר אקווריום
+    - **הסיבה**: הקוד טען שמות דגים רק מאקווריומים מסומנים כ-"occupied"
+    - **הפתרון**: שינוי הלוגיקה לטעינת דגים מכל האקווריומים, ללא תלות בסטטוס
+  - **קבצים ששונו**:
+    - `src/components/features/health/MortalityRecordModal.jsx` - תיקון זיהוי fishId
+    - `src/components/features/reception/AquariumAssignmentModal.jsx` - תיקון טעינת שמות דגים
+
+---
+
 ## [19.5.5] - 2026-01-14
 
 ### שיפורים 🎨

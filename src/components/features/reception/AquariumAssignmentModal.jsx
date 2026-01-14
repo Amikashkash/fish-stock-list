@@ -35,48 +35,45 @@ function AquariumAssignmentModal({
       setLoading(true)
       const data = await getAquariums(currentFarm.farmId)
 
-      // For each occupied aquarium, load the fish names
+      // For each aquarium, load the fish names
       const aquariumsWithFish = await Promise.all(
         data.map(async (aquarium) => {
-          if (aquarium.status === 'occupied') {
-            // Get fish from both fish_instances and farmFish
-            const fishNames = []
+          // Get fish from both fish_instances and farmFish
+          const fishNames = []
 
-            // Get imported fish (fish_instances)
-            const fishInstancesRef = collection(db, 'farms', currentFarm.farmId, 'fish_instances')
-            const fishInstancesQuery = query(
-              fishInstancesRef,
-              where('aquariumId', '==', aquarium.aquariumId)
-            )
-            const fishInstancesSnapshot = await getDocs(fishInstancesQuery)
-            fishInstancesSnapshot.docs.forEach((doc) => {
-              const fish = doc.data()
-              if (fish.currentQuantity > 0) {
-                fishNames.push(fish.commonName || fish.scientificName)
-              }
-            })
-
-            // Get local fish (farmFish)
-            const farmFishRef = collection(db, 'farmFish')
-            const farmFishQuery = query(
-              farmFishRef,
-              where('farmId', '==', currentFarm.farmId),
-              where('aquariumId', '==', aquarium.aquariumId)
-            )
-            const farmFishSnapshot = await getDocs(farmFishQuery)
-            farmFishSnapshot.docs.forEach((doc) => {
-              const fish = doc.data()
-              if (fish.quantity > 0) {
-                fishNames.push(fish.hebrewName || fish.scientificName)
-              }
-            })
-
-            return {
-              ...aquarium,
-              fishNames: fishNames.length > 0 ? fishNames : null,
+          // Get imported fish (fish_instances)
+          const fishInstancesRef = collection(db, 'farms', currentFarm.farmId, 'fish_instances')
+          const fishInstancesQuery = query(
+            fishInstancesRef,
+            where('aquariumId', '==', aquarium.aquariumId)
+          )
+          const fishInstancesSnapshot = await getDocs(fishInstancesQuery)
+          fishInstancesSnapshot.docs.forEach((doc) => {
+            const fish = doc.data()
+            if (fish.currentQuantity > 0) {
+              fishNames.push(fish.commonName || fish.scientificName)
             }
+          })
+
+          // Get local fish (farmFish)
+          const farmFishRef = collection(db, 'farmFish')
+          const farmFishQuery = query(
+            farmFishRef,
+            where('farmId', '==', currentFarm.farmId),
+            where('aquariumId', '==', aquarium.aquariumId)
+          )
+          const farmFishSnapshot = await getDocs(farmFishQuery)
+          farmFishSnapshot.docs.forEach((doc) => {
+            const fish = doc.data()
+            if (fish.quantity > 0) {
+              fishNames.push(fish.hebrewName || fish.scientificName)
+            }
+          })
+
+          return {
+            ...aquarium,
+            fishNames: fishNames.length > 0 ? fishNames : null,
           }
-          return aquarium
         })
       )
 

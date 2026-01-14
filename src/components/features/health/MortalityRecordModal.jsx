@@ -101,7 +101,7 @@ function MortalityRecordModal({ isOpen, onClose, fishData, onMortalityRecorded =
 
       const eventData = {
         fishSource: fishData.fishSource || 'reception',
-        fishId: fishData.instanceId || fishData.farmFishId,
+        fishId: fishData.instanceId || fishData.fishId || fishData.farmFishId,
         scientificName: fishData.scientificName,
         commonName: fishData.commonName || fishData.hebrewName,
         aquariumId: fishData.aquariumId,
