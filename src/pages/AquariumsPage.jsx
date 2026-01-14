@@ -7,6 +7,8 @@ import AquariumCreateModal from '../components/features/aquarium/AquariumCreateM
 import AquariumEditModal from '../components/features/aquarium/AquariumEditModal'
 import AquariumFishModal from '../components/features/aquarium/AquariumFishModal'
 import FishTransferModal from '../components/features/transfer/FishTransferModal'
+import { collection, getDocs, query, where } from 'firebase/firestore'
+import { db } from '../firebase/config'
 
 function AquariumsPage() {
   const navigate = useNavigate()
@@ -33,7 +35,49 @@ function AquariumsPage() {
     setLoading(true)
     try {
       const data = await getAquariums(currentFarm.farmId)
-      setAquariums(data)
+
+      // Load fish names for each aquarium
+      const aquariumsWithFish = await Promise.all(
+        data.map(async (aquarium) => {
+          const fishNames = []
+
+          // Get imported fish (fish_instances)
+          const fishInstancesRef = collection(db, 'farms', currentFarm.farmId, 'fish_instances')
+          const fishInstancesQuery = query(
+            fishInstancesRef,
+            where('aquariumId', '==', aquarium.aquariumId)
+          )
+          const fishInstancesSnapshot = await getDocs(fishInstancesQuery)
+          fishInstancesSnapshot.docs.forEach((doc) => {
+            const fish = doc.data()
+            if (fish.currentQuantity > 0) {
+              fishNames.push(fish.commonName || fish.scientificName)
+            }
+          })
+
+          // Get local fish (farmFish)
+          const farmFishRef = collection(db, 'farmFish')
+          const farmFishQuery = query(
+            farmFishRef,
+            where('farmId', '==', currentFarm.farmId),
+            where('aquariumId', '==', aquarium.aquariumId)
+          )
+          const farmFishSnapshot = await getDocs(farmFishQuery)
+          farmFishSnapshot.docs.forEach((doc) => {
+            const fish = doc.data()
+            if (fish.quantity > 0) {
+              fishNames.push(fish.hebrewName || fish.scientificName)
+            }
+          })
+
+          return {
+            ...aquarium,
+            fishNames: fishNames.length > 0 ? fishNames : null,
+          }
+        })
+      )
+
+      setAquariums(aquariumsWithFish)
     } catch (error) {
       console.error('Error loading aquariums:', error)
     } finally {

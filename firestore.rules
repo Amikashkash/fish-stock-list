@@ -118,6 +118,13 @@ service cloud.firestore {
         allow create: if isFarmMember(farmId);
         allow update, delete: if isFarmMember(farmId);
       }
+
+      // Farm's mortality events subcollection
+      match /mortality_events/{eventId} {
+        allow read: if isFarmMember(farmId);
+        allow create: if isFarmMember(farmId);
+        allow update, delete: if isFarmMember(farmId);
+      }
     }
 
     // Farm fish collection (local/farm-sourced fish)

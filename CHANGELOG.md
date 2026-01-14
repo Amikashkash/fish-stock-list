@@ -1,5 +1,35 @@
 # יומן שינויים - Fish Stock Management System
 
+## [19.5.7] - 2026-01-14
+
+### תיקוני באגים קריטיים 🐛
+- **תיקון שגיאת הרשאות ברישום תמותה**:
+  - **הבעיה**: שגיאה "Missing or insufficient permissions" בעת רישום תמותה לדגים
+  - **הסיבה**: חסרו Firestore rules עבור subcollection `mortality_events`
+  - **הפתרון**:
+    - הוספת rules להרשאות קריאה/כתיבה ל-`mortality_events` תחת `farms/{farmId}/`
+    - כל חברי חווה יכולים כעת לרשום ולצפות באירועי תמותה
+  - **קבצים ששונו**:
+    - `firestore.rules` - הוספת rules למערכת ניטור התמותה
+
+### שיפורי UX 🎨
+- **הצגת שמות דגים ליד מספר אקווריום**:
+  - **הבעיה**: בדף האקווריומים לא היה ניתן לדעת מיד איזה דג נמצא באקווריום ללא לחיצה
+  - **הפתרון**:
+    - טעינת שמות דגים (מיובאים ומקומיים) לכל אקווריום
+    - הצגת שמות הדגים ליד מספר האקווריום בפורמט: "1 - שם דג"
+    - תמיכה במספר דגים באותו אקווריום (מופרדים בפסיקים)
+    - צבע כחול בולט לשמות הדגים
+  - **יתרונות**:
+    - זיהוי מיידי של דגים באקווריומים
+    - חיסכון בזמן - אין צורך ללחוץ לפרטים
+    - ממשק אינטואיטיבי יותר
+  - **קבצים ששונו**:
+    - `src/pages/AquariumsPage.jsx` - טעינת שמות דגים לכל אקווריום
+    - `src/components/features/aquarium/AquariumCard.jsx` - הצגת שמות דגים ליד מספר אקווריום
+
+---
+
 ## [19.5.6] - 2026-01-14
 
 ### תיקוני באגים 🐛

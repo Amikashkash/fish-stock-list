@@ -46,7 +46,14 @@ function AquariumCard({ aquarium, onClick, statusLabel, onManageFish }) {
       {/* Mobile Layout - Stacked */}
       <div className="sm:hidden">
         <div className="flex items-center justify-between mb-2">
-          <span className="font-bold text-gray-900 text-base">{aquarium.aquariumNumber}</span>
+          <div className="flex-1">
+            <span className="font-bold text-gray-900 text-base">{aquarium.aquariumNumber}</span>
+            {aquarium.fishNames && aquarium.fishNames.length > 0 && (
+              <span className="text-xs text-gray-600 mr-2">
+                - {aquarium.fishNames.join(', ')}
+              </span>
+            )}
+          </div>
           <span className={`font-semibold text-sm ${statusColor}`}>
             {statusLabel || aquarium.status}
           </span>
@@ -70,7 +77,14 @@ function AquariumCard({ aquarium, onClick, statusLabel, onManageFish }) {
 
       {/* Desktop Layout - Horizontal */}
       <div className="hidden sm:flex items-center justify-between gap-3 text-sm">
-        <span className="font-bold text-gray-900 min-w-[80px]">{aquarium.aquariumNumber}</span>
+        <div className="flex items-center gap-2 min-w-[200px]">
+          <span className="font-bold text-gray-900">{aquarium.aquariumNumber}</span>
+          {aquarium.fishNames && aquarium.fishNames.length > 0 && (
+            <span className="text-sm text-blue-700 font-medium">
+              - {aquarium.fishNames.join(', ')}
+            </span>
+          )}
+        </div>
         <span className={`font-semibold ${statusColor} min-w-[60px]`}>
           {statusLabel || aquarium.status}
         </span>
@@ -81,7 +95,7 @@ function AquariumCard({ aquarium, onClick, statusLabel, onManageFish }) {
         )}
         <button
           onClick={handleManageFishClick}
-          className="manage-fish-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600"
+          className="manage-fish-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600 whitespace-nowrap"
         >
           {isEmpty ? '➕ הוסף דג' : '🐠 ערוך דגים'}
         </button>
