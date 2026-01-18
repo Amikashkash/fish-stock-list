@@ -6,6 +6,7 @@ import AquariumCard from '../components/features/aquarium/AquariumCard'
 import AquariumCreateModal from '../components/features/aquarium/AquariumCreateModal'
 import AquariumEditModal from '../components/features/aquarium/AquariumEditModal'
 import AquariumFishModal from '../components/features/aquarium/AquariumFishModal'
+import QuickEmptyModal from '../components/features/aquarium/QuickEmptyModal'
 import FishTransferModal from '../components/features/transfer/FishTransferModal'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../firebase/config'
@@ -19,9 +20,11 @@ function AquariumsPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showFishModal, setShowFishModal] = useState(false)
   const [showTransferModal, setShowTransferModal] = useState(false)
+  const [showQuickEmptyModal, setShowQuickEmptyModal] = useState(false)
   const [selectedAquarium, setSelectedAquarium] = useState(null)
   const [fishModalAquarium, setFishModalAquarium] = useState(null)
   const [transferSourceAquarium, setTransferSourceAquarium] = useState(null)
+  const [quickEmptyAquarium, setQuickEmptyAquarium] = useState(null)
   const [selectedRoom, setSelectedRoom] = useState(null) // null = room selection screen
   const [filterStatus, setFilterStatus] = useState('all')
 
@@ -131,6 +134,18 @@ function AquariumsPage() {
     setShowTransferModal(false)
     setTransferSourceAquarium(null)
     alert(`הועברו ${result.transferred} ${result.fishName} בהצלחה!`)
+  }
+
+  function handleQuickEmpty(aquarium) {
+    setQuickEmptyAquarium(aquarium)
+    setShowQuickEmptyModal(true)
+  }
+
+  function handleQuickEmptySuccess() {
+    // Reload aquariums after emptying
+    loadAquariums()
+    setShowQuickEmptyModal(false)
+    setQuickEmptyAquarium(null)
   }
 
   function getStatusLabel(statusId) {
@@ -353,6 +368,7 @@ function AquariumsPage() {
                 statusLabel={getStatusLabel(aquarium.status)}
                 onClick={() => handleAquariumClick(aquarium)}
                 onManageFish={handleManageFish}
+                onQuickEmpty={handleQuickEmpty}
               />
             ))}
           </div>
@@ -399,6 +415,17 @@ function AquariumsPage() {
         }}
         onSuccess={handleTransferSuccess}
         sourceAquarium={transferSourceAquarium}
+      />
+
+      {/* Quick Empty Modal */}
+      <QuickEmptyModal
+        isOpen={showQuickEmptyModal}
+        onClose={() => {
+          setShowQuickEmptyModal(false)
+          setQuickEmptyAquarium(null)
+        }}
+        onSuccess={handleQuickEmptySuccess}
+        aquarium={quickEmptyAquarium}
       />
     </div>
   )

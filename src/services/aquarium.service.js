@@ -11,7 +11,9 @@ import {
   orderBy,
   where,
   Timestamp,
+  writeBatch,
 } from 'firebase/firestore'
+import { recordMortalityEvent } from './mortality.service'
 
 /**
  * Creates a new aquarium
@@ -258,6 +260,148 @@ export async function getAquariumsByRoom(farmId, room) {
     return aquariums
   } catch (error) {
     console.error('Error getting aquariums by room:', error)
+    throw error
+  }
+}
+
+/**
+ * Empty reasons enum
+ */
+export const EMPTY_REASONS = {
+  MORTALITY: 'mortality',   // תמותה כוללת
+  SHIPMENT: 'shipment',     // אריזה לחנות
+  DELETE: 'delete',         // מחיקה רגילה
+}
+
+/**
+ * Empty an aquarium - remove all fish with a specified reason
+ * @param {string} farmId - Farm ID
+ * @param {string} aquariumId - Aquarium ID
+ * @param {string} reason - Reason for emptying (mortality/shipment/delete)
+ * @param {string} notes - Optional notes
+ * @returns {Promise<{farmFishCount: number, fishInstancesCount: number}>}
+ */
+export async function emptyAquarium(farmId, aquariumId, reason, notes = '') {
+  try {
+    // 1. Get all farmFish in this aquarium
+    const farmFishRef = collection(db, 'farmFish')
+    const farmFishQuery = query(
+      farmFishRef,
+      where('farmId', '==', farmId),
+      where('aquariumId', '==', aquariumId)
+    )
+    const farmFishSnapshot = await getDocs(farmFishQuery)
+    const farmFishList = farmFishSnapshot.docs.map((doc) => ({
+      fishId: doc.id,
+      ...doc.data(),
+    }))
+
+    // 2. Get all fish_instances in this aquarium
+    const fishInstancesRef = collection(db, 'farms', farmId, 'fish_instances')
+    const fishInstancesQuery = query(
+      fishInstancesRef,
+      where('aquariumId', '==', aquariumId)
+    )
+    const fishInstancesSnapshot = await getDocs(fishInstancesQuery)
+    const fishInstancesList = fishInstancesSnapshot.docs.map((doc) => ({
+      instanceId: doc.id,
+      ...doc.data(),
+    }))
+
+    // Get aquarium info for mortality recording
+    const aquarium = await getAquarium(farmId, aquariumId)
+
+    // 3. Handle based on reason
+    if (reason === EMPTY_REASONS.MORTALITY) {
+      // Record mortality for each fish
+      for (const fish of farmFishList) {
+        if (fish.quantity > 0) {
+          await recordMortalityEvent(farmId, {
+            fishSource: 'local',
+            fishId: fish.fishId,
+            scientificName: fish.scientificName || '',
+            commonName: fish.hebrewName || '',
+            aquariumId: aquariumId,
+            aquariumNumber: aquarium?.aquariumNumber || '',
+            mortalityType: 'regular',
+            quantity: fish.quantity,
+            cause: 'mass_mortality',
+            notes: notes || 'ריקון אקווריום - תמותה כוללת',
+          })
+        }
+      }
+
+      for (const fish of fishInstancesList) {
+        if (fish.currentQuantity > 0) {
+          await recordMortalityEvent(farmId, {
+            fishSource: 'reception',
+            fishId: fish.instanceId,
+            scientificName: fish.scientificName || '',
+            commonName: fish.commonName || '',
+            aquariumId: aquariumId,
+            aquariumNumber: aquarium?.aquariumNumber || '',
+            mortalityType: 'regular',
+            quantity: fish.currentQuantity,
+            cause: 'mass_mortality',
+            notes: notes || 'ריקון אקווריום - תמותה כוללת',
+            receptionDate: fish.arrivalDate,
+          })
+        }
+      }
+    } else if (reason === EMPTY_REASONS.SHIPMENT) {
+      // Set quantity to 0 (keeps records for history)
+      const batch = writeBatch(db)
+
+      for (const fish of farmFishList) {
+        const fishRef = doc(db, 'farmFish', fish.fishId)
+        batch.update(fishRef, {
+          quantity: 0,
+          updatedAt: Timestamp.now(),
+          lastEmptyReason: 'shipment',
+          lastEmptyNotes: notes,
+        })
+      }
+
+      for (const fish of fishInstancesList) {
+        const fishRef = doc(db, 'farms', farmId, 'fish_instances', fish.instanceId)
+        batch.update(fishRef, {
+          currentQuantity: 0,
+          updatedAt: Timestamp.now(),
+          lastEmptyReason: 'shipment',
+          lastEmptyNotes: notes,
+        })
+      }
+
+      await batch.commit()
+    } else {
+      // DELETE - remove fish completely
+      const batch = writeBatch(db)
+
+      for (const fish of farmFishList) {
+        const fishRef = doc(db, 'farmFish', fish.fishId)
+        batch.delete(fishRef)
+      }
+
+      for (const fish of fishInstancesList) {
+        const fishRef = doc(db, 'farms', farmId, 'fish_instances', fish.instanceId)
+        batch.delete(fishRef)
+      }
+
+      await batch.commit()
+    }
+
+    // 4. Update aquarium status to empty
+    await updateAquarium(farmId, aquariumId, {
+      status: 'empty',
+      totalFish: 0,
+    })
+
+    return {
+      farmFishCount: farmFishList.length,
+      fishInstancesCount: fishInstancesList.length,
+    }
+  } catch (error) {
+    console.error('Error emptying aquarium:', error)
     throw error
   }
 }

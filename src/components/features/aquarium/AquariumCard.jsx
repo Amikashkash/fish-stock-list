@@ -18,14 +18,14 @@ const STATUS_BG_COLORS = {
   'in-transfer': 'bg-purple-50',
 }
 
-function AquariumCard({ aquarium, onClick, statusLabel, onManageFish }) {
+function AquariumCard({ aquarium, onClick, statusLabel, onManageFish, onQuickEmpty }) {
   const statusColor = STATUS_COLORS[aquarium.status] || 'text-gray-500'
   const bgColor = STATUS_BG_COLORS[aquarium.status] || 'bg-gray-50'
   const shelfLabel = SHELF_LABELS[aquarium.shelf] || aquarium.shelf
 
   const handleCardClick = (e) => {
-    // Only trigger onClick if not clicking on the manage fish button
-    if (e.target.closest('.manage-fish-btn')) {
+    // Only trigger onClick if not clicking on buttons
+    if (e.target.closest('.manage-fish-btn') || e.target.closest('.quick-empty-btn')) {
       return
     }
     onClick()
@@ -34,6 +34,13 @@ function AquariumCard({ aquarium, onClick, statusLabel, onManageFish }) {
   const handleManageFishClick = (e) => {
     e.stopPropagation()
     onManageFish(aquarium)
+  }
+
+  const handleQuickEmptyClick = (e) => {
+    e.stopPropagation()
+    if (onQuickEmpty) {
+      onQuickEmpty(aquarium)
+    }
   }
 
   const isEmpty = aquarium.status === 'empty' || !aquarium.totalFish || aquarium.totalFish === 0
@@ -67,12 +74,23 @@ function AquariumCard({ aquarium, onClick, statusLabel, onManageFish }) {
             )}
           </div>
         </div>
-        <button
-          onClick={handleManageFishClick}
-          className="manage-fish-btn w-full px-3 py-2 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600"
-        >
-          {isEmpty ? '➕ הוסף דג' : '🐠 ערוך דגים'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleManageFishClick}
+            className="manage-fish-btn flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600"
+          >
+            {isEmpty ? '➕ הוסף דג' : '🐠 ערוך דגים'}
+          </button>
+          {!isEmpty && onQuickEmpty && (
+            <button
+              onClick={handleQuickEmptyClick}
+              className="quick-empty-btn px-3 py-2 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-red-500 text-white hover:bg-red-600"
+              title="ריקון מהיר"
+            >
+              🗑️
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Desktop Layout - Horizontal */}
@@ -93,12 +111,23 @@ function AquariumCard({ aquarium, onClick, statusLabel, onManageFish }) {
         {!isEmpty && (
           <span className="text-blue-600 font-medium">🐠 {aquarium.totalFish}</span>
         )}
-        <button
-          onClick={handleManageFishClick}
-          className="manage-fish-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600 whitespace-nowrap"
-        >
-          {isEmpty ? '➕ הוסף דג' : '🐠 ערוך דגים'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleManageFishClick}
+            className="manage-fish-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600 whitespace-nowrap"
+          >
+            {isEmpty ? '➕ הוסף דג' : '🐠 ערוך דגים'}
+          </button>
+          {!isEmpty && onQuickEmpty && (
+            <button
+              onClick={handleQuickEmptyClick}
+              className="quick-empty-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-red-500 text-white hover:bg-red-600 whitespace-nowrap"
+              title="ריקון מהיר"
+            >
+              🗑️ רוקן
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
