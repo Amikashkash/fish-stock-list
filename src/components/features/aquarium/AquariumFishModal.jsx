@@ -5,14 +5,26 @@ import { getFarmFish, addFarmFish, updateFarmFish, deleteFarmFish } from '../../
 import { getFishByAquarium, updateFishInstance, deleteFishInstance } from '../../../services/fish.service'
 import MortalityRecordModal from '../health/MortalityRecordModal'
 
-const SOURCE_TYPES = {
-  local_delivery: 'משלוח מקומי',
-  farm_breeding: 'ריבוי בחווה',
-  store_return: 'החזרתי מאחת החנויות',
-}
+// Default fallback sources if none defined in settings
+const DEFAULT_FISH_SOURCES = [
+  { id: 'local_delivery', label: 'משלוח מקומי' },
+  { id: 'farm_breeding', label: 'ריבוי בחווה' },
+  { id: 'store_return', label: 'החזרה מחנות' },
+]
 
 function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   const { currentFarm } = useFarm()
+
+  // Get fish sources from farm settings or use defaults
+  const fishSources = currentFarm?.settings?.fishSources?.length > 0
+    ? currentFarm.settings.fishSources
+    : DEFAULT_FISH_SOURCES
+
+  // Helper to get source label by id
+  const getSourceLabel = (sourceId) => {
+    const source = fishSources.find(s => s.id === sourceId)
+    return source?.label || sourceId
+  }
   const [fishList, setFishList] = useState([])
   const [receptionFishList, setReceptionFishList] = useState([])
   const [previousFishNames, setPreviousFishNames] = useState([])
@@ -23,13 +35,16 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   const [mortalityModalOpen, setMortalityModalOpen] = useState(false)
   const [selectedFishForMortality, setSelectedFishForMortality] = useState(null)
 
+  // Get default source id
+  const defaultSourceId = fishSources[0]?.id || 'local_delivery'
+
   const [newFish, setNewFish] = useState({
     hebrewName: '',
     scientificName: '',
     size: '',
     quantity: '',
     price: '',
-    source: 'local_delivery',
+    source: defaultSourceId,
     notes: '',
   })
 
@@ -531,7 +546,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                             <p className="text-xs text-gray-600 italic">{fish.scientificName}</p>
                           </div>
                           <div className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-1 rounded">
-                            {SOURCE_TYPES[fish.source]}
+                            {getSourceLabel(fish.source)}
                           </div>
                         </div>
 
@@ -564,9 +579,9 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
                                 disabled={loading}
                               >
-                                {Object.entries(SOURCE_TYPES).map(([key, label]) => (
-                                  <option key={key} value={key}>
-                                    {label}
+                                {fishSources.map((source) => (
+                                  <option key={source.id} value={source.id}>
+                                    {source.label}
                                   </option>
                                 ))}
                               </select>
@@ -743,9 +758,9 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500"
                       disabled={loading}
                     >
-                      {Object.entries(SOURCE_TYPES).map(([key, label]) => (
-                        <option key={key} value={key}>
-                          {label}
+                      {fishSources.map((source) => (
+                        <option key={source.id} value={source.id}>
+                          {source.label}
                         </option>
                       ))}
                     </select>

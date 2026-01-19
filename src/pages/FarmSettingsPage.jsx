@@ -9,10 +9,14 @@ function FarmSettingsPage() {
   const navigate = useNavigate()
   const { currentFarm, reloadFarms } = useFarm()
   const [locations, setLocations] = useState(currentFarm?.settings?.aquariumRooms || [])
+  const [fishSources, setFishSources] = useState(currentFarm?.settings?.fishSources || [])
   const [aquariums, setAquariums] = useState([])
   const [editingId, setEditingId] = useState(null)
   const [editingLabel, setEditingLabel] = useState('')
   const [newLocationLabel, setNewLocationLabel] = useState('')
+  const [editingSourceId, setEditingSourceId] = useState(null)
+  const [editingSourceLabel, setEditingSourceLabel] = useState('')
+  const [newSourceLabel, setNewSourceLabel] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [checkingUpdates, setCheckingUpdates] = useState(false)
@@ -175,6 +179,102 @@ function FarmSettingsPage() {
     setEditingId(null)
     setEditingLabel('')
     saveLocations(updatedLocations)
+  }
+
+  // ===== Fish Sources Management =====
+  async function saveFishSources(updatedSources) {
+    setSaving(true)
+    setMessage({ type: '', text: '' })
+
+    try {
+      await updateFarm(currentFarm.farmId, {
+        settings: {
+          ...currentFarm.settings,
+          fishSources: updatedSources,
+        },
+      })
+
+      await reloadFarms()
+      setMessage({ type: 'success', text: 'השינויים נשמרו בהצלחה!' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    } catch (error) {
+      console.error('Error updating fish sources:', error)
+      setMessage({ type: 'error', text: 'שגיאה בשמירת השינויים. נסה שוב.' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function handleAddSource() {
+    if (!newSourceLabel.trim()) {
+      setMessage({ type: 'error', text: 'נא להזין שם מקור' })
+      return
+    }
+
+    // Check for duplicate
+    if (fishSources.some((src) => src.label === newSourceLabel.trim())) {
+      setMessage({ type: 'error', text: 'מקור עם שם זה כבר קיים' })
+      return
+    }
+
+    const newSource = {
+      id: `src-${Date.now()}`,
+      label: newSourceLabel.trim(),
+    }
+
+    const updatedSources = [...fishSources, newSource]
+    setFishSources(updatedSources)
+    setNewSourceLabel('')
+    saveFishSources(updatedSources)
+  }
+
+  function handleStartEditSource(source) {
+    setEditingSourceId(source.id)
+    setEditingSourceLabel(source.label)
+  }
+
+  function handleCancelEditSource() {
+    setEditingSourceId(null)
+    setEditingSourceLabel('')
+  }
+
+  function handleSaveEditSource(sourceId) {
+    if (!editingSourceLabel.trim()) {
+      setMessage({ type: 'error', text: 'נא להזין שם מקור' })
+      return
+    }
+
+    // Check for duplicate (excluding current source)
+    if (
+      fishSources.some(
+        (src) => src.id !== sourceId && src.label === editingSourceLabel.trim()
+      )
+    ) {
+      setMessage({ type: 'error', text: 'מקור עם שם זה כבר קיים' })
+      return
+    }
+
+    const updatedSources = fishSources.map((src) =>
+      src.id === sourceId ? { ...src, label: editingSourceLabel.trim() } : src
+    )
+
+    setFishSources(updatedSources)
+    setEditingSourceId(null)
+    setEditingSourceLabel('')
+    saveFishSources(updatedSources)
+  }
+
+  function handleDeleteSource(sourceId) {
+    const source = fishSources.find((src) => src.id === sourceId)
+    if (!source) return
+
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את המקור "${source.label}"?`)) {
+      return
+    }
+
+    const updatedSources = fishSources.filter((src) => src.id !== sourceId)
+    setFishSources(updatedSources)
+    saveFishSources(updatedSources)
   }
 
   function handleDeleteLocation(locationId) {
@@ -368,6 +468,118 @@ function FarmSettingsPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+      </div>
+
+      {/* Fish Sources Manager */}
+      <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8 mb-6">
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">ניהול מקורות דגים</h2>
+          <p className="text-[15px] text-gray-600">
+            הוסף, ערוך או מחק מקורות דגים (משלוח מקומי, ריבוי בחווה וכו')
+          </p>
+        </div>
+
+        {/* Add New Source */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-8 pb-8 border-b-2 border-gray-100">
+          <input
+            type="text"
+            value={newSourceLabel}
+            onChange={(e) => setNewSourceLabel(e.target.value)}
+            placeholder="שם מקור חדש (למשל: קניה מספק, גידול עצמי)"
+            className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-[15px] transition-colors focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleAddSource()
+              }
+            }}
+          />
+          <button
+            className="w-full sm:w-auto px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+            onClick={handleAddSource}
+            disabled={saving}
+          >
+            + הוסף מקור
+          </button>
+        </div>
+
+        {/* Sources List */}
+        {fishSources.length === 0 ? (
+          <div className="text-center py-12 px-6 text-gray-600">
+            <div className="text-6xl mb-4 opacity-50">🐟</div>
+            <p className="my-2 text-base">אין מקורות מוגדרים</p>
+            <p className="text-sm opacity-70">הוסף את המקור הראשון למעלה</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {fishSources.map((source) => (
+              <div
+                key={source.id}
+                className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 rounded-xl transition-colors bg-green-50 hover:bg-green-100"
+              >
+                {editingSourceId === source.id ? (
+                  <>
+                    <input
+                      type="text"
+                      value={editingSourceLabel}
+                      onChange={(e) => setEditingSourceLabel(e.target.value)}
+                      className="flex-1 px-3 py-2 border-2 border-green-500 rounded-lg text-base font-medium focus:outline-none focus:ring-4 focus:ring-green-500/10"
+                      autoFocus
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSaveEditSource(source.id)
+                        } else if (e.key === 'Escape') {
+                          handleCancelEditSource()
+                        }
+                      }}
+                    />
+                    <div className="flex gap-2 mr-2">
+                      <button
+                        className="w-9 h-9 border-none rounded-lg cursor-pointer flex items-center justify-center text-lg transition-all bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => handleSaveEditSource(source.id)}
+                        disabled={saving}
+                        title="שמור"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        className="w-9 h-9 border-none rounded-lg cursor-pointer flex items-center justify-center text-lg transition-all bg-gray-300 text-gray-700 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleCancelEditSource}
+                        disabled={saving}
+                        title="ביטול"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3 flex-1">
+                      <span className="text-[15px] sm:text-base font-medium text-gray-900">{source.label}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        className="w-9 h-9 border-none rounded-lg cursor-pointer flex items-center justify-center text-lg transition-all bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => handleStartEditSource(source)}
+                        disabled={saving}
+                        title="ערוך"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        className="w-9 h-9 border-none rounded-lg cursor-pointer flex items-center justify-center text-lg transition-all bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => handleDeleteSource(source.id)}
+                        disabled={saving}
+                        title="מחק"
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -16,6 +16,11 @@ const DEFAULT_AQUARIUM_SETTINGS = {
     { id: 'maintenance', label: 'תחזוקה', color: '#f39c12' },
     { id: 'in-transfer', label: 'בהעברה', color: '#9b59b6' },
   ],
+  fishSources: [
+    { id: 'local_delivery', label: 'משלוח מקומי' },
+    { id: 'farm_breeding', label: 'ריבוי בחווה' },
+    { id: 'store_return', label: 'החזרה מחנות' },
+  ],
 }
 
 const FarmContext = createContext()
@@ -46,8 +51,8 @@ export function FarmProvider({ children }) {
   async function migrateFarmSettings(farm) {
     try {
       // Check if farm needs migration
-      if (!farm.settings?.aquariumRooms || !farm.settings?.aquariumStatuses) {
-        console.log(`Migrating farm ${farm.name} with aquarium settings...`)
+      if (!farm.settings?.aquariumRooms || !farm.settings?.aquariumStatuses || !farm.settings?.fishSources) {
+        console.log(`Migrating farm ${farm.name} with settings...`)
 
         const updates = {
           settings: {
