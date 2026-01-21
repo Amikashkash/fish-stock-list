@@ -72,16 +72,57 @@ export async function parseShipmentExcel(file) {
     const sheetName = workbook.SheetNames[0]
     const worksheet = workbook.Sheets[sheetName]
 
-    // 4. Convert to JSON (using first row as headers)
-    const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: null })
+    // 4. Convert to raw array (no headers assumed)
+    const rawArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null })
 
-    if (!rawData || rawData.length === 0) {
+    if (!rawArray || rawArray.length === 0) {
       throw new Error('לא נמצאו נתונים בקובץ האקסל')
     }
 
-    // Log first row to help debug column names
+    // Find the header row (look for row containing 'שם' or 'מספר ארגז' or 'גודל')
+    let headerRowIndex = -1
+    for (let i = 0; i < Math.min(10, rawArray.length); i++) {
+      const row = rawArray[i]
+      if (row && Array.isArray(row)) {
+        const rowStr = row.join(' ').toLowerCase()
+        if (rowStr.includes('שם') || rowStr.includes('מספר ארגז') || rowStr.includes('גודל')) {
+          headerRowIndex = i
+          console.log('Found header row at index:', i, 'Content:', row)
+          break
+        }
+      }
+    }
+
+    if (headerRowIndex === -1) {
+      throw new Error('לא נמצאה שורת כותרות בקובץ (מחפש: שם, גודל, מספר ארגז)')
+    }
+
+    // Get headers from the header row
+    const headers = rawArray[headerRowIndex].map(h => h?.toString().trim() || '')
+    console.log('Headers found:', headers)
+
+    // Convert remaining rows to objects using these headers
+    const rawData = []
+    for (let i = headerRowIndex + 1; i < rawArray.length; i++) {
+      const row = rawArray[i]
+      if (row && Array.isArray(row)) {
+        const obj = {}
+        headers.forEach((header, idx) => {
+          if (header) {
+            obj[header] = row[idx] !== undefined ? row[idx] : null
+          }
+        })
+        rawData.push(obj)
+      }
+    }
+
+    if (rawData.length === 0) {
+      throw new Error('לא נמצאו שורות נתונים אחרי הכותרות')
+    }
+
+    // Log first row to help debug
     console.log('Excel columns found:', Object.keys(rawData[0]))
-    console.log('First row data:', rawData[0])
+    console.log('First data row:', rawData[0])
 
     // 5. Map columns to our schema - try multiple possible column names
     const mappedData = rawData.map((row, index) => {
@@ -110,7 +151,7 @@ export async function parseShipmentExcel(file) {
 
       return {
         // Row metadata
-        rowNumber: index + 2, // Excel rows (1-based, +1 for header)
+        rowNumber: headerRowIndex + index + 2, // Excel rows (1-based, +1 for header row, +1 for 0-index)
 
         // Mandatory fields (only these 3)
         scientificName: scientificName?.toString().trim() || null,
