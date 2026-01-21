@@ -21,30 +21,33 @@ import { db, auth } from '../firebase/config'
 
 /**
  * Calculate initial costs for fish instance
+ * Simplified version - costs will be updated later
  *
  * @param {Object} item - Shipment item
  * @returns {Object} Cost structure
  */
 function calculateInitialCosts(item) {
+  const price = item.price || 0
+  const quantity = item.total || item.quantity || 1
+
   return {
-    // From invoice
-    invoiceCostPerFish: item.price,
+    // From invoice (0 if not provided)
+    invoiceCostPerFish: price,
 
     // Same as invoice initially (no DOA yet)
-    arrivalCostPerFish: item.price,
+    arrivalCostPerFish: price,
 
     // For USD invoices, this is just invoice price initially
-    // User will update manually later
-    currentCostPerFish: item.price,
+    currentCostPerFish: price,
 
     // Total invoice cost
-    totalInvoiceCost: item.total * item.price,
+    totalInvoiceCost: quantity * price,
 
-    // Currency
-    currency: item.currency,
+    // Currency - default to ILS if not provided
+    currency: item.currency || 'ILS',
 
     // Flags
-    profitableAtWholesale: true, // Will be calculated later
+    profitableAtWholesale: true,
   }
 }
 
@@ -79,20 +82,24 @@ export async function importShipment(farmId, shipmentData, items) {
     const shipmentRef = doc(shipmentsRef)
     const shipmentId = shipmentRef.id
 
-    // Calculate totals
-    const totalFish = items.reduce((sum, item) => sum + item.total, 0)
-    const totalCost = items.reduce((sum, item) => sum + (item.total * item.price), 0)
+    // Calculate totals (handle missing price/total fields)
+    const totalFish = items.reduce((sum, item) => sum + (item.total || item.quantity || 1), 0)
+    const totalCost = items.reduce((sum, item) => {
+      const qty = item.total || item.quantity || 1
+      const price = item.price || 0
+      return sum + (qty * price)
+    }, 0)
 
     // 2. Set shipment document
     batch.set(shipmentRef, {
       shipmentId,
       farmId,
-      supplier: shipmentData.supplier,
-      dateReceived: shipmentData.dateReceived,
+      supplier: shipmentData.supplier || 'לא צוין',
+      dateReceived: shipmentData.dateReceived || new Date(),
       totalItems: items.length,
       totalFish,
       totalCost,
-      currency: items[0].currency, // Assuming all same currency per shipment
+      currency: items[0]?.currency || 'ILS', // Default to ILS
       status: 'received',
       notes: shipmentData.notes || null,
       createdAt: serverTimestamp(),
@@ -106,34 +113,35 @@ export async function importShipment(farmId, shipmentData, items) {
     for (const item of items) {
       const fishRef = doc(fishInstancesRef)
       const fishId = fishRef.id
+      const quantity = item.total || item.quantity || 1
 
       batch.set(fishRef, {
         instanceId: fishId,
         farmId,
         shipmentId,
 
-        // Species info
-        code: item.code,
-        codeStatus: item.codeStatus,
-        scientificName: item.scientificName,
-        commonName: item.commonName,
-        size: item.size,
+        // Species info (handle simplified parser)
+        code: item.code || '',
+        codeStatus: item.codeStatus || 'unknown',
+        scientificName: item.scientificName || '',
+        commonName: item.commonName || '',
+        size: item.size || '',
 
-        // Additional metadata
-        packingRatio: item.packingRatio,
-        partOfCart: item.partOfCart,
-        cart: item.cart,
+        // Additional metadata (optional fields)
+        packingRatio: item.packingRatio || null,
+        partOfCart: item.partOfCart || null,
+        cart: item.cart || item.boxNumber || null,
 
         // Quantities
-        originalQuantity: item.total,
-        currentQuantity: item.total,
+        originalQuantity: quantity,
+        currentQuantity: quantity,
 
         // Costs
         costs: calculateInitialCosts(item),
 
         // Lifecycle
-        phase: 'reception', // or 'growth' if marked as long-term
-        lifecycle: 'short-term', // or 'growth' - can be updated later
+        phase: 'reception',
+        lifecycle: 'short-term',
 
         // Mortality tracking
         mortality: {
@@ -149,7 +157,7 @@ export async function importShipment(farmId, shipmentData, items) {
         },
 
         // Aquarium assignment
-        aquariumId: null, // To be assigned later
+        aquariumId: null,
 
         // Treatment tracking
         allTreatments: [],
