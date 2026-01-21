@@ -13,6 +13,52 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "mortality_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "fishId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "mortality_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "mortalityType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "mortality_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "fishId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "mortalityType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

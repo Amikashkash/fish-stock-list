@@ -75,19 +75,26 @@ export async function recordMortalityEvent(farmId, eventData) {
  * Update fish instance quantity after mortality
  */
 async function updateFishInstanceQuantity(farmId, instanceId, mortalityQuantity) {
-  // Get current quantity
-  const instanceSnap = await getDocs(
-    query(collection(db, 'farms', farmId, 'fish_instances'), where('instanceId', '==', instanceId))
-  )
+  // Get current quantity using getDoc directly
+  const { getDoc } = await import('firebase/firestore')
+  const instanceRef = doc(db, 'farms', farmId, 'fish_instances', instanceId)
+  const instanceSnap = await getDoc(instanceRef)
 
-  if (!instanceSnap.empty) {
-    const currentQuantity = instanceSnap.docs[0].data().currentQuantity || 0
+  if (instanceSnap.exists()) {
+    const currentQuantity = instanceSnap.data().currentQuantity || 0
     const newQuantity = Math.max(0, currentQuantity - mortalityQuantity)
 
-    await updateDoc(instanceSnap.docs[0].ref, {
+    const updates = {
       currentQuantity: newQuantity,
       updatedAt: Timestamp.now(),
-    })
+    }
+
+    // Remove from aquarium if quantity reaches 0
+    if (newQuantity === 0) {
+      updates.aquariumId = null
+    }
+
+    await updateDoc(instanceRef, updates)
   }
 }
 
@@ -97,19 +104,25 @@ async function updateFishInstanceQuantity(farmId, instanceId, mortalityQuantity)
 async function updateLocalFishQuantity(farmId, farmFishId, mortalityQuantity) {
   const fishRef = doc(db, 'farmFish', farmFishId)
 
-  // Get current quantity
-  const fishSnap = await getDocs(
-    query(collection(db, 'farmFish'), where('farmFishId', '==', farmFishId))
-  )
+  // Get current quantity using getDoc directly
+  const { getDoc } = await import('firebase/firestore')
+  const fishSnap = await getDoc(fishRef)
 
-  if (!fishSnap.empty) {
-    const currentQuantity = fishSnap.docs[0].data().quantity || 0
+  if (fishSnap.exists()) {
+    const currentQuantity = fishSnap.data().quantity || 0
     const newQuantity = Math.max(0, currentQuantity - mortalityQuantity)
 
-    await updateDoc(fishSnap.docs[0].ref, {
+    const updates = {
       quantity: newQuantity,
       updatedAt: Timestamp.now(),
-    })
+    }
+
+    // Remove from aquarium if quantity reaches 0
+    if (newQuantity === 0) {
+      updates.aquariumId = null
+    }
+
+    await updateDoc(fishRef, updates)
   }
 }
 

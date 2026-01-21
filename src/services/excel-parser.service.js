@@ -2,88 +2,44 @@
  * excel-parser.service.js
  *
  * Service for parsing Excel shipment files.
- * Handles file reading, data extraction, validation, and code generation.
+ * Simplified version - only 3 mandatory fields:
+ * 1. Scientific Name (שם מדעי)
+ * 2. Size (גודל)
+ * 3. Box Number (מספר ארגז)
  */
 
 import * as XLSX from 'xlsx'
 
 /**
- * Generate a dummy code for fish without supplier SKU
- *
- * Format: MISSING-{timestamp}-{randomId}
- * Example: MISSING-1702345678-a3f8c2
- *
- * @returns {string} Dummy code
+ * Find column value by trying multiple possible column names
  */
-function generateMissingCode() {
-  const timestamp = Date.now()
-  const randomId = Math.random().toString(36).substring(2, 8)
-  return `MISSING-${timestamp}-${randomId}`
+function findColumnValue(row, possibleNames) {
+  for (const name of possibleNames) {
+    if (row[name] !== undefined && row[name] !== null && row[name] !== '') {
+      return row[name]
+    }
+  }
+  return null
 }
 
 /**
- * Validate a single row from Excel
- *
- * @param {Object} row - Parsed row data
- * @returns {Object} Validation result with errors and warnings
+ * Validate a single row - simplified version
  */
 function validateRow(row) {
   const errors = []
   const warnings = []
 
-  // Required field validations
-  if (!row.scientificName?.trim()) {
-    errors.push({ field: 'scientificName', message: 'Scientific name is required' })
+  // Only 3 mandatory fields
+  if (!row.scientificName?.toString().trim()) {
+    errors.push({ field: 'scientificName', message: 'שם מדעי חסר' })
   }
 
-  if (!row.commonName?.trim()) {
-    errors.push({ field: 'commonName', message: 'Common name is required' })
+  if (!row.size?.toString().trim()) {
+    errors.push({ field: 'size', message: 'גודל חסר' })
   }
 
-  if (!row.size?.trim()) {
-    errors.push({ field: 'size', message: 'Size is required' })
-  }
-
-  // Numeric validations
-  if (isNaN(row.cart) || row.cart <= 0) {
-    errors.push({ field: 'cart', message: 'Cart must be a positive number' })
-  }
-
-  if (isNaN(row.bags) || row.bags <= 0) {
-    errors.push({ field: 'bags', message: 'Bags must be a positive number' })
-  }
-
-  if (isNaN(row.qtyPerBag) || row.qtyPerBag <= 0) {
-    errors.push({ field: 'qtyPerBag', message: 'Qty/Bag must be a positive number' })
-  }
-
-  if (isNaN(row.total) || row.total <= 0) {
-    errors.push({ field: 'total', message: 'Total must be a positive number' })
-  }
-
-  // Price validation
-  if (isNaN(row.price) || row.price <= 0) {
-    errors.push({ field: 'price', message: 'Price must be a positive number' })
-  } else if (row.price > 10000) {
-    warnings.push({ field: 'price', message: 'Price seems unusually high' })
-  }
-
-  // Currency - always ILS (no validation needed)
-
-  // Calculation check: bags × qtyPerBag should equal total
-  if (!isNaN(row.bags) && !isNaN(row.qtyPerBag) && !isNaN(row.total)) {
-    const calculated = row.bags * row.qtyPerBag
-    if (calculated !== row.total) {
-      errors.push({
-        field: 'total',
-        message: `Total (${row.total}) doesn't match Bags × Qty/Bag (${calculated})`
-      })
-    }
-  }
-
-  // Missing code warning (not an error)
-  if (!row.code) {
-    warnings.push({ field: 'code', message: 'Code missing - will be generated automatically' })
+  if (!row.boxNumber && row.boxNumber !== 0) {
+    errors.push({ field: 'boxNumber', message: 'מספר ארגז חסר' })
   }
 
   return {
@@ -95,6 +51,7 @@ function validateRow(row) {
 
 /**
  * Parse Excel file and extract shipment data
+ * Simplified version - only 3 mandatory fields
  *
  * @param {File} file - Excel file from user upload
  * @returns {Promise<Object>} Parsed data with validation results
@@ -109,7 +66,7 @@ export async function parseShipmentExcel(file) {
 
     // 3. Get first sheet
     if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-      throw new Error('No sheets found in Excel file')
+      throw new Error('לא נמצאו גליונות בקובץ האקסל')
     }
 
     const sheetName = workbook.SheetNames[0]
@@ -119,35 +76,58 @@ export async function parseShipmentExcel(file) {
     const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: null })
 
     if (!rawData || rawData.length === 0) {
-      throw new Error('No data found in Excel file')
+      throw new Error('לא נמצאו נתונים בקובץ האקסל')
     }
 
-    // 5. Map columns to our schema
+    // Log first row to help debug column names
+    console.log('Excel columns found:', Object.keys(rawData[0]))
+    console.log('First row data:', rawData[0])
+
+    // 5. Map columns to our schema - try multiple possible column names
     const mappedData = rawData.map((row, index) => {
+      // Scientific Name - try multiple variations
+      const scientificName = findColumnValue(row, [
+        'Scientific Name', 'scientific name', 'Scientific name',
+        'שם מדעי', 'שם לטיני', 'Latin Name', 'latin name',
+        'Species', 'species', 'מין'
+      ])
+
+      // Size - try multiple variations
+      const size = findColumnValue(row, [
+        'Size', 'size', 'SIZE',
+        'גודל', 'מידה', 'Measure', 'measure'
+      ])
+
+      // Box Number - try multiple variations
+      const boxNumber = findColumnValue(row, [
+        'Box', 'box', 'BOX',
+        'Cart', 'cart', 'CART',
+        'ארגז', 'מספר ארגז', 'קרטון', 'מספר קרטון',
+        'Box Number', 'Box No', 'Box #',
+        'Carton', 'carton'
+      ])
+
       return {
         // Row metadata
         rowNumber: index + 2, // Excel rows (1-based, +1 for header)
 
-        // Data fields
-        code: row['Code'] || null,
-        cart: parseInt(row['Cart']),
-        scientificName: row['Scientific Name'],
-        commonName: row['Common Name'],
-        size: row['Size'],
-        bags: parseInt(row['Bags']),
-        qtyPerBag: parseInt(row['Qty/Bag']),
-        total: parseInt(row['Total']),
-        price: parseFloat(row['Price']),
-        currency: 'ILS', // Always ILS - no need for user to specify
+        // Mandatory fields (only these 3)
+        scientificName: scientificName?.toString().trim() || null,
+        size: size?.toString().trim() || null,
+        boxNumber: boxNumber !== null ? parseInt(boxNumber) || boxNumber : null,
 
-        // Optional fields
-        packingRatio: row['Packing Ratio'] || null,
-        partOfCart: row['Part of Cart'] ? parseFloat(row['Part of Cart']) : null,
+        // Store original row for debugging
+        _originalRow: row,
       }
     })
 
+    // Filter out empty rows (rows where all 3 fields are empty)
+    const filteredData = mappedData.filter(row =>
+      row.scientificName || row.size || row.boxNumber
+    )
+
     // 6. Validate each row
-    const validatedData = mappedData.map(row => {
+    const validatedData = filteredData.map(row => {
       const validation = validateRow(row)
 
       return {
@@ -158,31 +138,17 @@ export async function parseShipmentExcel(file) {
       }
     })
 
-    // 7. Handle missing codes
-    const dataWithCodes = validatedData.map(row => {
-      if (!row.code) {
-        row.code = generateMissingCode()
-        row.codeStatus = 'missing'
-      } else {
-        row.codeStatus = 'valid'
-      }
-      return row
-    })
-
-    // 8. Calculate summary
+    // 7. Calculate summary
     const summary = {
-      totalRows: dataWithCodes.length,
-      validRows: dataWithCodes.filter(r => r.isValid).length,
-      errorRows: dataWithCodes.filter(r => !r.isValid).length,
-      missingCodes: dataWithCodes.filter(r => r.codeStatus === 'missing').length,
-      totalFish: dataWithCodes.reduce((sum, r) => sum + (r.total || 0), 0),
-      totalCost: dataWithCodes.reduce((sum, r) => sum + ((r.total || 0) * (r.price || 0)), 0),
+      totalRows: validatedData.length,
+      validRows: validatedData.filter(r => r.isValid).length,
+      errorRows: validatedData.filter(r => !r.isValid).length,
     }
 
-    // 9. Return results
+    // 8. Return results
     return {
       success: true,
-      data: dataWithCodes,
+      data: validatedData,
       summary,
     }
 
@@ -192,15 +158,12 @@ export async function parseShipmentExcel(file) {
     // Return error result
     return {
       success: false,
-      error: error.message || 'Failed to parse Excel file',
+      error: error.message || 'שגיאה בקריאת קובץ האקסל',
       data: [],
       summary: {
         totalRows: 0,
         validRows: 0,
         errorRows: 0,
-        missingCodes: 0,
-        totalFish: 0,
-        totalCost: 0,
       }
     }
   }

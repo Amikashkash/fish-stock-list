@@ -49,7 +49,11 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   })
 
   const [editData, setEditData] = useState({
+    hebrewName: '',
+    scientificName: '',
+    size: '',
     quantity: '',
+    price: '',
     source: '',
     notes: '',
   })
@@ -143,6 +147,10 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   }
 
   async function handleUpdateFish(fishId) {
+    if (!editData.hebrewName?.trim()) {
+      setError('שם עברי הוא שדה חובה')
+      return
+    }
     if (!editData.quantity || editData.quantity < 0) {
       setError('כמות לא תקינה')
       return
@@ -152,12 +160,16 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
       setLoading(true)
       setError('')
       await updateFarmFish(currentFarm.farmId, fishId, {
+        hebrewName: editData.hebrewName.trim(),
+        scientificName: editData.scientificName?.trim() || '',
+        size: editData.size?.trim() || '',
         quantity: parseInt(editData.quantity),
+        price: editData.price ? parseFloat(editData.price) : null,
         source: editData.source,
-        notes: editData.notes,
+        notes: editData.notes || '',
       })
       setEditingId(null)
-      setEditData({ quantity: '', source: '', notes: '' })
+      setEditData({ hebrewName: '', scientificName: '', size: '', quantity: '', price: '', source: '', notes: '' })
       await loadData()
       if (onSuccess) onSuccess()
     } catch (err) {
@@ -251,8 +263,12 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   function startEditing(fish) {
     setEditingId(fish.fishId)
     setEditData({
+      hebrewName: fish.hebrewName || '',
+      scientificName: fish.scientificName || '',
+      size: fish.size || '',
       quantity: fish.quantity,
-      source: fish.source,
+      price: fish.price || '',
+      source: fish.source || defaultSourceId,
       notes: fish.notes || ''
     })
   }
@@ -275,6 +291,8 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
       ...fish,
       fishSource,
       aquariumNumber: aquarium.aquariumNumber,
+      // Normalize quantity field - farmFish uses 'quantity', reception uses 'currentQuantity'
+      currentQuantity: fish.currentQuantity || fish.quantity,
     })
     setMortalityModalOpen(true)
   }
@@ -552,20 +570,82 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
 
                         {editingId === fish.fishId ? (
                           <div className="bg-white rounded-lg p-3 border border-blue-200 mb-2">
-                            <div className="mb-3">
-                              <label className="text-xs font-semibold text-gray-700 block mb-2">
-                                כמות:
-                              </label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={editData.quantity}
-                                onChange={(e) =>
-                                  setEditData({ ...editData, quantity: e.target.value })
-                                }
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                                disabled={loading}
-                              />
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  שם עברי: *
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editData.hebrewName}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, hebrewName: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                                  disabled={loading}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  שם מדעי:
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editData.scientificName}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, scientificName: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                                  disabled={loading}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3 mb-3">
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  גודל:
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editData.size}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, size: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                                  disabled={loading}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  כמות: *
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editData.quantity}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, quantity: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                                  disabled={loading}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-700 block mb-2">
+                                  מחיר (₪):
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={editData.price}
+                                  onChange={(e) =>
+                                    setEditData({ ...editData, price: e.target.value })
+                                  }
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                                  disabled={loading}
+                                />
+                              </div>
                             </div>
                             <div className="mb-3">
                               <label className="text-xs font-semibold text-gray-700 block mb-2">
@@ -605,12 +685,12 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                                 disabled={loading}
                                 className="flex-1 px-3 py-2 text-xs font-semibold bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
                               >
-                                שמור
+                                💾 שמור
                               </button>
                               <button
                                 onClick={() => {
                                   setEditingId(null)
-                                  setEditData({ quantity: '', source: '', notes: '' })
+                                  setEditData({ hebrewName: '', scientificName: '', size: '', quantity: '', price: '', source: '', notes: '' })
                                 }}
                                 disabled={loading}
                                 className="px-3 py-2 text-xs font-semibold bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50"
