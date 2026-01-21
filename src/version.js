@@ -3,6 +3,6 @@
  * Update this file before each release
  */
 
-export const VERSION = '19.5.15'
+export const VERSION = '19.5.16'
 export const RELEASE_DATE = '2026-01-21'
-export const RELEASE_NAME = 'Excel Auto Header Detection'
+export const RELEASE_NAME = 'Simplified Import Preview'
