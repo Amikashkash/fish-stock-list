@@ -87,9 +87,10 @@ export async function parseShipmentExcel(file) {
     const mappedData = rawData.map((row, index) => {
       // Scientific Name - try multiple variations
       const scientificName = findColumnValue(row, [
+        'שם', 'שם מדעי', 'שם לטיני',
         'Scientific Name', 'scientific name', 'Scientific name',
-        'שם מדעי', 'שם לטיני', 'Latin Name', 'latin name',
-        'Species', 'species', 'מין'
+        'Latin Name', 'latin name',
+        'Species', 'species', 'מין', 'Name', 'name'
       ])
 
       // Size - try multiple variations
