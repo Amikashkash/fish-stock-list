@@ -18,6 +18,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { db, auth } from '../firebase/config'
+import { saveFishToCatalog } from './farm-fish.service'
 
 /**
  * Calculate initial costs for fish instance
@@ -174,6 +175,15 @@ export async function importShipment(farmId, shipmentData, items) {
 
     // 4. Commit batch write
     await batch.commit()
+
+    // 5. Save fish to catalog for future selection
+    try {
+      const catalogResult = await saveFishToCatalog(farmId, items)
+      console.log(`Catalog updated: ${catalogResult.added} new fish added`)
+    } catch (catalogError) {
+      // Don't fail the import if catalog update fails
+      console.error('Warning: Failed to update fish catalog:', catalogError)
+    }
 
     console.log(`Shipment ${shipmentId} imported successfully with ${items.length} fish types`)
 

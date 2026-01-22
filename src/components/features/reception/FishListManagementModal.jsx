@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import { addReceptionItem, updateReceptionItem, deleteReceptionItem } from '../../../services/reception.service'
+import { getFishCatalog } from '../../../services/farm-fish.service'
 
 function FishListManagementModal({
   isOpen,
@@ -14,8 +15,30 @@ function FishListManagementModal({
   const { currentFarm } = useFarm()
   const [editingId, setEditingId] = useState(null)
   const [isAdding, setIsAdding] = useState(false)
+  const [showCatalog, setShowCatalog] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [fishCatalog, setFishCatalog] = useState([])
+  const [catalogLoading, setCatalogLoading] = useState(false)
+
+  // Load fish catalog when modal opens
+  useEffect(() => {
+    if (isOpen && currentFarm?.farmId) {
+      loadFishCatalog()
+    }
+  }, [isOpen, currentFarm?.farmId])
+
+  async function loadFishCatalog() {
+    try {
+      setCatalogLoading(true)
+      const catalog = await getFishCatalog(currentFarm.farmId)
+      setFishCatalog(catalog)
+    } catch (err) {
+      console.error('Error loading fish catalog:', err)
+    } finally {
+      setCatalogLoading(false)
+    }
+  }
 
   // Create map for quick lookup: hebrewName -> scientificName
   const fishNameMap = new Map(previousFishNames.map((f) => [f.hebrewName, f.scientificName]))
@@ -141,6 +164,35 @@ function FishListManagementModal({
       if (onItemsChanged) onItemsChanged()
     } catch (err) {
       setError(err.message || 'שגיאה במחיקת הפריט')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Add fish from catalog
+  async function handleAddFromCatalog(catalogFish) {
+    try {
+      setLoading(true)
+      setError('')
+      await addReceptionItem(currentFarm.farmId, {
+        planId,
+        hebrewName: catalogFish.hebrewName || '',
+        scientificName: catalogFish.scientificName,
+        size: catalogFish.size,
+        quantity: 1, // Default quantity, user can edit
+        notes: '',
+        code: '',
+        boxNumber: catalogFish.boxNumber || '',
+        boxPortion: '',
+        price: catalogFish.price || null,
+        priceUpdatedAt: catalogFish.price ? new Date().toISOString() : null,
+        targetRoom: plan?.targetRoom || '',
+        targetAquariumId: null,
+        targetAquariumNumber: '',
+      })
+      if (onItemsChanged) onItemsChanged()
+    } catch (err) {
+      setError(err.message || 'שגיאה בהוספת הדג')
     } finally {
       setLoading(false)
     }
@@ -387,15 +439,74 @@ function FishListManagementModal({
             )}
           </div>
 
+          {/* Fish Catalog Selection */}
+          {showCatalog && (
+            <div className="mb-6 bg-purple-50 border-2 border-purple-300 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-gray-900">בחר דג מהקטלוג</h4>
+                <button
+                  onClick={() => setShowCatalog(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {catalogLoading ? (
+                <div className="text-center py-4 text-gray-500">טוען קטלוג...</div>
+              ) : fishCatalog.length === 0 ? (
+                <div className="text-center py-4 text-gray-500">
+                  <div className="text-2xl mb-2">📋</div>
+                  <div>אין דגים בקטלוג</div>
+                  <div className="text-xs mt-1">יבא קובץ אקסל כדי להוסיף דגים לקטלוג</div>
+                </div>
+              ) : (
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {fishCatalog.map((fish) => (
+                    <div
+                      key={fish.catalogId}
+                      className="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center hover:border-purple-400 transition-all"
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900 text-sm">
+                          {fish.scientificName}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          גודל: {fish.size}
+                          {fish.boxNumber && ` | ארגז: ${fish.boxNumber}`}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAddFromCatalog(fish)}
+                        disabled={loading}
+                        className="px-3 py-1.5 text-xs font-semibold bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
+                      >
+                        ➕ הוסף
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Add New Item */}
-          {!isAdding ? (
-            <button
-              onClick={() => setIsAdding(true)}
-              className="w-full px-4 py-3 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-all"
-            >
-              ➕ הוסף דג חדש
-            </button>
-          ) : (
+          {!isAdding && !showCatalog ? (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCatalog(true)}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-semibold bg-purple-500 text-white hover:bg-purple-600 transition-all"
+              >
+                📋 בחר מקטלוג ({fishCatalog.length})
+              </button>
+              <button
+                onClick={() => setIsAdding(true)}
+                className="flex-1 px-4 py-3 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-all"
+              >
+                ➕ הוסף ידנית
+              </button>
+            </div>
+          ) : !isAdding ? null : (
             <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
               <h4 className="font-semibold text-gray-900 mb-3">דג חדש</h4>
               <div className="grid grid-cols-2 gap-3 mb-3">

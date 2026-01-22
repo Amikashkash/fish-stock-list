@@ -194,3 +194,86 @@ export async function deleteFarmFish(farmId, fishId) {
     throw new Error('שגיאה במחיקת הדג')
   }
 }
+
+/**
+ * Save fish from Excel import to catalog
+ * This creates catalog entries for fish that don't already exist
+ * @param {string} farmId - Farm ID
+ * @param {Array} fishItems - Parsed fish items from Excel
+ * @returns {Promise<{added: number, existing: number}>} Count of fish added/existing
+ */
+export async function saveFishToCatalog(farmId, fishItems) {
+  try {
+    // Get existing fish in catalog
+    const existingFish = await getFarmFish(farmId)
+
+    // Create a map of existing fish by scientificName+size for quick lookup
+    const existingMap = new Map()
+    existingFish.forEach(fish => {
+      const key = `${(fish.scientificName || '').toLowerCase()}_${(fish.size || '').toLowerCase()}`
+      existingMap.set(key, fish)
+    })
+
+    let added = 0
+    let existing = 0
+
+    for (const item of fishItems) {
+      const scientificName = item.scientificName || ''
+      const size = item.size || ''
+      const key = `${scientificName.toLowerCase()}_${size.toLowerCase()}`
+
+      if (!scientificName) continue // Skip items without scientific name
+
+      if (existingMap.has(key)) {
+        existing++
+      } else {
+        // Add new fish to catalog
+        await addDoc(collection(db, COLLECTION_NAME), {
+          farmId,
+          hebrewName: '', // Can be updated later
+          scientificName,
+          size,
+          quantity: 0, // Catalog entry, not actual stock
+          price: item.price || null,
+          source: 'excel-import',
+          notes: '',
+          aquariumId: null,
+          boxNumber: item.boxNumber || null,
+          createdAt: serverTimestamp(),
+        })
+        added++
+        // Add to map to prevent duplicates in same batch
+        existingMap.set(key, { scientificName, size })
+      }
+    }
+
+    console.log(`Fish catalog updated: ${added} added, ${existing} already existed`)
+    return { added, existing }
+  } catch (err) {
+    console.error('Error saving fish to catalog:', err)
+    throw new Error('שגיאה בשמירת דגים לקטלוג')
+  }
+}
+
+/**
+ * Get fish catalog (unique species for selection)
+ * @param {string} farmId - Farm ID
+ * @returns {Promise<Array>} Array of unique fish species
+ */
+export async function getFishCatalog(farmId) {
+  try {
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('farmId', '==', farmId),
+      where('source', '==', 'excel-import')
+    )
+    const querySnapshot = await getDocs(q)
+    return querySnapshot.docs.map((doc) => ({
+      catalogId: doc.id,
+      ...doc.data(),
+    }))
+  } catch (err) {
+    console.error('Error getting fish catalog:', err)
+    throw new Error('שגיאה בטעינת קטלוג הדגים')
+  }
+}
