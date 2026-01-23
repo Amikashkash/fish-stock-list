@@ -49,6 +49,16 @@ export async function createFishInstance(farmId, fishData) {
       updatedAt: Timestamp.now(),
     }
 
+    // Add price fields if provided
+    if (fishData.price !== null && fishData.price !== undefined) {
+      instance.price = fishData.price
+    }
+    if (fishData.priceUpdatedAt) {
+      instance.priceUpdatedAt = fishData.priceUpdatedAt instanceof Date
+        ? Timestamp.fromDate(fishData.priceUpdatedAt)
+        : fishData.priceUpdatedAt
+    }
+
     await setDoc(instanceRef, instance)
 
     return { instanceId, instance }
