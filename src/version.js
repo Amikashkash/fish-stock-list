@@ -3,6 +3,6 @@
  * Update this file before each release
  */
 
-export const VERSION = '19.5.18'
-export const RELEASE_DATE = '2026-01-22'
-export const RELEASE_NAME = 'Fish Catalog from Excel'
+export const VERSION = '19.5.19'
+export const RELEASE_DATE = '2026-01-23'
+export const RELEASE_NAME = 'Prevent Duplicate Catalog Selection'

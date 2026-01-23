@@ -462,29 +462,48 @@ function FishListManagementModal({
                 </div>
               ) : (
                 <div className="max-h-60 overflow-y-auto space-y-2">
-                  {fishCatalog.map((fish) => (
-                    <div
-                      key={fish.catalogId}
-                      className="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center hover:border-purple-400 transition-all"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900 text-sm">
-                          {fish.scientificName}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          גודל: {fish.size}
-                          {fish.boxNumber && ` | ארגז: ${fish.boxNumber}`}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleAddFromCatalog(fish)}
-                        disabled={loading}
-                        className="px-3 py-1.5 text-xs font-semibold bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
+                  {fishCatalog.map((fish) => {
+                    // Check if this fish is already in the items list
+                    const alreadyAdded = items.some(
+                      (item) =>
+                        item.scientificName?.toLowerCase() === fish.scientificName?.toLowerCase() &&
+                        item.size?.toLowerCase() === fish.size?.toLowerCase()
+                    )
+
+                    return (
+                      <div
+                        key={fish.catalogId}
+                        className={`bg-white border rounded-lg p-3 flex justify-between items-center transition-all ${
+                          alreadyAdded
+                            ? 'border-gray-200 opacity-50'
+                            : 'border-gray-200 hover:border-purple-400'
+                        }`}
                       >
-                        ➕ הוסף
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 text-sm">
+                            {fish.scientificName}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            גודל: {fish.size}
+                            {fish.boxNumber && ` | ארגז: ${fish.boxNumber}`}
+                          </div>
+                        </div>
+                        {alreadyAdded ? (
+                          <span className="px-3 py-1.5 text-xs font-semibold text-green-700 bg-green-100 rounded">
+                            ✓ נוסף
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleAddFromCatalog(fish)}
+                            disabled={loading}
+                            className="px-3 py-1.5 text-xs font-semibold bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
+                          >
+                            ➕ הוסף
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
