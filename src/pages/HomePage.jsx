@@ -4,7 +4,7 @@ import { auth } from '../firebase/config'
 import { signOut } from 'firebase/auth'
 import { useFarm } from '../contexts/FarmContext'
 import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
-import FishTransferModal from '../components/features/transfer/FishTransferModal'
+import FishPriceListModal from '../components/features/pricelist/FishPriceListModal'
 import ReceptionPlansModal from '../components/features/reception/ReceptionPlansModal'
 import TransferPlanModal from '../components/features/transfer-plan/TransferPlanModal'
 import TransferExecutionModal from '../components/features/transfer-plan/TransferExecutionModal'
@@ -15,7 +15,7 @@ function HomePage() {
   const user = auth.currentUser
   const { currentFarm } = useFarm()
   const [showImportModal, setShowImportModal] = useState(false)
-  const [showTransferModal, setShowTransferModal] = useState(false)
+  const [showPriceListModal, setShowPriceListModal] = useState(false)
   const [showReceptionModal, setShowReceptionModal] = useState(false)
   const [showTransferPlanModal, setShowTransferPlanModal] = useState(false)
   const [showTransferExecutionModal, setShowTransferExecutionModal] = useState(false)
@@ -37,15 +37,11 @@ function HomePage() {
     alert(`Success! Imported ${result.fishCount} fish types (${result.totalFish} total fish)`)
   }
 
-  const handleTransferSuccess = (result) => {
-    console.log('Transfer successful:', result)
-    alert(`הועברו ${result.transferred} ${result.fishName} בהצלחה!`)
-  }
 
   const actionCards = [
     { icon: '📋', label: 'משימות', gradient: 'from-ocean-400 to-ocean-600', action: 'tasks' },
     { icon: '🐠', label: 'אקווריומים', gradient: 'from-aqua-400 to-aqua-600', action: 'aquariums' },
-    { icon: '🔄', label: 'העברת דגים', gradient: 'from-coral-300 to-coral-500', action: 'transfer' },
+    { icon: '💰', label: 'מחירון דגים', gradient: 'from-coral-300 to-coral-500', action: 'pricelist' },
     { icon: '📝', label: 'תכנון העברות', gradient: 'from-ocean-500 to-ocean-700', action: 'plan-transfers' },
     { icon: '▶️', label: 'ביצוע העברות', gradient: 'from-aqua-500 to-ocean-500', action: 'execute-transfers' },
     { icon: '📥', label: 'ייבוא משלוח', gradient: 'from-green-400 to-green-600', action: 'import' },
@@ -56,8 +52,8 @@ function HomePage() {
   const handleCardClick = (action) => {
     if (action === 'import') {
       setShowImportModal(true)
-    } else if (action === 'transfer') {
-      setShowTransferModal(true)
+    } else if (action === 'pricelist') {
+      setShowPriceListModal(true)
     } else if (action === 'reception') {
       setShowReceptionModal(true)
     } else if (action === 'plan-transfers') {
@@ -166,11 +162,10 @@ function HomePage() {
         onSuccess={handleImportSuccess}
       />
 
-      {/* Transfer Modal */}
-      <FishTransferModal
-        isOpen={showTransferModal}
-        onClose={() => setShowTransferModal(false)}
-        onSuccess={handleTransferSuccess}
+      {/* Price List Modal */}
+      <FishPriceListModal
+        isOpen={showPriceListModal}
+        onClose={() => setShowPriceListModal(false)}
       />
 
       {/* Reception Plans Modal */}
