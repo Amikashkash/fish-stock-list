@@ -3,6 +3,6 @@
  * Update this file before each release
  */
 
-export const VERSION = '19.5.22'
-export const RELEASE_DATE = '2026-01-23'
-export const RELEASE_NAME = 'Fish Price List'
+export const VERSION = '19.5.23'
+export const RELEASE_DATE = '2026-01-25'
+export const RELEASE_NAME = 'Price List Categories'
