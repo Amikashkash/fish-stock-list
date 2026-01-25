@@ -10,6 +10,7 @@ import WelcomePage from './pages/WelcomePage'
 import AquariumsPage from './pages/AquariumsPage'
 import FarmSettingsPage from './pages/FarmSettingsPage'
 import AdminPage from './pages/AdminPage'
+import JoinPage from './pages/JoinPage'
 import VersionUpdateDialog from './components/VersionUpdateDialog'
 import { initializeVersionCheck, isNewVersionAvailable } from './services/version.service'
 
@@ -84,6 +85,10 @@ function AppRoutes() {
         <Route
           path="/admin"
           element={user ? (hasFarms ? <AdminPage /> : <Navigate to="/welcome" />) : <Navigate to="/login" />}
+        />
+        <Route
+          path="/join/:inviteCode"
+          element={<JoinPage />}
         />
         <Route
           path="/"

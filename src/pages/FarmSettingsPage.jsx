@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFarm } from '../contexts/FarmContext'
 import { updateFarm } from '../services/farm.service'
-import { getAquariums, fixAllAquariumStatuses } from '../services/aquarium.service'
+import { getAquariums } from '../services/aquarium.service'
 import { getCurrentVersion, clearCacheAndReload, isNewVersionAvailable } from '../services/version.service'
+import { createInvitation, getFarmInvitations, deleteInvitation } from '../services/invitation.service'
 
 function FarmSettingsPage() {
   const navigate = useNavigate()
@@ -21,12 +22,17 @@ function FarmSettingsPage() {
   const [message, setMessage] = useState({ type: '', text: '' })
   const [checkingUpdates, setCheckingUpdates] = useState(false)
   const [updateAvailable, setUpdateAvailable] = useState(false)
-  const [fixingAquariums, setFixingAquariums] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState('worker')
+  const [sendingInvite, setSendingInvite] = useState(false)
+  const [invitations, setInvitations] = useState([])
+  const [loadingInvitations, setLoadingInvitations] = useState(false)
 
   // Load aquariums to check for location usage
   useEffect(() => {
     if (currentFarm) {
       loadAquariums()
+      loadInvitations()
     }
   }, [currentFarm])
 
@@ -35,6 +41,83 @@ function FarmSettingsPage() {
     const hasUpdate = isNewVersionAvailable()
     setUpdateAvailable(hasUpdate)
   }, [])
+
+  async function loadInvitations() {
+    if (!currentFarm?.farmId) return
+    try {
+      setLoadingInvitations(true)
+      const data = await getFarmInvitations(currentFarm.farmId)
+      setInvitations(data)
+    } catch (error) {
+      console.error('Error loading invitations:', error)
+    } finally {
+      setLoadingInvitations(false)
+    }
+  }
+
+  async function handleSendInvitation() {
+    if (!inviteEmail.trim()) {
+      setMessage({ type: 'error', text: 'נא להזין כתובת אימייל' })
+      return
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(inviteEmail.trim())) {
+      setMessage({ type: 'error', text: 'כתובת אימייל לא תקינה' })
+      return
+    }
+
+    setSendingInvite(true)
+    setMessage({ type: '', text: '' })
+
+    try {
+      const result = await createInvitation(currentFarm.farmId, {
+        email: inviteEmail.trim().toLowerCase(),
+        role: inviteRole,
+        farmName: currentFarm.name
+      })
+
+      setInviteEmail('')
+      setMessage({
+        type: 'success',
+        text: `הזמנה נשלחה בהצלחה! לינק ההצטרפות הועתק ללוח.`
+      })
+
+      // Copy invite link to clipboard
+      if (result.inviteLink) {
+        navigator.clipboard.writeText(result.inviteLink)
+      }
+
+      await loadInvitations()
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
+    } catch (error) {
+      console.error('Error sending invitation:', error)
+      setMessage({ type: 'error', text: error.message || 'שגיאה בשליחת ההזמנה' })
+    } finally {
+      setSendingInvite(false)
+    }
+  }
+
+  async function handleDeleteInvitation(invitationId) {
+    if (!confirm('האם למחוק את ההזמנה?')) return
+
+    try {
+      await deleteInvitation(invitationId)
+      await loadInvitations()
+      setMessage({ type: 'success', text: 'ההזמנה נמחקה' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    } catch (error) {
+      console.error('Error deleting invitation:', error)
+      setMessage({ type: 'error', text: 'שגיאה במחיקת ההזמנה' })
+    }
+  }
+
+  function copyInviteLink(link) {
+    navigator.clipboard.writeText(link)
+    setMessage({ type: 'success', text: 'הלינק הועתק ללוח!' })
+    setTimeout(() => setMessage({ type: '', text: '' }), 2000)
+  }
 
   async function handleCheckUpdates() {
     setCheckingUpdates(true)
@@ -57,37 +140,6 @@ function FarmSettingsPage() {
 
   async function handleUpdateNow() {
     await clearCacheAndReload()
-  }
-
-  async function handleFixAquariumStatuses() {
-    if (!confirm('פעולה זו תתקן את סטטוס כל האקווריומים בחווה על בסיס ספירת דגים בפועל.\n\nהאם להמשיך?')) {
-      return
-    }
-
-    setFixingAquariums(true)
-    setMessage({ type: '', text: '' })
-
-    try {
-      const result = await fixAllAquariumStatuses(currentFarm.farmId)
-
-      // Reload aquariums to show updated statuses
-      await loadAquariums()
-
-      setMessage({
-        type: 'success',
-        text: `✓ תוקנו ${result.fixed} אקווריומים בהצלחה! (${result.errors} שגיאות)`
-      })
-
-      setTimeout(() => setMessage({ type: '', text: '' }), 5000)
-    } catch (error) {
-      console.error('Error fixing aquarium statuses:', error)
-      setMessage({
-        type: 'error',
-        text: 'שגיאה בתיקון סטטוס אקווריומים. נסה שוב.'
-      })
-    } finally {
-      setFixingAquariums(false)
-    }
   }
 
   async function loadAquariums() {
@@ -593,34 +645,91 @@ function FarmSettingsPage() {
           </p>
         </div>
 
-        {/* Aquarium Status Fix */}
-        <div className="bg-orange-50 rounded-xl p-5 mb-6 border-2 border-orange-200">
+        {/* Invite Employee */}
+        <div className="bg-purple-50 rounded-xl p-5 mb-6 border-2 border-purple-200">
           <div className="mb-4">
-            <p className="text-sm font-semibold text-orange-800 mb-1">🔧 תיקון סטטוס אקווריומים</p>
-            <p className="text-sm text-orange-700">
-              אם יש אקווריומים המוצגים כ"תפוסים" למרות שהם ריקים, לחץ על הכפתור למטה לתקן אוטומטית.
+            <p className="text-sm font-semibold text-purple-800 mb-1">👥 הזמנת עובד לחווה</p>
+            <p className="text-sm text-purple-700">
+              שלח הזמנה באימייל לעובד חדש להצטרף לחווה שלך
             </p>
           </div>
 
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="כתובת אימייל של העובד"
+              className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-lg text-[15px] focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10"
+              dir="ltr"
+            />
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value)}
+              className="px-4 py-3 border-2 border-purple-300 rounded-lg text-[15px] bg-white focus:outline-none focus:border-purple-500"
+            >
+              <option value="worker">עובד</option>
+              <option value="manager">מנהל</option>
+            </select>
+          </div>
+
           <button
-            onClick={handleFixAquariumStatuses}
-            disabled={fixingAquariums}
-            className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            onClick={handleSendInvitation}
+            disabled={sendingInvite}
+            className="w-full px-6 py-3 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
-            {fixingAquariums ? (
+            {sendingInvite ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                מתקן סטטוס אקווריומים...
+                שולח הזמנה...
               </>
             ) : (
               <>
-                🔄 תקן סטטוס כל האקווריומים
+                📧 שלח הזמנה
               </>
             )}
           </button>
 
-          <p className="text-xs text-orange-600 mt-3">
-            פעולה זו תספור את הדגים בכל אקווריום ותעדכן את הסטטוס בהתאם (ריק/תפוס)
+          {/* Pending Invitations */}
+          {invitations.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-purple-200">
+              <p className="text-sm font-semibold text-purple-800 mb-2">הזמנות ממתינות:</p>
+              <div className="space-y-2">
+                {invitations.map((inv) => (
+                  <div
+                    key={inv.invitationId}
+                    className="flex items-center justify-between bg-white rounded-lg p-3 text-sm"
+                  >
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900">{inv.email}</span>
+                      <span className="text-gray-500 mr-2">
+                        ({inv.role === 'manager' ? 'מנהל' : 'עובד'})
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => copyInviteLink(inv.inviteLink)}
+                        className="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        title="העתק לינק"
+                      >
+                        📋
+                      </button>
+                      <button
+                        onClick={() => handleDeleteInvitation(inv.invitationId)}
+                        className="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                        title="מחק הזמנה"
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs text-purple-600 mt-3">
+            לינק ההזמנה יועתק אוטומטית ללוח - שלח אותו לעובד בוואטסאפ או באימייל
           </p>
         </div>
 
