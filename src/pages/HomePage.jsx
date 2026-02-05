@@ -6,8 +6,7 @@ import { useFarm } from '../contexts/FarmContext'
 import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
 import FishPriceListModal from '../components/features/pricelist/FishPriceListModal'
 import ReceptionPlansModal from '../components/features/reception/ReceptionPlansModal'
-import TransferPlanModal from '../components/features/transfer-plan/TransferPlanModal'
-import TransferExecutionModal from '../components/features/transfer-plan/TransferExecutionModal'
+import TasksModal from '../components/features/tasks/TasksModal'
 import { VERSION } from '../version'
 
 function HomePage() {
@@ -17,8 +16,7 @@ function HomePage() {
   const [showImportModal, setShowImportModal] = useState(false)
   const [showPriceListModal, setShowPriceListModal] = useState(false)
   const [showReceptionModal, setShowReceptionModal] = useState(false)
-  const [showTransferPlanModal, setShowTransferPlanModal] = useState(false)
-  const [showTransferExecutionModal, setShowTransferExecutionModal] = useState(false)
+  const [showTasksModal, setShowTasksModal] = useState(false)
 
   const handleSignOut = async () => {
     const confirmed = window.confirm('האם אתה בטוח שברצונך להתנתק?')
@@ -42,8 +40,6 @@ function HomePage() {
     { icon: '📋', label: 'משימות', gradient: 'from-ocean-400 to-ocean-600', action: 'tasks' },
     { icon: '🐠', label: 'אקווריומים', gradient: 'from-aqua-400 to-aqua-600', action: 'aquariums' },
     { icon: '💰', label: 'מחירון דגים', gradient: 'from-coral-300 to-coral-500', action: 'pricelist' },
-    { icon: '📝', label: 'תכנון העברות', gradient: 'from-ocean-500 to-ocean-700', action: 'plan-transfers' },
-    { icon: '▶️', label: 'ביצוע העברות', gradient: 'from-aqua-500 to-ocean-500', action: 'execute-transfers' },
     { icon: '📥', label: 'ייבוא משלוח', gradient: 'from-green-400 to-green-600', action: 'import' },
     { icon: '🚚', label: 'משלוחים', gradient: 'from-sunset-300 to-sunset-500', action: 'shipments' },
     { icon: '📦', label: 'דגים מיבוא', gradient: 'from-coral-400 to-sunset-500', action: 'reception' },
@@ -56,10 +52,8 @@ function HomePage() {
       setShowPriceListModal(true)
     } else if (action === 'reception') {
       setShowReceptionModal(true)
-    } else if (action === 'plan-transfers') {
-      setShowTransferPlanModal(true)
-    } else if (action === 'execute-transfers') {
-      setShowTransferExecutionModal(true)
+    } else if (action === 'tasks') {
+      setShowTasksModal(true)
     } else if (action === 'aquariums') {
       navigate('/aquariums')
     } else {
@@ -174,22 +168,12 @@ function HomePage() {
         onClose={() => setShowReceptionModal(false)}
       />
 
-      {/* Transfer Plan Modal */}
-      <TransferPlanModal
-        isOpen={showTransferPlanModal}
-        onClose={() => setShowTransferPlanModal(false)}
+      {/* Tasks Modal */}
+      <TasksModal
+        isOpen={showTasksModal}
+        onClose={() => setShowTasksModal(false)}
         onSuccess={() => {
-          alert('תוכנית נשמרה בהצלחה!')
-          setShowTransferPlanModal(false)
-        }}
-      />
-
-      {/* Transfer Execution Modal */}
-      <TransferExecutionModal
-        isOpen={showTransferExecutionModal}
-        onClose={() => setShowTransferExecutionModal(false)}
-        onSuccess={() => {
-          // Refresh or do something after execution
+          // Task created/completed successfully
         }}
       />
     </div>
