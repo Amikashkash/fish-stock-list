@@ -136,7 +136,11 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
     setSelectedSourceAquarium(aquarium)
     try {
       setLoading(true)
+      console.log('Selected aquarium:', aquarium)
+      console.log('All fish in state:', allFish)
+      console.log('Fish filtered by aquariumId:', allFish.filter(f => f.aquariumId === aquarium.aquariumId))
       const fish = await getFishInAquarium(currentFarm.farmId, aquarium.aquariumId)
+      console.log('Fish from getFishInAquarium:', fish)
       setFishInSource(fish)
       setStep(2)
     } catch (err) {
