@@ -3,6 +3,7 @@ import { useFarm } from '../../../contexts/FarmContext'
 import { getAquariums } from '../../../services/aquarium.service'
 import { getFarmFish } from '../../../services/farm-fish.service'
 import { getFishInAquarium } from '../../../services/transfer.service'
+import { getFishByAquarium } from '../../../services/fish.service'
 import {
   getTasks,
   createTask,
@@ -136,12 +137,33 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
     setSelectedSourceAquarium(aquarium)
     try {
       setLoading(true)
-      console.log('Selected aquarium:', aquarium)
-      console.log('All fish in state:', allFish)
-      console.log('Fish filtered by aquariumId:', allFish.filter(f => f.aquariumId === aquarium.aquariumId))
-      const fish = await getFishInAquarium(currentFarm.farmId, aquarium.aquariumId)
-      console.log('Fish from getFishInAquarium:', fish)
-      setFishInSource(fish)
+
+      // Load fish from BOTH collections:
+      // 1. farmFish - directly added fish
+      // 2. fish_instances - fish from reception/shipments
+      const [farmFish, receptionFish] = await Promise.all([
+        getFishInAquarium(currentFarm.farmId, aquarium.aquariumId),
+        getFishByAquarium(currentFarm.farmId, aquarium.aquariumId),
+      ])
+
+      // Transform reception fish to same format as farm fish
+      const transformedReceptionFish = receptionFish.map(fish => ({
+        instanceId: fish.instanceId,
+        quantity: fish.currentQuantity,
+        dateAdded: fish.arrivalDate,
+        code: fish.code || '',
+        scientificName: fish.scientificName,
+        commonName: fish.commonName, // reception fish use commonName
+        size: fish.size,
+        currentQuantity: fish.currentQuantity,
+        isReceptionFish: true, // flag to identify source
+      }))
+
+      // Combine both lists
+      const allFishInAquarium = [...farmFish, ...transformedReceptionFish]
+      console.log('Combined fish in aquarium:', allFishInAquarium)
+
+      setFishInSource(allFishInAquarium)
       setStep(2)
     } catch (err) {
       console.error('Error loading fish:', err)
