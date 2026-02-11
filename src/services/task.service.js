@@ -97,6 +97,7 @@ export async function createTransferTask(farmId, transferData) {
       targetAquariumNumber: transferData.targetAquariumNumber,
       targetRoom: transferData.targetRoom,
       isShipment: transferData.isShipment || false,
+      isReceptionFish: transferData.isReceptionFish || false,
       allowMixing: transferData.allowMixing || false,
     },
   })
@@ -267,8 +268,28 @@ export async function completeTask(farmId, taskId) {
           isShipment: true,
           fishName: task.transfer.fishName,
         }
+      } else if (task.transfer.isReceptionFish) {
+        // Reception fish (fish_instances collection) - update aquariumId directly
+        const { updateFishInstance } = await import('./fish.service')
+        const { updateAquariumStatus } = await import('./farm-fish.service')
+
+        await updateFishInstance(farmId, task.transfer.fishId, {
+          aquariumId: task.transfer.targetAquariumId,
+        })
+
+        // Update both aquarium statuses
+        await updateAquariumStatus(farmId, task.transfer.sourceAquariumId)
+        if (task.transfer.targetAquariumId !== 'SHIPMENT') {
+          await updateAquariumStatus(farmId, task.transfer.targetAquariumId)
+        }
+
+        transferResult = {
+          success: true,
+          transferred: task.transfer.quantity,
+          fishName: task.transfer.fishName,
+        }
       } else {
-        // Regular transfer between aquariums
+        // Regular farmFish transfer between aquariums
         transferResult = await transferFish(farmId, {
           sourceAquariumId: task.transfer.sourceAquariumId,
           destinationAquariumId: task.transfer.targetAquariumId,

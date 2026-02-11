@@ -14,6 +14,7 @@ import {
   unblockTask,
 } from '../../../services/task.service'
 import BlockReportDialog from '../transfer-plan/BlockReportDialog'
+import WarningDialog from '../transfer-plan/WarningDialog'
 
 function TasksModal({ isOpen, onClose, onSuccess }) {
   const { currentFarm, user } = useFarm()
@@ -46,6 +47,11 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
   // Block report dialog
   const [showBlockDialog, setShowBlockDialog] = useState(false)
   const [blockingTaskId, setBlockingTaskId] = useState(null)
+
+  // Warning dialog
+  const [showWarningDialog, setShowWarningDialog] = useState(false)
+  const [warnings, setWarnings] = useState([])
+  const [pendingTransferTasks, setPendingTransferTasks] = useState([])
 
   // Load tasks on mount
   useEffect(() => {
@@ -120,6 +126,7 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
   function switchToAddMode() {
     resetForm()
     setViewMode('add')
+    loadPendingTransferTasks()
   }
 
   function switchToListMode() {
@@ -179,8 +186,85 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
     setStep(3)
   }
 
+  // Load pending transfer tasks to check for conflicts
+  async function loadPendingTransferTasks() {
+    try {
+      const allTasks = await getTasks(currentFarm.farmId, 'pending')
+      const transferTasks = allTasks.filter(t => t.type === 'transfer' && t.transfer)
+      setPendingTransferTasks(transferTasks)
+    } catch (err) {
+      console.error('Error loading pending tasks for validation:', err)
+    }
+  }
+
+  function validateDestination(aquarium) {
+    const newWarnings = []
+
+    // Warning 1: Target aquarium already has fish (mixing)
+    if (aquarium.totalFish > 0) {
+      newWarnings.push({
+        type: 'target_occupied',
+        message: `אקווריום ${aquarium.aquariumNumber} (${aquarium.room}) מכיל ${aquarium.totalFish} דגים. האם ברצונך לערבב דגים?`,
+        severity: 'warning',
+        allowOverride: true,
+      })
+    }
+
+    // Warning 2: Pending tasks already transfer fish TO this aquarium
+    const pendingToTarget = pendingTransferTasks.filter(
+      t => t.transfer.targetAquariumId === aquarium.aquariumId
+    )
+    if (pendingToTarget.length > 0) {
+      const fishNames = pendingToTarget.map(t => t.transfer.fishName).join(', ')
+      newWarnings.push({
+        type: 'target_has_pending_additions',
+        message: `כבר יש ${pendingToTarget.length} משימות ממתינות שמעבירות דגים לאקווריום ${aquarium.aquariumNumber}: ${fishNames}`,
+        severity: 'warning',
+        allowOverride: true,
+      })
+    }
+
+    // Warning 3: Pending tasks remove fish FROM source aquarium
+    if (selectedSourceAquarium) {
+      const pendingFromSource = pendingTransferTasks.filter(
+        t => t.transfer.sourceAquariumId === selectedSourceAquarium.aquariumId
+      )
+      if (pendingFromSource.length > 0) {
+        const fishNames = pendingFromSource.map(t => t.transfer.fishName).join(', ')
+        newWarnings.push({
+          type: 'source_has_pending_removals',
+          message: `כבר יש ${pendingFromSource.length} משימות ממתינות שמוציאות דגים מאקווריום ${selectedSourceAquarium.aquariumNumber}: ${fishNames}`,
+          severity: 'warning',
+          allowOverride: true,
+        })
+      }
+    }
+
+    return newWarnings
+  }
+
   function handleDestinationSelect(aquarium) {
-    setSelectedDestAquarium(aquarium)
+    const destWarnings = validateDestination(aquarium)
+
+    if (destWarnings.length > 0) {
+      setWarnings(destWarnings)
+      setSelectedDestAquarium(aquarium)
+      setShowWarningDialog(true)
+    } else {
+      setSelectedDestAquarium(aquarium)
+    }
+  }
+
+  function handleWarningConfirm() {
+    setShowWarningDialog(false)
+    setWarnings([])
+    // Destination already set, user confirmed
+  }
+
+  function handleWarningCancel() {
+    setShowWarningDialog(false)
+    setWarnings([])
+    setSelectedDestAquarium(null) // Reset destination selection
   }
 
   async function handleCreateGeneralTask() {
@@ -240,6 +324,7 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
         targetAquariumNumber: isShipment ? 'shipment' : selectedDestAquarium.aquariumNumber,
         targetRoom: isShipment ? '' : selectedDestAquarium.room,
         isShipment: isShipment,
+        isReceptionFish: selectedFish.isReceptionFish || false,
         allowMixing: false,
         notes: taskNotes.trim(),
         createdBy: user?.email || 'unknown',
@@ -933,6 +1018,16 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
           </div>
         </div>
       </div>
+
+      {/* Warning Dialog */}
+      {showWarningDialog && (
+        <WarningDialog
+          isOpen={showWarningDialog}
+          warnings={warnings}
+          onConfirm={handleWarningConfirm}
+          onCancel={handleWarningCancel}
+        />
+      )}
 
       {/* Block Report Dialog */}
       {showBlockDialog && (
