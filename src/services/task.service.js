@@ -234,32 +234,65 @@ export async function completeTask(farmId, taskId) {
     // If it's a transfer task, execute the actual transfer
     let transferResult = null
     if (task.type === 'transfer' && task.transfer) {
-      const { transferFish } = await import('./transfer.service')
+      const { updateAquariumStatus } = await import('./farm-fish.service')
 
-      // Handle shipments differently - for now, just mark as done
-      // In the future, this could update shipment records
-      if (task.transfer.isShipment) {
-        // For shipments, we need to remove the fish from the aquarium
-        const { updateFarmFish, deleteFarmFish, updateAquariumStatus } = await import('./farm-fish.service')
+      // Auto-detect if fish is in farmFish or fish_instances
+      let isReceptionFish = task.transfer.isReceptionFish || false
 
-        // Get the fish data directly from the farmFish collection
-        const fishRef = doc(db, 'farmFish', task.transfer.fishId)
-        const fishDoc = await getDoc(fishRef)
-
-        if (fishDoc.exists()) {
-          const fishData = fishDoc.data()
-          const remainingQuantity = fishData.quantity - task.transfer.quantity
-          if (remainingQuantity <= 0) {
-            // Delete the fish record entirely
-            await deleteFarmFish(farmId, task.transfer.fishId)
-          } else {
-            // Just reduce the quantity
-            await updateFarmFish(farmId, task.transfer.fishId, {
-              quantity: remainingQuantity,
-            })
+      if (!isReceptionFish && !task.transfer.isShipment) {
+        // Check if fish exists in farmFish collection
+        const farmFishRef = doc(db, 'farmFish', task.transfer.fishId)
+        try {
+          const farmFishDoc = await getDoc(farmFishRef)
+          if (!farmFishDoc.exists()) {
+            // Not in farmFish, must be a reception fish
+            isReceptionFish = true
+            console.log('Fish not found in farmFish, trying fish_instances')
           }
-          // Update the aquarium status since fish was removed
-          await updateAquariumStatus(farmId, task.transfer.sourceAquariumId)
+        } catch (err) {
+          // Permission error means it's not in farmFish - try fish_instances
+          isReceptionFish = true
+          console.log('Cannot access farmFish, trying fish_instances')
+        }
+      }
+
+      if (task.transfer.isShipment) {
+        // Shipment - remove fish from aquarium
+        if (isReceptionFish) {
+          const { updateFishInstance, deleteFishInstance } = await import('./fish.service')
+          // For reception fish shipments, delete or reduce quantity
+          const instanceRef = doc(db, 'farms', farmId, 'fish_instances', task.transfer.fishId)
+          const instanceDoc = await getDoc(instanceRef)
+
+          if (instanceDoc.exists()) {
+            const fishData = instanceDoc.data()
+            const remainingQuantity = fishData.currentQuantity - task.transfer.quantity
+            if (remainingQuantity <= 0) {
+              await deleteFishInstance(farmId, task.transfer.fishId)
+            } else {
+              await updateFishInstance(farmId, task.transfer.fishId, {
+                currentQuantity: remainingQuantity,
+              })
+            }
+            await updateAquariumStatus(farmId, task.transfer.sourceAquariumId)
+          }
+        } else {
+          const { updateFarmFish, deleteFarmFish } = await import('./farm-fish.service')
+          const fishRef = doc(db, 'farmFish', task.transfer.fishId)
+          const fishDoc = await getDoc(fishRef)
+
+          if (fishDoc.exists()) {
+            const fishData = fishDoc.data()
+            const remainingQuantity = fishData.quantity - task.transfer.quantity
+            if (remainingQuantity <= 0) {
+              await deleteFarmFish(farmId, task.transfer.fishId)
+            } else {
+              await updateFarmFish(farmId, task.transfer.fishId, {
+                quantity: remainingQuantity,
+              })
+            }
+            await updateAquariumStatus(farmId, task.transfer.sourceAquariumId)
+          }
         }
 
         transferResult = {
@@ -268,10 +301,9 @@ export async function completeTask(farmId, taskId) {
           isShipment: true,
           fishName: task.transfer.fishName,
         }
-      } else if (task.transfer.isReceptionFish) {
+      } else if (isReceptionFish) {
         // Reception fish (fish_instances collection) - update aquariumId directly
         const { updateFishInstance } = await import('./fish.service')
-        const { updateAquariumStatus } = await import('./farm-fish.service')
 
         await updateFishInstance(farmId, task.transfer.fishId, {
           aquariumId: task.transfer.targetAquariumId,
@@ -279,9 +311,7 @@ export async function completeTask(farmId, taskId) {
 
         // Update both aquarium statuses
         await updateAquariumStatus(farmId, task.transfer.sourceAquariumId)
-        if (task.transfer.targetAquariumId !== 'SHIPMENT') {
-          await updateAquariumStatus(farmId, task.transfer.targetAquariumId)
-        }
+        await updateAquariumStatus(farmId, task.transfer.targetAquariumId)
 
         transferResult = {
           success: true,
@@ -290,6 +320,7 @@ export async function completeTask(farmId, taskId) {
         }
       } else {
         // Regular farmFish transfer between aquariums
+        const { transferFish } = await import('./transfer.service')
         transferResult = await transferFish(farmId, {
           sourceAquariumId: task.transfer.sourceAquariumId,
           destinationAquariumId: task.transfer.targetAquariumId,
