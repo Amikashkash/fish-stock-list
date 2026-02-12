@@ -16,7 +16,6 @@ import { validatePlanComplete } from '../../../models/ReceptionPlan'
 import { formatDateDDMMYYYY } from '../../../utils/dateFormatter'
 
 // New components
-import WorkRequirementsReport from './WorkRequirementsReport'
 import ExcelTemplateDisplay from './ExcelTemplateDisplay'
 import FishListManagementModal from './FishListManagementModal'
 import AquariumAssignmentModal from './AquariumAssignmentModal'
@@ -25,7 +24,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
   const { currentFarm } = useFarm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [step, setStep] = useState(1) // 1: create plan, 2: add fish, 3: work requirements, 4: assign aquariums, 5: review & lock
+  const [step, setStep] = useState(1) // 1: create plan, 2: add fish, 3: assign aquariums, 4: review & lock
   const isEditing = !!editingPlanId
 
   // Plan data
@@ -205,7 +204,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
 
       setLoading(true)
       await updatePlanStatus(currentFarm.farmId, currentPlan.planId, 'finalized')
-      setStep(5)
+      setStep(4)
     } catch (err) {
       setError('שגיאה בסיום תכנון: ' + err.message)
     } finally {
@@ -303,13 +302,13 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-semibold text-gray-700">שלב בתהליך:</span>
                   <span className="text-sm text-gray-600">
-                    {step}/5
+                    {step}/4
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-blue-500 h-full rounded-full transition-all duration-300"
-                    style={{ width: `${(step / 5) * 100}%` }}
+                    style={{ width: `${(step / 4) * 100}%` }}
                   ></div>
                 </div>
                 <div className="mt-3 text-sm text-gray-700">
@@ -497,16 +496,8 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
               </div>
             )}
 
-            {/* Step 3: Work Requirements */}
+            {/* Step 3: Assign Aquariums */}
             {step === 3 && currentPlan && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">בחן דרישות עבודה</h3>
-                <WorkRequirementsReport items={planItems} plan={currentPlan} />
-              </div>
-            )}
-
-            {/* Step 4: Assign Aquariums */}
-            {step === 4 && currentPlan && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">הקצה אקווריומים</h3>
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 mb-4">
@@ -526,8 +517,8 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
               </div>
             )}
 
-            {/* Step 5: Review & Lock */}
-            {step === 5 && currentPlan && (
+            {/* Step 4: Review & Lock */}
+            {step === 4 && currentPlan && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">בדיקה סופית ונעילה</h3>
 
@@ -618,16 +609,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
                   </button>
                 )}
 
-                {step === 3 && (
-                  <button
-                    onClick={() => setStep(4)}
-                    className="px-6 py-3 rounded-lg text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600"
-                  >
-                    המשך ➜
-                  </button>
-                )}
-
-                {step === 4 && completionStatus.allAssigned && (
+                {step === 3 && completionStatus.allAssigned && (
                   <button
                     onClick={handleFinalizePlan}
                     className="px-6 py-3 rounded-lg text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
@@ -637,7 +619,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
                   </button>
                 )}
 
-                {step === 5 && completionStatus.allAssigned && (
+                {step === 4 && completionStatus.allAssigned && (
                   <button
                     onClick={handleLockPlan}
                     className="px-6 py-3 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
