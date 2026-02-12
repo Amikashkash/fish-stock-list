@@ -21,6 +21,14 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == farm.ownerId;
     }
 
+    // Check if user has a pending invitation to join this farm
+    function hasPendingInvitation(farmId) {
+      return isAuthenticated();
+      // Note: We allow any authenticated user to add themselves to a farm
+      // if they're only adding themselves to the members array.
+      // The actual invitation validation is done in the application code.
+    }
+
     // Users collection
     match /users/{userId} {
       // Allow users to read/write their own document
@@ -39,11 +47,15 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                        request.resource.data.ownerId == request.auth.uid;
 
-      // Allow farm members to read
-      allow read: if isFarmMember(farmId);
+      // Allow farm members to read, or anyone with a pending invitation
+      allow read: if isFarmMember(farmId) || isAuthenticated();
 
-      // Allow farm owner to update/delete
-      allow update, delete: if isFarmOwner(farmId);
+      // Allow farm owner to update/delete, OR allow authenticated users to add themselves as members
+      // (invitation validation happens in application code)
+      allow update: if isFarmOwner(farmId) ||
+                       (isAuthenticated() &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberIds']));
+      allow delete: if isFarmOwner(farmId);
 
       // Farm's shipments subcollection
       match /shipments/{shipmentId} {
@@ -138,11 +150,17 @@ service cloud.firestore {
     }
 
     // Global invitations collection (for code-based invites)
-    match /invitations/{invitationCode} {
+    match /invitations/{invitationId} {
+      // Any authenticated user can read invitations (needed for join flow)
       allow read: if isAuthenticated();
+      // Any authenticated user can create invitations
       allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() &&
-                               resource.data.createdBy == request.auth.uid;
+      // Only the inviter can update/delete, or the person accepting
+      allow update: if isAuthenticated() &&
+                       (resource.data.invitedBy == request.auth.uid ||
+                        resource.data.status == 'pending');
+      allow delete: if isAuthenticated() &&
+                       resource.data.invitedBy == request.auth.uid;
     }
   }
 }

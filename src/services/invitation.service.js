@@ -12,6 +12,7 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
+  setDoc,
   query,
   where,
   serverTimestamp,
@@ -65,7 +66,9 @@ export async function createInvitation(farmId, inviteData) {
       expiresAt: Timestamp.fromDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) // 7 days
     }
 
+    console.log('Creating invitation with data:', invitation)
     const docRef = await addDoc(collection(db, COLLECTION_NAME), invitation)
+    console.log('Invitation created with ID:', docRef.id, 'inviteCode:', inviteCode)
 
     return {
       invitationId: docRef.id,
@@ -121,6 +124,19 @@ export async function getFarmInvitations(farmId) {
  */
 export async function getInvitationByCode(inviteCode) {
   try {
+    console.log('Looking for invitation with code:', inviteCode)
+
+    // First, try to find by inviteCode only (without status filter) for debugging
+    const debugQ = query(
+      collection(db, COLLECTION_NAME),
+      where('inviteCode', '==', inviteCode)
+    )
+    const debugSnapshot = await getDocs(debugQ)
+    console.log('DEBUG - All invitations with this code:', debugSnapshot.size)
+    debugSnapshot.forEach(doc => {
+      console.log('DEBUG - Invitation:', doc.id, doc.data())
+    })
+
     const q = query(
       collection(db, COLLECTION_NAME),
       where('inviteCode', '==', inviteCode),
@@ -128,13 +144,16 @@ export async function getInvitationByCode(inviteCode) {
     )
 
     const snapshot = await getDocs(q)
+    console.log('Found pending invitations:', snapshot.size)
 
     if (snapshot.empty) {
+      console.log('No pending invitation found for code:', inviteCode)
       return null
     }
 
     const doc = snapshot.docs[0]
     const data = doc.data()
+    console.log('Invitation found:', doc.id, data)
 
     // Check if expired
     if (data.expiresAt && data.expiresAt.toDate() < new Date()) {
@@ -161,16 +180,20 @@ export async function getInvitationByCode(inviteCode) {
  */
 export async function acceptInvitation(invitationId, userId) {
   try {
+    console.log('Accepting invitation:', invitationId, 'for user:', userId)
     const inviteRef = doc(db, COLLECTION_NAME, invitationId)
     const inviteDoc = await getDoc(inviteRef)
 
     if (!inviteDoc.exists()) {
+      console.error('Invitation not found:', invitationId)
       throw new Error('ההזמנה לא נמצאה')
     }
 
     const invitation = inviteDoc.data()
+    console.log('Invitation data:', invitation)
 
     if (invitation.status !== 'pending') {
+      console.error('Invitation status is not pending:', invitation.status)
       throw new Error('ההזמנה כבר נוצלה או בוטלה')
     }
 
@@ -178,14 +201,7 @@ export async function acceptInvitation(invitationId, userId) {
       throw new Error('ההזמנה פגה תוקף')
     }
 
-    // Update invitation status
-    await updateDoc(inviteRef, {
-      status: 'accepted',
-      acceptedBy: userId,
-      acceptedAt: serverTimestamp()
-    })
-
-    // Add user to farm members
+    // First, add user to farm members (do this BEFORE marking invitation as accepted)
     const farmRef = doc(db, 'farms', invitation.farmId)
     const farmDoc = await getDoc(farmRef)
 
@@ -194,18 +210,65 @@ export async function acceptInvitation(invitationId, userId) {
     }
 
     const farmData = farmDoc.data()
+    console.log('Farm data:', farmData)
     const members = farmData.members || []
+    const memberIds = farmData.memberIds || []
+    console.log('Current members:', members)
+    console.log('Current memberIds:', memberIds)
 
     // Check if user is already a member
-    if (!members.some(m => m.id === userId)) {
-      members.push({
+    const isAlreadyMember = members.some(m => m.id === userId)
+    const isInMemberIds = memberIds.includes(userId)
+    console.log('Is already member:', isAlreadyMember, 'Is in memberIds:', isInMemberIds)
+
+    let needsUpdate = false
+
+    if (!isAlreadyMember) {
+      const newMember = {
         id: userId,
         role: invitation.role,
         joinedAt: new Date().toISOString()
-      })
-
-      await updateDoc(farmRef, { members })
+      }
+      members.push(newMember)
+      needsUpdate = true
     }
+
+    // Always ensure user is in memberIds (used for security rules)
+    if (!isInMemberIds) {
+      memberIds.push(userId)
+      needsUpdate = true
+    }
+
+    if (needsUpdate) {
+      console.log('Updating farm members:', { farmId: invitation.farmId, userId, members, memberIds })
+      await updateDoc(farmRef, { members, memberIds })
+      console.log('User added to farm successfully')
+    } else {
+      console.log('User is already fully added, skipping update')
+    }
+
+    // Create user's farm membership document (required for getUserFarms to find this farm)
+    try {
+      const membershipRef = doc(db, 'users', userId, 'farms', invitation.farmId)
+      await setDoc(membershipRef, {
+        farmId: invitation.farmId,
+        farmName: invitation.farmName,
+        role: invitation.role,
+        joinedAt: serverTimestamp()
+      })
+      console.log('User farm membership document created at users/' + userId + '/farms/' + invitation.farmId)
+    } catch (membershipError) {
+      console.error('Error creating user membership document:', membershipError)
+      // Don't throw - the user is added to the farm, they just might need to refresh
+    }
+
+    // Only mark invitation as accepted AFTER successfully adding user to farm
+    await updateDoc(inviteRef, {
+      status: 'accepted',
+      acceptedBy: userId,
+      acceptedAt: serverTimestamp()
+    })
+    console.log('Invitation marked as accepted')
 
     return {
       farmId: invitation.farmId,

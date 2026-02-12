@@ -12,6 +12,7 @@ import {
   deleteTask,
   blockTask,
   unblockTask,
+  getPendingTransferQuantity,
 } from '../../../services/task.service'
 import BlockReportDialog from '../transfer-plan/BlockReportDialog'
 import WarningDialog from '../transfer-plan/WarningDialog'
@@ -180,10 +181,24 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
     }
   }
 
-  function handleFishSelect(fish) {
+  async function handleFishSelect(fish) {
     setSelectedFish(fish)
-    setTransferQuantity(fish.quantity.toString())
     setStep(3)
+
+    // Calculate available quantity (total - pending transfers)
+    try {
+      const fishId = fish.instanceId
+      const pendingQty = await getPendingTransferQuantity(currentFarm.farmId, fishId)
+      const available = Math.max(0, fish.quantity - pendingQty)
+      fish._availableQuantity = available
+      fish._pendingQuantity = pendingQty
+      setSelectedFish({ ...fish })
+      setTransferQuantity(available > 0 ? available.toString() : '0')
+    } catch (err) {
+      console.error('Error calculating available quantity:', err)
+      // Fallback to full quantity
+      setTransferQuantity(fish.quantity.toString())
+    }
   }
 
   // Load pending transfer tasks to check for conflicts
@@ -304,8 +319,11 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
     }
 
     const quantity = parseInt(transferQuantity)
-    if (isNaN(quantity) || quantity <= 0 || quantity > selectedFish.quantity) {
-      setError('כמות לא תקינה')
+    const maxQuantity = selectedFish._availableQuantity ?? selectedFish.quantity
+    if (isNaN(quantity) || quantity <= 0 || quantity > maxQuantity) {
+      setError(quantity > maxQuantity
+        ? `הכמות המבוקשת (${quantity}) חורגת מהכמות הזמינה (${maxQuantity})`
+        : 'כמות לא תקינה')
       return
     }
 
@@ -902,17 +920,28 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
                           <label className="block mb-2 font-semibold text-gray-900 text-sm">
                             כמות להעברה <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="number"
-                            value={transferQuantity}
-                            onChange={(e) => setTransferQuantity(e.target.value)}
-                            min="1"
-                            max={selectedFish.quantity}
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">
-                            מתוך {selectedFish.quantity} זמינים
-                          </p>
+                          {selectedFish._availableQuantity !== undefined && selectedFish._availableQuantity <= 0 ? (
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                              כל הדגים מסוג זה כבר מוקצים למשימות העברה ממתינות ({selectedFish._pendingQuantity} מתוך {selectedFish.quantity}).
+                              יש לבצע או לבטל את המשימות הקיימות תחילה.
+                            </div>
+                          ) : (
+                            <>
+                              <input
+                                type="number"
+                                value={transferQuantity}
+                                onChange={(e) => setTransferQuantity(e.target.value)}
+                                min="1"
+                                max={selectedFish._availableQuantity ?? selectedFish.quantity}
+                                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">
+                                {selectedFish._pendingQuantity > 0
+                                  ? `זמינים: ${selectedFish._availableQuantity} מתוך ${selectedFish.quantity} (${selectedFish._pendingQuantity} מוקצים למשימות ממתינות)`
+                                  : `מתוך ${selectedFish.quantity} זמינים`}
+                              </p>
+                            </>
+                          )}
                         </div>
 
                         {/* Shipment checkbox */}
@@ -1004,7 +1033,7 @@ function TasksModal({ isOpen, onClose, onSuccess }) {
                         {/* Create button */}
                         <button
                           onClick={handleCreateTransferTask}
-                          disabled={loading || (!isShipment && !selectedDestAquarium)}
+                          disabled={loading || (!isShipment && !selectedDestAquarium) || (selectedFish._availableQuantity !== undefined && selectedFish._availableQuantity <= 0)}
                           className="w-full px-4 py-3 bg-gradient-to-r from-ocean-500 to-ocean-600 text-white rounded-lg font-semibold hover:from-ocean-600 hover:to-ocean-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loading ? 'יוצר...' : '+ צור משימת העברה'}

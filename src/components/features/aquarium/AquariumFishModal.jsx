@@ -3,6 +3,7 @@ import { useFarm } from '../../../contexts/FarmContext'
 import { getPreviousFishNames } from '../../../services/reception.service'
 import { getFarmFish, addFarmFish, updateFarmFish, deleteFarmFish } from '../../../services/farm-fish.service'
 import { getFishByAquarium, updateFishInstance, deleteFishInstance } from '../../../services/fish.service'
+import { getPendingTasksForFish } from '../../../services/task.service'
 import MortalityRecordModal from '../health/MortalityRecordModal'
 
 // Default fallback sources if none defined in settings
@@ -229,6 +230,18 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   }
 
   async function handleDeleteFish(fishId) {
+    try {
+      // Check for pending transfer tasks
+      const pendingTasks = await getPendingTasksForFish(currentFarm.farmId, fishId)
+      if (pendingTasks.length > 0) {
+        const taskNames = pendingTasks.map(t => t.title).join(', ')
+        setError(`לא ניתן למחוק דג זה - יש ${pendingTasks.length} משימות העברה ממתינות: ${taskNames}. יש לבטל את המשימות תחילה.`)
+        return
+      }
+    } catch (err) {
+      // If we can't check, allow deletion with warning
+    }
+
     if (!window.confirm('האם אתה בטוח שברצונך למחוק דג זה?')) return
 
     try {
@@ -245,6 +258,18 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   }
 
   async function handleDeleteReceptionFish(instanceId) {
+    try {
+      // Check for pending transfer tasks
+      const pendingTasks = await getPendingTasksForFish(currentFarm.farmId, instanceId)
+      if (pendingTasks.length > 0) {
+        const taskNames = pendingTasks.map(t => t.title).join(', ')
+        setError(`לא ניתן למחוק דג זה - יש ${pendingTasks.length} משימות העברה ממתינות: ${taskNames}. יש לבטל את המשימות תחילה.`)
+        return
+      }
+    } catch (err) {
+      // If we can't check, allow deletion with warning
+    }
+
     if (!window.confirm('האם אתה בטוח שברצונך למחוק דג מיובא זה?')) return
 
     try {

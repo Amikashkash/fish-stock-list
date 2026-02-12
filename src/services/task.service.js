@@ -177,6 +177,44 @@ export async function getTasks(farmId, statusFilter = null) {
 }
 
 /**
+ * Get pending transfer quantity for a specific fish
+ * Returns total quantity committed to pending transfer tasks
+ * @param {string} farmId - Farm ID
+ * @param {string} fishId - Fish ID to check
+ * @returns {Promise<number>} Total pending quantity
+ */
+export async function getPendingTransferQuantity(farmId, fishId) {
+  try {
+    const pendingTasks = await getTasks(farmId, 'pending')
+    const fishTasks = pendingTasks.filter(
+      t => t.type === 'transfer' && t.transfer && t.transfer.fishId === fishId
+    )
+    return fishTasks.reduce((total, t) => total + (t.transfer.quantity || 0), 0)
+  } catch (error) {
+    console.error('Error getting pending transfer quantity:', error)
+    return 0
+  }
+}
+
+/**
+ * Check if a fish has pending transfer tasks
+ * @param {string} farmId - Farm ID
+ * @param {string} fishId - Fish ID to check
+ * @returns {Promise<Array>} List of pending tasks for this fish
+ */
+export async function getPendingTasksForFish(farmId, fishId) {
+  try {
+    const pendingTasks = await getTasks(farmId, 'pending')
+    return pendingTasks.filter(
+      t => t.type === 'transfer' && t.transfer && t.transfer.fishId === fishId
+    )
+  } catch (error) {
+    console.error('Error getting pending tasks for fish:', error)
+    return []
+  }
+}
+
+/**
  * Update a task
  * @param {string} farmId - Farm ID
  * @param {string} taskId - Task ID
