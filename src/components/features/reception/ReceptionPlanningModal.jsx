@@ -468,7 +468,7 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-900">הוסף רשימת דגים</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">הוסף רשימת דגים והצמד אקווריומים</h3>
 
                   <button
                     onClick={() => setShowExcelTemplate(true)}
@@ -488,8 +488,15 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
                   </button>
 
                   {completionStatus.totalItems > 0 && (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-                      ✅ {completionStatus.totalItems} דגים בתוכנית
+                    <div className={`p-3 border rounded-lg text-sm ${
+                      completionStatus.allAssigned
+                        ? 'bg-green-50 border-green-200 text-green-800'
+                        : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+                    }`}>
+                      {completionStatus.allAssigned
+                        ? `✅ ${completionStatus.totalItems} דגים בתוכנית - כולם מוקצים לאקווריומים`
+                        : `⚠️ ${completionStatus.totalItems} דגים | ${completionStatus.assignedItems} מוקצים, ${completionStatus.totalItems - completionStatus.assignedItems} ממתינים להקצאה`
+                      }
                     </div>
                   )}
                 </div>
@@ -602,10 +609,17 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
 
                 {step === 2 && completionStatus.hasFish && (
                   <button
-                    onClick={() => setStep(3)}
-                    className="px-6 py-3 rounded-lg text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600"
+                    onClick={() => {
+                      if (completionStatus.allAssigned) {
+                        handleFinalizePlan()
+                      } else {
+                        setStep(3)
+                      }
+                    }}
+                    className="px-6 py-3 rounded-lg text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                    disabled={loading}
                   >
-                    המשך ➜
+                    {loading ? 'מסיים...' : 'המשך ➜'}
                   </button>
                 )}
 

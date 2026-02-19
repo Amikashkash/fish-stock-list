@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useFarm } from '../../../contexts/FarmContext'
 import { addReceptionItem, updateReceptionItem, deleteReceptionItem } from '../../../services/reception.service'
-import { getFishCatalog } from '../../../services/farm-fish.service'
+import { getAquariums } from '../../../services/aquarium.service'
+
+const SHELF_LABELS = {
+  bottom: 'תחתון',
+  middle: 'אמצעי',
+  top: 'עליון',
+}
 
 function FishListManagementModal({
   isOpen,
@@ -15,28 +21,26 @@ function FishListManagementModal({
   const { currentFarm } = useFarm()
   const [editingId, setEditingId] = useState(null)
   const [isAdding, setIsAdding] = useState(false)
-  const [showCatalog, setShowCatalog] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [fishCatalog, setFishCatalog] = useState([])
-  const [catalogLoading, setCatalogLoading] = useState(false)
+  const [aquariums, setAquariums] = useState([])
 
-  // Load fish catalog when modal opens
   useEffect(() => {
     if (isOpen && currentFarm?.farmId) {
-      loadFishCatalog()
+      loadAquariums()
     }
   }, [isOpen, currentFarm?.farmId])
 
-  async function loadFishCatalog() {
+  async function loadAquariums() {
     try {
-      setCatalogLoading(true)
-      const catalog = await getFishCatalog(currentFarm.farmId)
-      setFishCatalog(catalog)
+      const data = await getAquariums(currentFarm.farmId)
+      if (plan?.targetRoom) {
+        setAquariums(data.filter((aq) => aq.room === plan.targetRoom))
+      } else {
+        setAquariums(data)
+      }
     } catch (err) {
-      console.error('Error loading fish catalog:', err)
-    } finally {
-      setCatalogLoading(false)
+      console.error('Error loading aquariums:', err)
     }
   }
 
@@ -53,6 +57,8 @@ function FishListManagementModal({
     boxNumber: '',
     boxPortion: '',
     price: '',
+    targetAquariumId: null,
+    targetAquariumNumber: '',
   })
 
   const [editItem, setEditItem] = useState(null)
@@ -78,6 +84,31 @@ function FishListManagementModal({
     }
   }
 
+  function handleAquariumChange(aquariumId, isEditing = false) {
+    const selected = aquariums.find((aq) => aq.aquariumId === aquariumId)
+    if (isEditing) {
+      setEditItem({
+        ...editItem,
+        targetAquariumId: aquariumId || null,
+        targetAquariumNumber: selected?.aquariumNumber || '',
+      })
+    } else {
+      setNewItem({
+        ...newItem,
+        targetAquariumId: aquariumId || null,
+        targetAquariumNumber: selected?.aquariumNumber || '',
+      })
+    }
+  }
+
+  function getAquariumOptionLabel(aq) {
+    const shelf = SHELF_LABELS[aq.shelf] || aq.shelf || ''
+    const status = aq.status === 'occupied' ? ' (תפוס)' : ''
+    const assignedItem = items.find((i) => i.targetAquariumId === aq.aquariumId)
+    const assigned = assignedItem ? ` ⚠️ → ${assignedItem.hebrewName}` : ''
+    return `#${aq.aquariumNumber} | ${shelf} | ${aq.volume}L${status}${assigned}`
+  }
+
   async function handleAddItem() {
     if (!newItem.hebrewName || !newItem.scientificName || !newItem.size) {
       setError('חסרים שם עברי, שם מדעי וגודל')
@@ -100,8 +131,8 @@ function FishListManagementModal({
         price: newItem.price ? parseFloat(newItem.price) : null,
         priceUpdatedAt: newItem.price ? new Date().toISOString() : null,
         targetRoom: plan?.targetRoom || '',
-        targetAquariumId: null,
-        targetAquariumNumber: '',
+        targetAquariumId: newItem.targetAquariumId,
+        targetAquariumNumber: newItem.targetAquariumNumber || '',
       })
       setNewItem({
         hebrewName: '',
@@ -113,6 +144,8 @@ function FishListManagementModal({
         boxNumber: '',
         boxPortion: '',
         price: '',
+        targetAquariumId: null,
+        targetAquariumNumber: '',
       })
       setIsAdding(false)
       if (onItemsChanged) onItemsChanged()
@@ -143,6 +176,8 @@ function FishListManagementModal({
         boxPortion: editItem.boxPortion,
         price: editItem.price ? parseFloat(editItem.price) : null,
         priceUpdatedAt: editItem.price ? new Date().toISOString() : editItem.priceUpdatedAt || null,
+        targetAquariumId: editItem.targetAquariumId || null,
+        targetAquariumNumber: editItem.targetAquariumNumber || '',
       })
       setEditingId(null)
       setEditItem(null)
@@ -164,35 +199,6 @@ function FishListManagementModal({
       if (onItemsChanged) onItemsChanged()
     } catch (err) {
       setError(err.message || 'שגיאה במחיקת הפריט')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Add fish from catalog
-  async function handleAddFromCatalog(catalogFish) {
-    try {
-      setLoading(true)
-      setError('')
-      await addReceptionItem(currentFarm.farmId, {
-        planId,
-        hebrewName: catalogFish.hebrewName || '',
-        scientificName: catalogFish.scientificName,
-        size: catalogFish.size,
-        quantity: 1, // Default quantity, user can edit
-        notes: '',
-        code: '',
-        boxNumber: catalogFish.boxNumber || '',
-        boxPortion: '',
-        price: catalogFish.price || null,
-        priceUpdatedAt: catalogFish.price ? new Date().toISOString() : null,
-        targetRoom: plan?.targetRoom || '',
-        targetAquariumId: null,
-        targetAquariumNumber: '',
-      })
-      if (onItemsChanged) onItemsChanged()
-    } catch (err) {
-      setError(err.message || 'שגיאה בהוספת הדג')
     } finally {
       setLoading(false)
     }
@@ -291,6 +297,22 @@ function FishListManagementModal({
                             disabled={loading}
                           />
                         </div>
+                      </div>
+                      <div className="mb-3">
+                        <label className="text-xs font-semibold text-gray-700">אקווריום יעד</label>
+                        <select
+                          value={editItem.targetAquariumId || ''}
+                          onChange={(e) => handleAquariumChange(e.target.value, true)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
+                          disabled={loading}
+                        >
+                          <option value="">-- לא הוקצה --</option>
+                          {aquariums.map((aq) => (
+                            <option key={aq.aquariumId} value={aq.aquariumId}>
+                              {getAquariumOptionLabel(aq)}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div className="grid grid-cols-2 gap-3 mb-3">
                         <div>
@@ -410,6 +432,13 @@ function FishListManagementModal({
                         {item.boxPortion && <span>| 📊 {item.boxPortion}</span>}
                         {item.notes && <span>| 💡 {item.notes}</span>}
                       </div>
+                      {item.targetAquariumNumber ? (
+                        <div className="text-xs text-green-700 font-semibold mb-2">
+                          ✅ אקווריום: {item.targetAquariumNumber}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-yellow-700 mb-2">⚠️ לא הוקצה אקווריום</div>
+                      )}
                       {item.priceUpdatedAt && (
                         <div className="text-xs text-gray-500 mb-2">
                           מחיר עודכן: {new Date(item.priceUpdatedAt).toLocaleDateString('he-IL')}
@@ -439,121 +468,15 @@ function FishListManagementModal({
             )}
           </div>
 
-          {/* Fish Catalog Selection */}
-          {showCatalog && (
-            <div className="mb-6 bg-purple-50 border-2 border-purple-300 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-semibold text-gray-900">בחר דג מהקטלוג</h4>
-                <button
-                  onClick={() => setShowCatalog(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Add All Button */}
-              {fishCatalog.length > 0 && fishCatalog.some((fish) => !items.some(
-                (item) =>
-                  item.scientificName?.toLowerCase() === fish.scientificName?.toLowerCase() &&
-                  item.size?.toLowerCase() === fish.size?.toLowerCase()
-              )) && (
-                <button
-                  onClick={async () => {
-                    const notAdded = fishCatalog.filter((fish) => !items.some(
-                      (item) =>
-                        item.scientificName?.toLowerCase() === fish.scientificName?.toLowerCase() &&
-                        item.size?.toLowerCase() === fish.size?.toLowerCase()
-                    ))
-                    for (const fish of notAdded) {
-                      await handleAddFromCatalog(fish)
-                    }
-                  }}
-                  disabled={loading}
-                  className="w-full mb-3 px-4 py-2 text-sm font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-                >
-                  {loading ? 'מוסיף...' : `➕ הוסף את כל הקטלוג (${fishCatalog.filter((fish) => !items.some(
-                    (item) =>
-                      item.scientificName?.toLowerCase() === fish.scientificName?.toLowerCase() &&
-                      item.size?.toLowerCase() === fish.size?.toLowerCase()
-                  )).length})`}
-                </button>
-              )}
-
-              {catalogLoading ? (
-                <div className="text-center py-4 text-gray-500">טוען קטלוג...</div>
-              ) : fishCatalog.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">
-                  <div className="text-2xl mb-2">📋</div>
-                  <div>אין דגים בקטלוג</div>
-                  <div className="text-xs mt-1">יבא קובץ אקסל כדי להוסיף דגים לקטלוג</div>
-                </div>
-              ) : (
-                <div className="max-h-60 overflow-y-auto space-y-2">
-                  {fishCatalog.map((fish) => {
-                    // Check if this fish is already in the items list
-                    const alreadyAdded = items.some(
-                      (item) =>
-                        item.scientificName?.toLowerCase() === fish.scientificName?.toLowerCase() &&
-                        item.size?.toLowerCase() === fish.size?.toLowerCase()
-                    )
-
-                    return (
-                      <div
-                        key={fish.catalogId}
-                        className={`bg-white border rounded-lg p-3 flex justify-between items-center transition-all ${
-                          alreadyAdded
-                            ? 'border-gray-200 opacity-50'
-                            : 'border-gray-200 hover:border-purple-400'
-                        }`}
-                      >
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900 text-sm">
-                            {fish.scientificName}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            גודל: {fish.size}
-                            {fish.boxNumber && ` | ארגז: ${fish.boxNumber}`}
-                          </div>
-                        </div>
-                        {alreadyAdded ? (
-                          <span className="px-3 py-1.5 text-xs font-semibold text-green-700 bg-green-100 rounded">
-                            ✓ נוסף
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleAddFromCatalog(fish)}
-                            disabled={loading}
-                            className="px-3 py-1.5 text-xs font-semibold bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
-                          >
-                            ➕ הוסף
-                          </button>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Add New Item */}
-          {!isAdding && !showCatalog ? (
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowCatalog(true)}
-                className="flex-1 px-4 py-3 rounded-lg text-sm font-semibold bg-purple-500 text-white hover:bg-purple-600 transition-all"
-              >
-                📋 בחר מקטלוג ({fishCatalog.length})
-              </button>
-              <button
-                onClick={() => setIsAdding(true)}
-                className="flex-1 px-4 py-3 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-all"
-              >
-                ➕ הוסף ידנית
-              </button>
-            </div>
-          ) : !isAdding ? null : (
+          {!isAdding ? (
+            <button
+              onClick={() => setIsAdding(true)}
+              className="w-full px-4 py-3 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition-all"
+            >
+              ➕ הוסף דג
+            </button>
+          ) : (
             <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
               <h4 className="font-semibold text-gray-900 mb-3">דג חדש</h4>
               <div className="grid grid-cols-2 gap-3 mb-3">
@@ -607,6 +530,22 @@ function FishListManagementModal({
                     disabled={loading}
                   />
                 </div>
+              </div>
+              <div className="mb-3">
+                <label className="text-xs font-semibold text-gray-700">אקווריום יעד</label>
+                <select
+                  value={newItem.targetAquariumId || ''}
+                  onChange={(e) => handleAquariumChange(e.target.value, false)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-green-500 bg-white"
+                  disabled={loading}
+                >
+                  <option value="">-- לא הוקצה --</option>
+                  {aquariums.map((aq) => (
+                    <option key={aq.aquariumId} value={aq.aquariumId}>
+                      {getAquariumOptionLabel(aq)}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
