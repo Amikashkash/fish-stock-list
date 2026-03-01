@@ -51,10 +51,12 @@ function AquariumsPage() {
             where('aquariumId', '==', aquarium.aquariumId)
           )
           const fishInstancesSnapshot = await getDocs(fishInstancesQuery)
+          let totalFromInstances = 0
           fishInstancesSnapshot.docs.forEach((doc) => {
             const fish = doc.data()
             if (fish.currentQuantity > 0) {
               fishNames.push(fish.commonName || fish.scientificName)
+              totalFromInstances += fish.currentQuantity
             }
           })
 
@@ -66,16 +68,19 @@ function AquariumsPage() {
             where('aquariumId', '==', aquarium.aquariumId)
           )
           const farmFishSnapshot = await getDocs(farmFishQuery)
+          let totalFromFarmFish = 0
           farmFishSnapshot.docs.forEach((doc) => {
             const fish = doc.data()
             if (fish.quantity > 0) {
               fishNames.push(fish.hebrewName || fish.scientificName)
+              totalFromFarmFish += fish.quantity
             }
           })
 
           return {
             ...aquarium,
             fishNames: fishNames.length > 0 ? fishNames : null,
+            totalFish: totalFromInstances + totalFromFarmFish,
           }
         })
       )
