@@ -42,10 +42,12 @@ function buildFishList(catalogFish, fishInstances, aquariums) {
   fishInstances.forEach(inst => {
     // Skip non-active instances
     if (inst.status && inst.status !== 'active') return
+    // Skip instances with no aquarium — stale data from cancelled/deleted plans
+    if (!inst.aquariumId || !aquariumMap.has(inst.aquariumId)) return
 
     const key = `${(inst.scientificName || '').toLowerCase()}_${sizeKey(inst.size)}`
     const existing = fishMap.get(key)
-    const aqInfo = inst.aquariumId ? aquariumMap.get(inst.aquariumId) : null
+    const aqInfo = aquariumMap.get(inst.aquariumId)
     const instancePrice = inst.price || inst.costs?.invoiceCostPerFish || null
     const instQty = inst.currentQuantity || 0
 

@@ -63,12 +63,14 @@ function FishPriceListModal({ isOpen, onClose }) {
       fishInstances.forEach(inst => {
         // Skip non-active instances
         if (inst.status && inst.status !== 'active') return
+        // Skip instances with no aquarium — stale data from cancelled/deleted plans
+        if (!inst.aquariumId || !aquariumMap.has(inst.aquariumId)) return
 
         const key = `${(inst.scientificName || '').toLowerCase()}_${sizeKey(inst.size)}`
         const existing = fishMap.get(key)
 
         // Get aquarium info
-        const aqInfo = inst.aquariumId ? aquariumMap.get(inst.aquariumId) : null
+        const aqInfo = aquariumMap.get(inst.aquariumId)
 
         // Get price from instance (might be in costs object or direct price field)
         const instancePrice = inst.price || inst.costs?.invoiceCostPerFish || null
