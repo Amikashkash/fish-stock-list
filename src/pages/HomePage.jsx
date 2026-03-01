@@ -6,6 +6,7 @@ import { useFarm } from '../contexts/FarmContext'
 import FishPriceListModal from '../components/features/pricelist/FishPriceListModal'
 import ReceptionPlansModal from '../components/features/reception/ReceptionPlansModal'
 import TasksModal from '../components/features/tasks/TasksModal'
+import OrdersModal from '../components/features/orders/OrdersModal'
 import { VERSION } from '../version'
 
 function HomePage() {
@@ -15,6 +16,7 @@ function HomePage() {
   const [showPriceListModal, setShowPriceListModal] = useState(false)
   const [showReceptionModal, setShowReceptionModal] = useState(false)
   const [showTasksModal, setShowTasksModal] = useState(false)
+  const [showOrdersModal, setShowOrdersModal] = useState(false)
 
   const handleSignOut = async () => {
     const confirmed = window.confirm('האם אתה בטוח שברצונך להתנתק?')
@@ -34,6 +36,7 @@ function HomePage() {
     { icon: '💰', label: 'מחירון דגים', gradient: 'from-coral-300 to-coral-500', action: 'pricelist' },
     { icon: '🚚', label: 'משלוחים', gradient: 'from-sunset-300 to-sunset-500', action: 'shipments' },
     { icon: '📦', label: 'דגים מיבוא', gradient: 'from-coral-400 to-sunset-500', action: 'reception' },
+    { icon: '🛒', label: 'הזמנות', gradient: 'from-purple-400 to-purple-600', action: 'orders' },
   ]
 
   const handleCardClick = (action) => {
@@ -43,6 +46,8 @@ function HomePage() {
       setShowReceptionModal(true)
     } else if (action === 'tasks') {
       setShowTasksModal(true)
+    } else if (action === 'orders') {
+      setShowOrdersModal(true)
     } else if (action === 'aquariums') {
       navigate('/aquariums')
     } else {
@@ -147,6 +152,12 @@ function HomePage() {
       <ReceptionPlansModal
         isOpen={showReceptionModal}
         onClose={() => setShowReceptionModal(false)}
+      />
+
+      {/* Orders Modal */}
+      <OrdersModal
+        isOpen={showOrdersModal}
+        onClose={() => setShowOrdersModal(false)}
       />
 
       {/* Tasks Modal */}

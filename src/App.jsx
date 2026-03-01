@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { FarmProvider, useFarm } from './contexts/FarmContext'
 import { auth } from './firebase/config'
@@ -11,6 +11,7 @@ import AquariumsPage from './pages/AquariumsPage'
 import FarmSettingsPage from './pages/FarmSettingsPage'
 import AdminPage from './pages/AdminPage'
 import JoinPage from './pages/JoinPage'
+import OrderPortalPage from './pages/OrderPortalPage'
 import VersionUpdateDialog from './components/VersionUpdateDialog'
 import { initializeVersionCheck, isNewVersionAvailable } from './services/version.service'
 
@@ -26,6 +27,7 @@ const queryClient = new QueryClient({
 
 function AppRoutes() {
   const { farms, loading: farmsLoading } = useFarm()
+  const location = useLocation()
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [showVersionUpdate, setShowVersionUpdate] = useState(false)
@@ -37,7 +39,7 @@ function AppRoutes() {
       setAuthLoading(false)
 
       // Check version when user logs in
-      if (currentUser) {
+      if (currentUser && !currentUser.isAnonymous) {
         const hasNewVersion = initializeVersionCheck()
         if (hasNewVersion) {
           setShowVersionUpdate(true)
@@ -47,8 +49,11 @@ function AppRoutes() {
     return () => unsubscribe()
   }, [])
 
+  // Public routes bypass the auth/farms loading spinner
+  const isPublicRoute = location.pathname.startsWith('/shop/')
+
   // Wait for auth and farms to load before making routing decisions
-  if (authLoading || farmsLoading) {
+  if (!isPublicRoute && (authLoading || farmsLoading)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
@@ -89,6 +94,10 @@ function AppRoutes() {
         <Route
           path="/join/:inviteCode"
           element={<JoinPage />}
+        />
+        <Route
+          path="/shop/:token"
+          element={<OrderPortalPage />}
         />
         <Route
           path="/"

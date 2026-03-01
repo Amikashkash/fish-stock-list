@@ -5,6 +5,7 @@ import { updateFarm } from '../services/farm.service'
 import { getAquariums } from '../services/aquarium.service'
 import { getCurrentVersion, clearCacheAndReload, isNewVersionAvailable } from '../services/version.service'
 import { createInvitation, getFarmInvitations, deleteInvitation } from '../services/invitation.service'
+import { createOrderPortal, getActiveFarmPortal, deactivateOrderPortal } from '../services/order.service'
 
 function FarmSettingsPage() {
   const navigate = useNavigate()
@@ -27,12 +28,16 @@ function FarmSettingsPage() {
   const [sendingInvite, setSendingInvite] = useState(false)
   const [invitations, setInvitations] = useState([])
   const [loadingInvitations, setLoadingInvitations] = useState(false)
+  const [shareLink, setShareLink] = useState('')
+  const [activePortalToken, setActivePortalToken] = useState(null)
+  const [loadingShareLink, setLoadingShareLink] = useState(false)
 
   // Load aquariums to check for location usage
   useEffect(() => {
     if (currentFarm) {
       loadAquariums()
       loadInvitations()
+      loadActivePortal()
     }
   }, [currentFarm])
 
@@ -41,6 +46,50 @@ function FarmSettingsPage() {
     const hasUpdate = isNewVersionAvailable()
     setUpdateAvailable(hasUpdate)
   }, [])
+
+  async function loadActivePortal() {
+    if (!currentFarm?.farmId) return
+    try {
+      const token = await getActiveFarmPortal(currentFarm.farmId)
+      if (token) {
+        setActivePortalToken(token)
+        setShareLink(`${window.location.origin}/shop/${token}`)
+      }
+    } catch (err) {
+      console.error('Error loading active portal:', err)
+    }
+  }
+
+  async function handleGenerateShareLink() {
+    setLoadingShareLink(true)
+    try {
+      const { token, shareUrl } = await createOrderPortal(currentFarm.farmId, currentFarm.name)
+      setActivePortalToken(token)
+      setShareLink(shareUrl)
+      navigator.clipboard.writeText(shareUrl)
+      setMessage({ type: 'success', text: 'לינק ההזמנות נוצר והועתק ללוח!' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 4000)
+    } catch (err) {
+      console.error('Error creating portal:', err)
+      setMessage({ type: 'error', text: 'שגיאה ביצירת הלינק' })
+    } finally {
+      setLoadingShareLink(false)
+    }
+  }
+
+  async function handleDeactivatePortal() {
+    if (!confirm('האם לבטל את לינק ההזמנות?\n\nחנויות לא יוכלו להזמין דרך הלינק הישן.')) return
+    try {
+      await deactivateOrderPortal(activePortalToken)
+      setActivePortalToken(null)
+      setShareLink('')
+      setMessage({ type: 'success', text: 'הלינק בוטל' })
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    } catch (err) {
+      console.error('Error deactivating portal:', err)
+      setMessage({ type: 'error', text: 'שגיאה בביטול הלינק' })
+    }
+  }
 
   async function loadInvitations() {
     if (!currentFarm?.farmId) return
@@ -634,6 +683,66 @@ function FarmSettingsPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Order Portal Share Link */}
+      <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8 mb-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">לינק הזמנות לחנויות</h2>
+          <p className="text-[15px] text-gray-600">
+            שלח לינק לחנויות כדי שיוכלו לצפות במחירון ולהזמין דגים ישירות
+          </p>
+        </div>
+
+        <div className="bg-teal-50 rounded-xl p-5 border-2 border-teal-200">
+          {shareLink ? (
+            <>
+              <p className="text-sm font-semibold text-teal-800 mb-3">🔗 הלינק הפעיל:</p>
+              <div className="flex items-center gap-2 mb-3">
+                <div
+                  className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 truncate font-mono"
+                  dir="ltr"
+                >
+                  {shareLink}
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareLink)
+                    setMessage({ type: 'success', text: 'הלינק הועתק!' })
+                    setTimeout(() => setMessage({ type: '', text: '' }), 2000)
+                  }}
+                  className="shrink-0 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition-colors"
+                >
+                  📋 העתק
+                </button>
+              </div>
+              <button
+                onClick={handleDeactivatePortal}
+                className="text-sm text-red-600 hover:text-red-800 underline"
+              >
+                בטל לינק זה
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleGenerateShareLink}
+              disabled={loadingShareLink}
+              className="w-full px-6 py-3 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {loadingShareLink ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  יוצר לינק...
+                </>
+              ) : (
+                '🔗 צור לינק הזמנות'
+              )}
+            </button>
+          )}
+          <p className="text-xs text-teal-700 mt-3">
+            כל מי שיש לו את הלינק יוכל לצפות במחירון ולשלוח הזמנה — ללא צורך בהתחברות
+          </p>
+        </div>
       </div>
 
       {/* Application Settings */}

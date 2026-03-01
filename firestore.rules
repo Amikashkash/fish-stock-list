@@ -66,14 +66,14 @@ service cloud.firestore {
 
       // Farm's fish instances subcollection
       match /fish_instances/{instanceId} {
-        allow read: if isFarmMember(farmId);
+        allow read: if isAuthenticated();
         allow create: if isFarmMember(farmId);
         allow update, delete: if isFarmMember(farmId);
       }
 
       // Farm's aquariums subcollection
       match /aquariums/{aquariumId} {
-        allow read: if isFarmMember(farmId);
+        allow read: if isAuthenticated();
         allow create, update, delete: if isFarmMember(farmId);
       }
 
@@ -141,12 +141,30 @@ service cloud.firestore {
 
     // Farm fish collection (local/farm-sourced fish)
     match /farmFish/{fishId} {
-      allow read: if isAuthenticated() &&
-                     isFarmMember(resource.data.farmId);
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated() &&
                        isFarmMember(request.resource.data.farmId);
       allow update, delete: if isAuthenticated() &&
                                isFarmMember(resource.data.farmId);
+    }
+
+    // Order portals — public read so the shop page can look up farmId by token
+    match /orderPortals/{token} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+                       isFarmMember(request.resource.data.farmId);
+      allow update, delete: if isAuthenticated() &&
+                               isFarmMember(resource.data.farmId);
+    }
+
+    // Orders — anonymous users can create (token validated server-side),
+    //           farm members can read and update
+    match /orders/{orderId} {
+      allow create: if isAuthenticated() &&
+                       exists(/databases/$(database)/documents/orderPortals/$(request.resource.data.token)) &&
+                       get(/databases/$(database)/documents/orderPortals/$(request.resource.data.token)).data.farmId == request.resource.data.farmId &&
+                       get(/databases/$(database)/documents/orderPortals/$(request.resource.data.token)).data.active == true;
+      allow read, update: if isFarmMember(resource.data.farmId);
     }
 
     // Global invitations collection (for code-based invites)
