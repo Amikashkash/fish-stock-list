@@ -1,17 +1,16 @@
 /**
  * ShipmentImportModal.jsx
  *
- * Complete shipment import flow:
- * 1. File upload
- * 2. Parse Excel
- * 3. Preview & validate
- * 4. Confirm and import to Firestore
+ * Shipment import flow powered by Claude AI:
+ * 1. Upload any document (PDF, Excel, image, CSV, text) OR paste invoice text
+ * 2. Claude extracts fish data → Preview & validate
+ * 3. Confirm and import to Firestore
  */
 
 import { useState, useEffect, useRef } from 'react'
 import Modal from '../../ui/Modal'
 import Button from '../../ui/Button'
-import { parseShipmentExcel, validateExcelFile } from '../../../services/excel-parser.service'
+import { parseShipmentWithClaude } from '../../../services/claude-parser.service'
 import { importShipment } from '../../../services/shipment.service'
 import { getSuppliers } from '../../../services/supplier.service'
 import ImportPreview from './ImportPreview'
@@ -29,6 +28,7 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
   // State
   const [step, setStep] = useState('upload') // 'upload', 'preview', 'importing', 'success'
   const [file, setFile] = useState(null)
+  const [pastedText, setPastedText] = useState('')
   const [parseResult, setParseResult] = useState(null)
   const [shipmentData, setShipmentData] = useState({
     supplier: '',
@@ -60,9 +60,6 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  /**
-   * Load suppliers for autocomplete
-   */
   async function loadSuppliers() {
     try {
       const supplierList = await getSuppliers(farmId)
@@ -72,9 +69,6 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     }
   }
 
-  /**
-   * Format date to Israeli format (DD/MM/YYYY)
-   */
   function formatDateToIsraeli(date) {
     const d = new Date(date)
     const day = String(d.getDate()).padStart(2, '0')
@@ -83,9 +77,6 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     return `${day}/${month}/${year}`
   }
 
-  /**
-   * Parse Israeli date to ISO format for storage
-   */
   function parseIsraeliDate(dateStr) {
     const parts = dateStr.split('/')
     if (parts.length === 3) {
@@ -95,17 +86,10 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     return new Date().toISOString().split('T')[0]
   }
 
-  /**
-   * Handle supplier input change
-   */
   function handleSupplierChange(value) {
     setShipmentData({ ...shipmentData, supplier: value })
-
-    // Filter suppliers
     if (value.trim()) {
-      const filtered = suppliers.filter(s =>
-        s.toLowerCase().includes(value.toLowerCase())
-      )
+      const filtered = suppliers.filter(s => s.toLowerCase().includes(value.toLowerCase()))
       setFilteredSuppliers(filtered)
       setShowSupplierDropdown(true)
     } else {
@@ -114,55 +98,56 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     }
   }
 
-  /**
-   * Handle supplier selection from dropdown
-   */
   function handleSupplierSelect(supplier) {
     setShipmentData({ ...shipmentData, supplier })
     setShowSupplierDropdown(false)
   }
 
-  /**
-   * Handle file selection
-   */
   function handleFileChange(e) {
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
-
-    // Validate file
-    const validation = validateExcelFile(selectedFile)
-    if (!validation.isValid) {
-      setError(validation.errors.join(', '))
-      return
-    }
-
     setFile(selectedFile)
+    setPastedText('') // clear text if file is chosen
     setError(null)
   }
 
   /**
-   * Parse the selected Excel file
+   * Send document to Claude AI for extraction
    */
-  async function handleParse() {
-    if (!file) return
+  async function handleAnalyze() {
+    const hasInput = file || pastedText.trim()
+    if (!hasInput) return
 
     try {
       setLoading(true)
       setError(null)
 
-      const result = await parseShipmentExcel(file)
+      const result = await parseShipmentWithClaude(file, pastedText)
 
       if (!result.success) {
         setError(result.error)
         return
       }
 
+      // Pre-fill supplier/date if Claude found them in the document
+      if (result.extractedMeta) {
+        setShipmentData(prev => ({
+          ...prev,
+          supplier: result.extractedMeta.supplier && !prev.supplier.trim()
+            ? result.extractedMeta.supplier
+            : prev.supplier,
+          dateReceived: result.extractedMeta.dateReceived && prev.dateReceived === formatDateToIsraeli(new Date())
+            ? result.extractedMeta.dateReceived
+            : prev.dateReceived,
+        }))
+      }
+
       setParseResult(result)
       setStep('preview')
 
     } catch (err) {
-      console.error('Parse error:', err)
-      setError('Failed to parse Excel file. Please check the format.')
+      console.error('Claude analysis error:', err)
+      setError('Failed to analyze document. Please check your API key and try again.')
     } finally {
       setLoading(false)
     }
@@ -174,7 +159,6 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
   async function handleImport() {
     if (!parseResult || !farmId) return
 
-    // Validate shipment metadata
     if (!shipmentData.supplier.trim()) {
       setError('Supplier name is required')
       return
@@ -185,25 +169,15 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
       setError(null)
       setStep('importing')
 
-      // Convert Israeli date to ISO format for storage
       const shipmentDataForImport = {
         ...shipmentData,
         dateReceived: parseIsraeliDate(shipmentData.dateReceived),
       }
 
-      // Import to Firestore
-      const result = await importShipment(
-        farmId,
-        shipmentDataForImport,
-        parseResult.data
-      )
-
+      const result = await importShipment(farmId, shipmentDataForImport, parseResult.data)
       console.log('Import successful:', result)
 
-      // Show success
       setStep('success')
-
-      // Call success callback after a delay
       setTimeout(() => {
         onSuccess?.(result)
         handleClose()
@@ -212,18 +186,16 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     } catch (err) {
       console.error('Import error:', err)
       setError(`Import failed: ${err.message}`)
-      setStep('preview') // Go back to preview
+      setStep('preview')
     } finally {
       setLoading(false)
     }
   }
 
-  /**
-   * Close modal and reset state
-   */
   function handleClose() {
     setStep('upload')
     setFile(null)
+    setPastedText('')
     setParseResult(null)
     setShipmentData({
       supplier: '',
@@ -236,50 +208,75 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     onClose()
   }
 
-  /**
-   * Render upload step
-   */
   function renderUploadStep() {
+    const hasInput = file || pastedText.trim()
+
     return (
       <div className="space-y-6">
         {/* File Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Excel File
+            Upload Invoice or Document
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
             <input
               type="file"
-              accept=".xlsx,.xls"
+              accept=".pdf,.xlsx,.xls,.csv,.txt,image/*"
               onChange={handleFileChange}
               className="hidden"
               id="file-upload"
             />
-            <label
-              htmlFor="file-upload"
-              className="cursor-pointer"
-            >
-              <div className="text-4xl mb-2">📄</div>
-              <p className="text-sm text-gray-600 mb-2">
-                Click to select Excel file
+            <label htmlFor="file-upload" className="cursor-pointer">
+              <div className="text-4xl mb-2">🤖</div>
+              <p className="text-sm text-gray-600 mb-1">
+                Click to upload — PDF, Excel, CSV, image, or text file
               </p>
               <p className="text-xs text-gray-500">
-                Supports .xlsx and .xls files (max 10MB)
+                Claude AI will extract the fish data automatically
               </p>
             </label>
           </div>
           {file && (
-            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-green-600 text-xl">✓</span>
-                <div>
-                  <p className="text-sm font-medium text-green-900">File selected</p>
-                  <p className="text-xs text-green-700">{file.name}</p>
-                </div>
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+              <span className="text-blue-600 text-xl">📎</span>
+              <div>
+                <p className="text-sm font-medium text-blue-900">File ready</p>
+                <p className="text-xs text-blue-700">{file.name}</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setFile(null)}
+                className="ml-auto text-xs text-blue-500 hover:text-blue-700"
+              >
+                Remove
+              </button>
             </div>
           )}
         </div>
+
+        {/* OR divider + paste area */}
+        {!file && (
+          <>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 border-t border-gray-200" />
+              <span className="text-xs text-gray-400 font-medium">OR</span>
+              <div className="flex-1 border-t border-gray-200" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Paste Invoice Text
+              </label>
+              <textarea
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-mono"
+                placeholder="Paste any invoice text here — Hebrew, English, mixed tables, anything..."
+              />
+            </div>
+          </>
+        )}
 
         {/* Shipment Metadata */}
         <div className="space-y-4">
@@ -301,7 +298,6 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
               placeholder="Enter or select supplier name"
               autoComplete="off"
             />
-            {/* Supplier Dropdown */}
             {showSupplierDropdown && filteredSuppliers.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                 {filteredSuppliers.map((supplier, index) => (
@@ -355,12 +351,10 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
         )}
 
         {/* Help Text */}
-        {(!file || !shipmentData.supplier.trim()) && (
+        {!hasInput && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
-              <strong>To continue:</strong> {!file && 'Select an Excel file'}
-              {!file && !shipmentData.supplier.trim() && ' and '}
-              {file && !shipmentData.supplier.trim() && 'Enter supplier name'}
+              Upload an invoice file or paste invoice text above, then enter the supplier name.
             </p>
           </div>
         )}
@@ -371,25 +365,22 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
             Cancel
           </Button>
           <Button
-            onClick={handleParse}
-            disabled={!file || !shipmentData.supplier.trim()}
+            onClick={handleAnalyze}
+            disabled={!hasInput || !shipmentData.supplier.trim()}
             loading={loading}
             title={
-              !file ? 'Please select a file first' :
-              !shipmentData.supplier.trim() ? 'Please enter supplier name' :
-              'Click to parse and preview the file'
+              !hasInput ? 'Upload a file or paste text first' :
+              !shipmentData.supplier.trim() ? 'Enter supplier name' :
+              'Analyze with Claude AI'
             }
           >
-            Parse & Preview
+            {loading ? 'Analyzing...' : '✨ Analyze with AI'}
           </Button>
         </div>
       </div>
     )
   }
 
-  /**
-   * Render preview step
-   */
   function renderPreviewStep() {
     if (!parseResult) return null
 
@@ -401,12 +392,8 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
           error={error}
         />
 
-        {/* Actions */}
         <div className="flex gap-3 justify-end pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={() => setStep('upload')}
-          >
+          <Button variant="outline" onClick={() => setStep('upload')}>
             Back
           </Button>
           <Button
@@ -421,9 +408,6 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     )
   }
 
-  /**
-   * Render importing step
-   */
   function renderImportingStep() {
     return (
       <div className="text-center py-12">
@@ -434,9 +418,6 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     )
   }
 
-  /**
-   * Render success step
-   */
   function renderSuccessStep() {
     return (
       <div className="text-center py-12">
@@ -452,7 +433,7 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
       isOpen={isOpen}
       onClose={handleClose}
       title={
-        step === 'upload' ? 'Import Shipment' :
+        step === 'upload' ? 'Import Shipment with AI' :
         step === 'preview' ? 'Preview & Validate' :
         step === 'importing' ? 'Importing...' :
         'Success!'

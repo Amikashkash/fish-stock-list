@@ -3,6 +3,6 @@
  * Update this file before each release
  */
 
-export const VERSION = '20.1.0'
-export const RELEASE_DATE = '2026-02-19'
-export const RELEASE_NAME = 'Inline Aquarium Assignment'
+export const VERSION = '20.2.0'
+export const RELEASE_DATE = '2026-03-01'
+export const RELEASE_NAME = 'Feature Release'
