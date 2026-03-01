@@ -19,10 +19,17 @@ function buildFishList(catalogFish, fishInstances, aquariums) {
     })
   })
 
+  // Normalize size: extract leading number so "3cm" and "3-4cm" share the same key
+  const sizeKey = (s) => {
+    const n = (s || '').toLowerCase().replace(/\s+/g, '')
+    const m = n.match(/^(\d+\.?\d*)/)
+    return m ? m[1] : n
+  }
+
   const fishMap = new Map()
 
   catalogFish.forEach(f => {
-    const key = `${(f.scientificName || '').toLowerCase()}_${(f.size || '').toLowerCase()}`
+    const key = `${(f.scientificName || '').toLowerCase()}_${sizeKey(f.size)}`
     fishMap.set(key, {
       ...f,
       currentQuantity: 0,
@@ -33,19 +40,25 @@ function buildFishList(catalogFish, fishInstances, aquariums) {
   })
 
   fishInstances.forEach(inst => {
-    const key = `${(inst.scientificName || '').toLowerCase()}_${(inst.size || '').toLowerCase()}`
+    // Skip non-active instances
+    if (inst.status && inst.status !== 'active') return
+
+    const key = `${(inst.scientificName || '').toLowerCase()}_${sizeKey(inst.size)}`
     const existing = fishMap.get(key)
     const aqInfo = inst.aquariumId ? aquariumMap.get(inst.aquariumId) : null
     const instancePrice = inst.price || inst.costs?.invoiceCostPerFish || null
+    const instQty = inst.currentQuantity || 0
 
     if (existing) {
+      const useInstance = instQty > (existing.currentQuantity || 0)
       fishMap.set(key, {
         ...existing,
-        currentQuantity: (existing.currentQuantity || 0) + (inst.currentQuantity || 0),
+        size: useInstance ? (inst.size || existing.size) : existing.size,
+        currentQuantity: (existing.currentQuantity || 0) + instQty,
         price: instancePrice || existing.price,
-        aquariumId: inst.aquariumId || existing.aquariumId,
-        aquariumRoom: aqInfo?.room || existing.aquariumRoom || '',
-        aquariumNumber: aqInfo?.number || existing.aquariumNumber || '',
+        aquariumId: useInstance ? (inst.aquariumId || existing.aquariumId) : existing.aquariumId,
+        aquariumRoom: useInstance ? (aqInfo?.room || existing.aquariumRoom || '') : existing.aquariumRoom,
+        aquariumNumber: useInstance ? (aqInfo?.number || existing.aquariumNumber || '') : existing.aquariumNumber,
       })
     } else {
       fishMap.set(key, {
@@ -54,7 +67,7 @@ function buildFishList(catalogFish, fishInstances, aquariums) {
         hebrewName: inst.commonName || '',
         size: inst.size || '',
         price: instancePrice,
-        currentQuantity: inst.currentQuantity || 0,
+        currentQuantity: instQty,
         aquariumId: inst.aquariumId || null,
         aquariumRoom: aqInfo?.room || '',
         aquariumNumber: aqInfo?.number || '',

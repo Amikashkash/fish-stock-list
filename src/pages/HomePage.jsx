@@ -34,8 +34,7 @@ function HomePage() {
     { icon: '📋', label: 'משימות', gradient: 'from-ocean-400 to-ocean-600', action: 'tasks' },
     { icon: '🐠', label: 'אקווריומים', gradient: 'from-aqua-400 to-aqua-600', action: 'aquariums' },
     { icon: '💰', label: 'מחירון דגים', gradient: 'from-coral-300 to-coral-500', action: 'pricelist' },
-    { icon: '🚚', label: 'משלוחים', gradient: 'from-sunset-300 to-sunset-500', action: 'shipments' },
-    { icon: '📦', label: 'דגים מיבוא', gradient: 'from-coral-400 to-sunset-500', action: 'reception' },
+{ icon: '📦', label: 'דגים מיבוא', gradient: 'from-coral-400 to-sunset-500', action: 'reception' },
     { icon: '🛒', label: 'הזמנות', gradient: 'from-purple-400 to-purple-600', action: 'orders' },
   ]
 

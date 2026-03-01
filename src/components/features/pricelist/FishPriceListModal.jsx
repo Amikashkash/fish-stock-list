@@ -37,12 +37,19 @@ function FishPriceListModal({ isOpen, onClose }) {
         })
       })
 
-      // Create a map to merge catalog + instances by scientificName+size
+      // Normalize size: extract leading number so "3cm" and "3-4cm" share the same key
+      const sizeKey = (s) => {
+        const n = (s || '').toLowerCase().replace(/\s+/g, '')
+        const m = n.match(/^(\d+\.?\d*)/)
+        return m ? m[1] : n
+      }
+
+      // Create a map to merge catalog + instances by scientificName+sizeBase
       const fishMap = new Map()
 
       // First, add all catalog fish
       catalogFish.forEach(f => {
-        const key = `${(f.scientificName || '').toLowerCase()}_${(f.size || '').toLowerCase()}`
+        const key = `${(f.scientificName || '').toLowerCase()}_${sizeKey(f.size)}`
         fishMap.set(key, {
           ...f,
           currentQuantity: 0,
@@ -54,7 +61,10 @@ function FishPriceListModal({ isOpen, onClose }) {
 
       // Then, merge/add fish instances (they have actual stock and prices)
       fishInstances.forEach(inst => {
-        const key = `${(inst.scientificName || '').toLowerCase()}_${(inst.size || '').toLowerCase()}`
+        // Skip non-active instances
+        if (inst.status && inst.status !== 'active') return
+
+        const key = `${(inst.scientificName || '').toLowerCase()}_${sizeKey(inst.size)}`
         const existing = fishMap.get(key)
 
         // Get aquarium info
@@ -63,15 +73,21 @@ function FishPriceListModal({ isOpen, onClose }) {
         // Get price from instance (might be in costs object or direct price field)
         const instancePrice = inst.price || inst.costs?.invoiceCostPerFish || null
 
+        const instQty = inst.currentQuantity || 0
+
         if (existing) {
           // Merge: add quantity, prefer instance price if available
+          // Pick size/aquarium from whichever entry has more fish
+          const mergedQty = (existing.currentQuantity || 0) + instQty
+          const useInstance = instQty > (existing.currentQuantity || 0)
           fishMap.set(key, {
             ...existing,
-            currentQuantity: (existing.currentQuantity || 0) + (inst.currentQuantity || 0),
+            size: useInstance ? (inst.size || existing.size) : existing.size,
+            currentQuantity: mergedQty,
             price: instancePrice || existing.price,
-            aquariumId: inst.aquariumId || existing.aquariumId,
-            aquariumRoom: aqInfo?.room || existing.aquariumRoom || '',
-            aquariumNumber: aqInfo?.number || existing.aquariumNumber || ''
+            aquariumId: useInstance ? (inst.aquariumId || existing.aquariumId) : existing.aquariumId,
+            aquariumRoom: useInstance ? (aqInfo?.room || existing.aquariumRoom || '') : existing.aquariumRoom,
+            aquariumNumber: useInstance ? (aqInfo?.number || existing.aquariumNumber || '') : existing.aquariumNumber,
           })
         } else {
           // Add new entry from instance
@@ -81,7 +97,7 @@ function FishPriceListModal({ isOpen, onClose }) {
             hebrewName: inst.commonName || '',
             size: inst.size || '',
             price: instancePrice,
-            currentQuantity: inst.currentQuantity || 0,
+            currentQuantity: instQty,
             aquariumId: inst.aquariumId,
             aquariumRoom: aqInfo?.room || '',
             aquariumNumber: aqInfo?.number || '',
