@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { auth } from '../firebase/config'
 import { signOut } from 'firebase/auth'
 import { useFarm } from '../contexts/FarmContext'
-import ShipmentImportModal from '../components/features/shipments/ShipmentImportModal'
 import FishPriceListModal from '../components/features/pricelist/FishPriceListModal'
 import ReceptionPlansModal from '../components/features/reception/ReceptionPlansModal'
 import TasksModal from '../components/features/tasks/TasksModal'
@@ -13,7 +12,6 @@ function HomePage() {
   const navigate = useNavigate()
   const user = auth.currentUser
   const { currentFarm } = useFarm()
-  const [showImportModal, setShowImportModal] = useState(false)
   const [showPriceListModal, setShowPriceListModal] = useState(false)
   const [showReceptionModal, setShowReceptionModal] = useState(false)
   const [showTasksModal, setShowTasksModal] = useState(false)
@@ -30,25 +28,16 @@ function HomePage() {
     }
   }
 
-  const handleImportSuccess = (result) => {
-    console.log('Import successful:', result)
-    alert(`Success! Imported ${result.fishCount} fish types (${result.totalFish} total fish)`)
-  }
-
-
   const actionCards = [
     { icon: '📋', label: 'משימות', gradient: 'from-ocean-400 to-ocean-600', action: 'tasks' },
     { icon: '🐠', label: 'אקווריומים', gradient: 'from-aqua-400 to-aqua-600', action: 'aquariums' },
     { icon: '💰', label: 'מחירון דגים', gradient: 'from-coral-300 to-coral-500', action: 'pricelist' },
-    { icon: '📥', label: 'ייבוא משלוח', gradient: 'from-green-400 to-green-600', action: 'import' },
     { icon: '🚚', label: 'משלוחים', gradient: 'from-sunset-300 to-sunset-500', action: 'shipments' },
     { icon: '📦', label: 'דגים מיבוא', gradient: 'from-coral-400 to-sunset-500', action: 'reception' },
   ]
 
   const handleCardClick = (action) => {
-    if (action === 'import') {
-      setShowImportModal(true)
-    } else if (action === 'pricelist') {
+    if (action === 'pricelist') {
       setShowPriceListModal(true)
     } else if (action === 'reception') {
       setShowReceptionModal(true)
@@ -147,14 +136,6 @@ function HomePage() {
           <p className="text-base text-green-700 m-0 font-medium">כל התשתיות מוכנות - ניתן להתחיל לעבוד</p>
         </div>
       </main>
-
-      {/* Import Modal */}
-      <ShipmentImportModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        farmId={currentFarm.farmId}
-        onSuccess={handleImportSuccess}
-      />
 
       {/* Price List Modal */}
       <FishPriceListModal

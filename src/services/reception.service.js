@@ -589,7 +589,8 @@ export async function updatePlanStatus(farmId, planId, newStatus) {
 }
 
 /**
- * Remove an item from reception (DOA or not received)
+ * Remove an item from reception (DOA or not received).
+ * Soft-deletes by setting status to 'cancelled' so it can be undone.
  */
 export async function removeItem(farmId, itemId, reason = 'not-received') {
   try {
@@ -602,17 +603,21 @@ export async function removeItem(farmId, itemId, reason = 'not-received') {
 
     const itemData = itemDoc.data()
 
-    // Delete the item
-    await deleteDoc(itemRef)
+    // Soft-delete: mark as cancelled (preserves data for undo)
+    await updateDoc(itemRef, {
+      status: 'cancelled',
+      cancelReason: reason,
+      cancelledAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    })
 
-    // Update plan counts
+    // Update plan counts (decrement active item count)
     const planRef = doc(db, 'farms', farmId, 'reception_plans', itemData.planId)
     const planDoc = await getDoc(planRef)
 
     if (planDoc.exists()) {
       const planData = planDoc.data()
       const newItemCount = Math.max(0, (planData.itemCount || 0) - 1)
-
       await updateDoc(planRef, {
         itemCount: newItemCount,
         updatedAt: Timestamp.now(),
@@ -622,6 +627,46 @@ export async function removeItem(farmId, itemId, reason = 'not-received') {
     return { success: true, reason }
   } catch (error) {
     console.error('Error removing item:', error)
+    throw error
+  }
+}
+
+/**
+ * Restore a cancelled item back to 'planned' status (undo DOA / not-received).
+ */
+export async function restoreItem(farmId, itemId) {
+  try {
+    const itemRef = doc(db, 'farms', farmId, 'reception_items', itemId)
+    const itemDoc = await getDoc(itemRef)
+
+    if (!itemDoc.exists()) {
+      throw new Error('Item not found')
+    }
+
+    const itemData = itemDoc.data()
+
+    await updateDoc(itemRef, {
+      status: 'planned',
+      cancelReason: null,
+      cancelledAt: null,
+      updatedAt: Timestamp.now(),
+    })
+
+    // Increment plan item count back
+    const planRef = doc(db, 'farms', farmId, 'reception_plans', itemData.planId)
+    const planDoc = await getDoc(planRef)
+
+    if (planDoc.exists()) {
+      const planData = planDoc.data()
+      await updateDoc(planRef, {
+        itemCount: (planData.itemCount || 0) + 1,
+        updatedAt: Timestamp.now(),
+      })
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error restoring item:', error)
     throw error
   }
 }

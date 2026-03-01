@@ -5,6 +5,7 @@ import {
   getReceptionItems,
   receiveItem,
   removeItem,
+  restoreItem,
   completeReception,
 } from '../../../services/reception.service'
 import { formatDateDDMMYYYY } from '../../../utils/dateFormatter'
@@ -82,8 +83,12 @@ function ReceiveFishModal({ isOpen, onClose, planId, onSuccess }) {
     try {
       await removeItem(currentFarm.farmId, itemId, reason)
 
-      // Remove from local state
-      setItems(items.filter((item) => item.itemId !== itemId))
+      // Update local state to cancelled (soft-delete)
+      setItems(items.map((item) =>
+        item.itemId === itemId
+          ? { ...item, status: 'cancelled', cancelReason: reason }
+          : item
+      ))
 
       // Reload plan to update counts
       const updatedPlan = await getReceptionPlan(currentFarm.farmId, planId)
@@ -91,6 +96,26 @@ function ReceiveFishModal({ isOpen, onClose, planId, onSuccess }) {
     } catch (err) {
       console.error('Error removing item:', err)
       setError(err.message || 'שגיאה בהסרת הפריט')
+    }
+  }
+
+  async function handleRestoreItem(itemId) {
+    setError('')
+    try {
+      await restoreItem(currentFarm.farmId, itemId)
+
+      // Update local state back to planned
+      setItems(items.map((item) =>
+        item.itemId === itemId
+          ? { ...item, status: 'planned', cancelReason: null }
+          : item
+      ))
+
+      const updatedPlan = await getReceptionPlan(currentFarm.farmId, planId)
+      setPlan(updatedPlan)
+    } catch (err) {
+      console.error('Error restoring item:', err)
+      setError(err.message || 'שגיאה בשחזור הפריט')
     }
   }
 
@@ -140,6 +165,7 @@ function ReceiveFishModal({ isOpen, onClose, planId, onSuccess }) {
 
   let pendingItems = items.filter((item) => item.status === 'planned')
   const receivedItems = items.filter((item) => item.status === 'received')
+  const cancelledItems = items.filter((item) => item.status === 'cancelled')
 
   // Apply sorting
   if (sortBy === 'aquarium') {
@@ -425,6 +451,46 @@ function ReceiveFishModal({ isOpen, onClose, planId, onSuccess }) {
                               })}
                             </div>
                           )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Cancelled / DOA Items */}
+              {cancelledItems.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-base font-semibold text-gray-500 mb-2">
+                    הוסרו / DOA ({cancelledItems.length})
+                  </h3>
+                  <div className="flex flex-col gap-2">
+                    {cancelledItems.map((item) => (
+                      <div
+                        key={item.itemId}
+                        className="bg-red-50 border border-red-200 rounded-lg p-3 opacity-80"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 w-6 h-6 bg-red-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {item.cancelReason === 'DOA' ? '☠' : '✖'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-gray-700 text-sm">
+                              {item.hebrewName}
+                              {item.boxNumber && ` (ארגז ${item.boxNumber})`}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {item.quantity} יח' | {item.size}
+                              {item.cancelReason === 'DOA' ? ' · סומן כ-DOA' : ' · לא התקבל'}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleRestoreItem(item.itemId)}
+                            className="shrink-0 px-3 py-1.5 text-xs font-bold bg-white border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors"
+                            title="בטל והחזר לרשימת הממתינים"
+                          >
+                            ↩ בטל
+                          </button>
                         </div>
                       </div>
                     ))}

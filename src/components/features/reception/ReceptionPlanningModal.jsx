@@ -19,6 +19,7 @@ import { formatDateDDMMYYYY } from '../../../utils/dateFormatter'
 import ExcelTemplateDisplay from './ExcelTemplateDisplay'
 import FishListManagementModal from './FishListManagementModal'
 import AquariumAssignmentModal from './AquariumAssignmentModal'
+import AIFishImport from './AIFishImport'
 
 function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = null }) {
   const { currentFarm } = useFarm()
@@ -232,7 +233,26 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
     loadPlanItems()
   }
 
-  function handleClose() {
+  async function handleClose() {
+    // If we're on Step 1 with required fields filled but plan not yet saved to Firestore,
+    // auto-save as a draft so the user can resume later.
+    if (step === 1 && !currentPlan && expectedDate && countryOfOrigin.trim() && supplierName.trim() && targetRoom.trim()) {
+      try {
+        await createReceptionPlan(currentFarm.farmId, {
+          expectedDate,
+          source: 'manual',
+          countryOfOrigin: countryOfOrigin.trim(),
+          supplierName: supplierName.trim(),
+          targetRoom: targetRoom.trim(),
+          shipmentReference: shipmentReference.trim() || undefined,
+          notes: planNotes,
+          expectedAquariumCount: expectedAquariumCount ? parseInt(expectedAquariumCount) : 0,
+        })
+      } catch (err) {
+        console.error('Error auto-saving draft plan:', err)
+      }
+    }
+
     setStep(1)
     setCurrentPlan(null)
     setPlanItems([])
@@ -470,15 +490,13 @@ function ReceptionPlanningModal({ isOpen, onClose, onSuccess, editingPlanId = nu
                 <div className="space-y-3">
                   <h3 className="text-lg font-semibold text-gray-900">הוסף רשימת דגים והצמד אקווריומים</h3>
 
-                  <button
-                    onClick={() => setShowExcelTemplate(true)}
-                    className="w-full p-4 border-2 border-dashed border-blue-300 rounded-lg hover:bg-blue-50 transition-colors text-left"
-                  >
-                    <div className="font-semibold text-blue-900 mb-1">📋 צפה בטבלת Excel</div>
-                    <div className="text-xs text-blue-700">
-                      ראה את הפורמט הצפוי לייבוא מאקסל
-                    </div>
-                  </button>
+                  <AIFishImport
+                    farmId={currentFarm.farmId}
+                    planId={currentPlan.planId}
+                    onImported={(count) => {
+                      loadPlanItems()
+                    }}
+                  />
 
                   <button
                     onClick={() => setShowFishListModal(true)}

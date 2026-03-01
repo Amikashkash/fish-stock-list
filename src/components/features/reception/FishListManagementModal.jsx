@@ -63,7 +63,101 @@ function FishListManagementModal({
 
   const [editItem, setEditItem] = useState(null)
 
+  // Split state
+  const [splittingId, setSplittingId] = useState(null)
+  const [splitRows, setSplitRows] = useState([]) // [{quantity, aquariumId, aquariumNumber}]
+
   if (!isOpen) return null
+
+  // ── Split helpers ────────────────────────────────────────────────────────────
+
+  function handleStartSplit(item) {
+    setSplittingId(item.itemId)
+    setSplitRows([
+      { quantity: Math.floor(item.quantity / 2), aquariumId: '', aquariumNumber: '' },
+      { quantity: item.quantity - Math.floor(item.quantity / 2), aquariumId: '', aquariumNumber: '' },
+    ])
+    setError('')
+  }
+
+  function handleSplitRowChange(index, field, value) {
+    setSplitRows(prev => prev.map((row, i) =>
+      i === index ? { ...row, [field]: value } : row
+    ))
+  }
+
+  function handleSplitAquariumChange(index, aquariumId) {
+    const selected = aquariums.find(aq => aq.aquariumId === aquariumId)
+    setSplitRows(prev => prev.map((row, i) =>
+      i === index
+        ? { ...row, aquariumId: aquariumId || '', aquariumNumber: selected?.aquariumNumber || '' }
+        : row
+    ))
+  }
+
+  function handleAddSplitRow() {
+    setSplitRows(prev => [...prev, { quantity: 0, aquariumId: '', aquariumNumber: '' }])
+  }
+
+  function handleRemoveSplitRow(index) {
+    if (splitRows.length <= 2) return
+    setSplitRows(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleConfirmSplit(item) {
+    const total = splitRows.reduce((sum, r) => sum + (parseInt(r.quantity) || 0), 0)
+    if (total !== item.quantity) {
+      setError(`סך הכמויות (${total}) חייב להיות שווה לכמות המקורית (${item.quantity})`)
+      return
+    }
+    const hasZero = splitRows.some(r => (parseInt(r.quantity) || 0) <= 0)
+    if (hasZero) {
+      setError('כל שורה חייבת להכיל כמות גדולה מ-0')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError('')
+
+      // Update original item with first row's data
+      const first = splitRows[0]
+      await updateReceptionItem(currentFarm.farmId, item.itemId, {
+        quantity: parseInt(first.quantity),
+        targetAquariumId: first.aquariumId || null,
+        targetAquariumNumber: first.aquariumNumber || '',
+      })
+
+      // Create new items for remaining rows
+      for (let i = 1; i < splitRows.length; i++) {
+        const row = splitRows[i]
+        await addReceptionItem(currentFarm.farmId, {
+          planId,
+          hebrewName: item.hebrewName,
+          scientificName: item.scientificName,
+          size: item.size,
+          quantity: parseInt(row.quantity),
+          notes: item.notes || '',
+          code: item.code || '',
+          boxNumber: item.boxNumber || '',
+          boxPortion: item.boxPortion || '',
+          price: item.price ?? null,
+          priceUpdatedAt: item.priceUpdatedAt || null,
+          targetRoom: item.targetRoom || '',
+          targetAquariumId: row.aquariumId || null,
+          targetAquariumNumber: row.aquariumNumber || '',
+        })
+      }
+
+      setSplittingId(null)
+      setSplitRows([])
+      if (onItemsChanged) onItemsChanged()
+    } catch (err) {
+      setError(err.message || 'שגיאה בפיצול הפריט')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Handle Hebrew name change and auto-fill scientific name
   function handleHebrewNameChange(value, isEditing = false) {
@@ -444,16 +538,116 @@ function FishListManagementModal({
                           מחיר עודכן: {new Date(item.priceUpdatedAt).toLocaleDateString('he-IL')}
                         </div>
                       )}
+
+                      {/* Split UI */}
+                      {splittingId === item.itemId && (
+                        <div className="mt-3 mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                          <div className="text-xs font-bold text-purple-900 mb-2">
+                            ✂️ פצל {item.quantity} יח' לאקווריומים שונים
+                          </div>
+                          <div className="space-y-2 mb-2">
+                            {splitRows.map((row, idx) => {
+                              const usedTotal = splitRows.reduce((s, r) => s + (parseInt(r.quantity) || 0), 0)
+                              return (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-500 w-4 shrink-0">{idx + 1}.</span>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={row.quantity}
+                                    onChange={(e) => handleSplitRowChange(idx, 'quantity', e.target.value)}
+                                    className="w-20 px-2 py-1.5 border border-purple-300 rounded text-sm text-center focus:outline-none focus:border-purple-500"
+                                    placeholder="כמות"
+                                  />
+                                  <select
+                                    value={row.aquariumId}
+                                    onChange={(e) => handleSplitAquariumChange(idx, e.target.value)}
+                                    className="flex-1 px-2 py-1.5 border border-purple-300 rounded text-xs bg-white focus:outline-none focus:border-purple-500"
+                                  >
+                                    <option value="">-- אקווריום --</option>
+                                    {aquariums.map((aq) => (
+                                      <option key={aq.aquariumId} value={aq.aquariumId}>
+                                        {getAquariumOptionLabel(aq)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  {splitRows.length > 2 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveSplitRow(idx)}
+                                      className="text-red-400 hover:text-red-600 text-sm px-1"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          {/* Running total */}
+                          {(() => {
+                            const used = splitRows.reduce((s, r) => s + (parseInt(r.quantity) || 0), 0)
+                            const remaining = item.quantity - used
+                            return (
+                              <div className={`text-xs mb-2 font-medium ${remaining === 0 ? 'text-green-700' : remaining > 0 ? 'text-orange-600' : 'text-red-600'}`}>
+                                {remaining === 0 ? '✅ ' : remaining > 0 ? '⚠️ ' : '❌ '}
+                                סה"כ: {used} / {item.quantity}
+                                {remaining > 0 && ` · נותרו ${remaining} לחלוקה`}
+                                {remaining < 0 && ` · חריגה של ${Math.abs(remaining)}`}
+                              </div>
+                            )
+                          })()}
+
+                          {splitRows.length < 6 && (
+                            <button
+                              type="button"
+                              onClick={handleAddSplitRow}
+                              className="text-xs text-purple-700 hover:text-purple-900 mb-2 block"
+                            >
+                              + הוסף אקווריום נוסף
+                            </button>
+                          )}
+
+                          <div className="flex gap-2 mt-1">
+                            <button
+                              onClick={() => handleConfirmSplit(item)}
+                              disabled={loading}
+                              className="flex-1 py-1.5 bg-purple-600 text-white text-xs font-bold rounded hover:bg-purple-700 disabled:opacity-50"
+                            >
+                              {loading ? 'שומר...' : 'אשר פיצול'}
+                            </button>
+                            <button
+                              onClick={() => { setSplittingId(null); setSplitRows([]); setError('') }}
+                              disabled={loading}
+                              className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-bold rounded hover:bg-gray-300 disabled:opacity-50"
+                            >
+                              ביטול
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
                             setEditingId(item.itemId)
                             setEditItem(item)
+                            setSplittingId(null)
                           }}
                           className="flex-1 px-3 py-1.5 text-xs font-semibold bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                         >
                           ✏️ ערוך
                         </button>
+                        {item.quantity > 1 && splittingId !== item.itemId && (
+                          <button
+                            onClick={() => { handleStartSplit(item); setEditingId(null) }}
+                            className="px-3 py-1.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                            title="פצל לאקווריומים שונים"
+                          >
+                            ✂️ פצל
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDeleteItem(item.itemId)}
                           className="px-3 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded hover:bg-red-200"

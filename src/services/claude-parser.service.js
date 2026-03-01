@@ -16,6 +16,12 @@ const SYSTEM_PROMPT = `You are a fish shipment data extractor for an aquarium fi
 Your job is to extract structured fish shipment data from supplier invoices, price lists, or any document.
 The document may be in Hebrew, English, or a mix of both.
 
+IMPORTANT: For the commonName field, always provide the Hebrew common name of the fish species.
+- If the document already contains a Hebrew name, use it.
+- If the document contains an English or other language common name, translate it to Hebrew.
+- If no common name is in the document, use your knowledge of the species to provide the standard Hebrew aquarium trade name.
+- If you are unsure of the Hebrew name, leave it null.
+
 Extract all fish/product line items and return ONLY a valid JSON object — no markdown, no explanation.`
 
 const USER_PROMPT_TEMPLATE = `Extract fish shipment data from the document below and return a JSON object with this exact structure:
@@ -26,7 +32,7 @@ const USER_PROMPT_TEMPLATE = `Extract fish shipment data from the document below
       "scientificName": "string (MANDATORY - scientific/latin fish name)",
       "size": "string (MANDATORY - fish size e.g. '3-4cm', '5-6cm', 'M', 'L')",
       "boxNumber": number (MANDATORY - box/cart/carton number as integer),
-      "commonName": "string or null (common name in Hebrew or English)",
+      "commonName": "string or null (common name IN HEBREW - translate if needed, use aquarium trade name)",
       "code": "string or null (product/item code)",
       "bags": number or null (number of bags),
       "qtyPerBag": number or null (quantity per bag),

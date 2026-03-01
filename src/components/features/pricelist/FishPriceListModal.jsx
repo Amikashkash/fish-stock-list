@@ -249,13 +249,13 @@ function FishSection({ title, icon, color, fish, onSelect }) {
             className="grid grid-cols-12 gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all items-center text-sm"
             onClick={() => onSelect(f)}
           >
-            {/* Scientific Name */}
+            {/* Fish Name */}
             <div className="col-span-4 text-right">
               <div className="font-medium text-gray-900 truncate">
-                {f.scientificName || 'ללא שם'}
+                {f.hebrewName || f.scientificName || 'ללא שם'}
               </div>
-              {f.hebrewName && (
-                <div className="text-xs text-gray-500">{f.hebrewName}</div>
+              {f.scientificName && (
+                <div className="text-xs text-gray-500 italic truncate">{f.scientificName}</div>
               )}
             </div>
             {/* Size */}
@@ -301,9 +301,9 @@ function FishDetailView({ fish }) {
     <div className="space-y-6">
       {/* Fish Info Card */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
-        <h3 className="text-lg font-bold text-gray-900 mb-1">{fish.scientificName}</h3>
-        {fish.hebrewName && (
-          <p className="text-sm text-gray-600 mb-3">{fish.hebrewName}</p>
+        <h3 className="text-lg font-bold text-gray-900 mb-1">{fish.hebrewName || fish.scientificName}</h3>
+        {fish.hebrewName && fish.scientificName && (
+          <p className="text-sm italic text-gray-600 mb-3">{fish.scientificName}</p>
         )}
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="bg-white rounded-lg p-3">
