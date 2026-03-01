@@ -17,6 +17,8 @@ import { emptyAquarium } from './aquarium.service'
 
 // ─── Token generation ─────────────────────────────────────────────────────────
 
+export const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin
+
 function generateToken() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
   return Array.from({ length: 36 }, () =>
@@ -38,7 +40,7 @@ export async function createOrderPortal(farmId, farmName) {
   // Return existing active portal if one exists
   const existing = await getActiveFarmPortal(farmId)
   if (existing) {
-    return { token: existing, shareUrl: `${window.location.origin}/shop/${existing}` }
+    return { token: existing, shareUrl: `${APP_URL}/shop/${existing}` }
   }
 
   const token = generateToken()
@@ -50,7 +52,7 @@ export async function createOrderPortal(farmId, farmName) {
     createdBy: auth.currentUser?.uid || null,
   })
 
-  return { token, shareUrl: `${window.location.origin}/shop/${token}` }
+  return { token, shareUrl: `${APP_URL}/shop/${token}` }
 }
 
 export async function getActiveFarmPortal(farmId) {

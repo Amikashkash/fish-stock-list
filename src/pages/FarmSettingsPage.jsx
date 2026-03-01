@@ -5,7 +5,7 @@ import { updateFarm } from '../services/farm.service'
 import { getAquariums } from '../services/aquarium.service'
 import { getCurrentVersion, clearCacheAndReload, isNewVersionAvailable } from '../services/version.service'
 import { createInvitation, getFarmInvitations, deleteInvitation } from '../services/invitation.service'
-import { createOrderPortal, getActiveFarmPortal, deactivateOrderPortal } from '../services/order.service'
+import { createOrderPortal, getActiveFarmPortal, deactivateOrderPortal, APP_URL } from '../services/order.service'
 
 function FarmSettingsPage() {
   const navigate = useNavigate()
@@ -53,7 +53,7 @@ function FarmSettingsPage() {
       const token = await getActiveFarmPortal(currentFarm.farmId)
       if (token) {
         setActivePortalToken(token)
-        setShareLink(`${window.location.origin}/shop/${token}`)
+        setShareLink(`${APP_URL}/shop/${token}`)
       }
     } catch (err) {
       console.error('Error loading active portal:', err)
