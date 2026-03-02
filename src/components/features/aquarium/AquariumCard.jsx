@@ -18,22 +18,22 @@ const STATUS_BG_COLORS = {
   'in-transfer': 'bg-purple-50',
 }
 
-function AquariumCard({ aquarium, onClick, statusLabel, onManageFish, onQuickEmpty }) {
+function AquariumCard({ aquarium, onClick, statusLabel, onEditAquarium, onQuickEmpty }) {
   const statusColor = STATUS_COLORS[aquarium.status] || 'text-gray-500'
   const bgColor = STATUS_BG_COLORS[aquarium.status] || 'bg-gray-50'
   const shelfLabel = SHELF_LABELS[aquarium.shelf] || aquarium.shelf
 
   const handleCardClick = (e) => {
     // Only trigger onClick if not clicking on buttons
-    if (e.target.closest('.manage-fish-btn') || e.target.closest('.quick-empty-btn')) {
+    if (e.target.closest('.edit-aquarium-btn') || e.target.closest('.quick-empty-btn')) {
       return
     }
     onClick()
   }
 
-  const handleManageFishClick = (e) => {
+  const handleEditAquariumClick = (e) => {
     e.stopPropagation()
-    onManageFish(aquarium)
+    onEditAquarium(aquarium)
   }
 
   const handleQuickEmptyClick = (e) => {
@@ -76,10 +76,10 @@ function AquariumCard({ aquarium, onClick, statusLabel, onManageFish, onQuickEmp
         </div>
         <div className="flex gap-2">
           <button
-            onClick={handleManageFishClick}
-            className="manage-fish-btn flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600"
+            onClick={handleEditAquariumClick}
+            className="edit-aquarium-btn flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-gray-400 text-white hover:bg-gray-500"
           >
-            {isEmpty ? '➕ הוסף דג' : '🐠 ערוך דגים'}
+            ✏️ ערוך אקווריום
           </button>
           {!isEmpty && onQuickEmpty && (
             <button
@@ -113,10 +113,10 @@ function AquariumCard({ aquarium, onClick, statusLabel, onManageFish, onQuickEmp
         )}
         <div className="flex gap-2">
           <button
-            onClick={handleManageFishClick}
-            className="manage-fish-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-green-500 text-white hover:bg-green-600 whitespace-nowrap"
+            onClick={handleEditAquariumClick}
+            className="edit-aquarium-btn px-3 py-1.5 text-xs font-semibold rounded-lg transition-all border-none cursor-pointer bg-gray-400 text-white hover:bg-gray-500 whitespace-nowrap"
           >
-            {isEmpty ? '➕ הוסף דג' : '🐠 ערוך דגים'}
+            ✏️ ערוך אקווריום
           </button>
           {!isEmpty && onQuickEmpty && (
             <button

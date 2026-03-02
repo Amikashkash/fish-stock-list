@@ -371,8 +371,8 @@ function AquariumsPage() {
                 key={aquarium.aquariumId}
                 aquarium={aquarium}
                 statusLabel={getStatusLabel(aquarium.status)}
-                onClick={() => handleAquariumClick(aquarium)}
-                onManageFish={handleManageFish}
+                onClick={() => handleManageFish(aquarium)}
+                onEditAquarium={handleAquariumClick}
                 onQuickEmpty={handleQuickEmpty}
               />
             ))}
