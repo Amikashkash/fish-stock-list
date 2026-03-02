@@ -44,12 +44,14 @@ function FishPriceListModal({ isOpen, onClose }) {
         return m ? m[1] : n
       }
 
-      // Create a map to merge catalog + instances by scientificName+sizeBase
+      // Create a map to merge catalog + instances by scientificName+commonName+sizeBase
+      // Including common name allows fish with the same scientific name but different
+      // common names (e.g. "Koi Cobra" vs "Koi Tuxedo") to be separate entries
       const fishMap = new Map()
 
       // First, add all catalog fish
       catalogFish.forEach(f => {
-        const key = `${(f.scientificName || '').toLowerCase()}_${sizeKey(f.size)}`
+        const key = `${(f.scientificName || '').toLowerCase()}_${(f.hebrewName || '').toLowerCase()}_${sizeKey(f.size)}`
         fishMap.set(key, {
           ...f,
           currentQuantity: 0,
@@ -66,7 +68,7 @@ function FishPriceListModal({ isOpen, onClose }) {
         // Skip instances with no aquarium — stale data from cancelled/deleted plans
         if (!inst.aquariumId || !aquariumMap.has(inst.aquariumId)) return
 
-        const key = `${(inst.scientificName || '').toLowerCase()}_${sizeKey(inst.size)}`
+        const key = `${(inst.scientificName || '').toLowerCase()}_${(inst.commonName || '').toLowerCase()}_${sizeKey(inst.size)}`
         const existing = fishMap.get(key)
 
         // Get aquarium info
