@@ -147,7 +147,7 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
 
     } catch (err) {
       console.error('Claude analysis error:', err)
-      setError('Failed to analyze document. Please check your API key and try again.')
+      setError('שגיאה בניתוח המסמך. בדוק את מפתח ה-API ונסה שוב.')
     } finally {
       setLoading(false)
     }
@@ -160,7 +160,7 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     if (!parseResult || !farmId) return
 
     if (!shipmentData.supplier.trim()) {
-      setError('Supplier name is required')
+      setError('שם ספק הוא שדה חובה')
       return
     }
 
@@ -174,7 +174,9 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
         dateReceived: parseIsraeliDate(shipmentData.dateReceived),
       }
 
-      const result = await importShipment(farmId, shipmentDataForImport, parseResult.data)
+      // Only pass valid rows to the import
+      const validItems = parseResult.data.filter(item => item.isValid)
+      const result = await importShipment(farmId, shipmentDataForImport, validItems)
       console.log('Import successful:', result)
 
       setStep('success')
@@ -185,7 +187,7 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
 
     } catch (err) {
       console.error('Import error:', err)
-      setError(`Import failed: ${err.message}`)
+      setError(`שגיאה ביבוא: ${err.message}`)
       setStep('preview')
     } finally {
       setLoading(false)
@@ -212,11 +214,11 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
     const hasInput = file || pastedText.trim()
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" dir="rtl">
         {/* File Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Invoice or Document
+            העלה חשבונית או מסמך
           </label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
             <input
@@ -229,10 +231,10 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
             <label htmlFor="file-upload" className="cursor-pointer">
               <div className="text-4xl mb-2">🤖</div>
               <p className="text-sm text-gray-600 mb-1">
-                Click to upload — PDF, Excel, CSV, image, or text file
+                לחץ להעלאת קובץ — PDF, אקסל, CSV, תמונה או טקסט
               </p>
               <p className="text-xs text-gray-500">
-                Claude AI will extract the fish data automatically
+                בינה מלאכותית תחלץ את נתוני הדגים אוטומטית
               </p>
             </label>
           </div>
@@ -240,15 +242,15 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
             <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
               <span className="text-blue-600 text-xl">📎</span>
               <div>
-                <p className="text-sm font-medium text-blue-900">File ready</p>
+                <p className="text-sm font-medium text-blue-900">קובץ מוכן</p>
                 <p className="text-xs text-blue-700">{file.name}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setFile(null)}
-                className="ml-auto text-xs text-blue-500 hover:text-blue-700"
+                className="mr-auto text-xs text-blue-500 hover:text-blue-700"
               >
-                Remove
+                הסר
               </button>
             </div>
           )}
@@ -259,20 +261,20 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
           <>
             <div className="flex items-center gap-3">
               <div className="flex-1 border-t border-gray-200" />
-              <span className="text-xs text-gray-400 font-medium">OR</span>
+              <span className="text-xs text-gray-400 font-medium">או</span>
               <div className="flex-1 border-t border-gray-200" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Paste Invoice Text
+                הדבק טקסט חשבונית
               </label>
               <textarea
                 value={pastedText}
                 onChange={(e) => setPastedText(e.target.value)}
                 rows={6}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm font-mono"
-                placeholder="Paste any invoice text here — Hebrew, English, mixed tables, anything..."
+                placeholder="הדבק כאן טקסט מהחשבונית — עברית, אנגלית, טבלאות, הכל..."
               />
             </div>
           </>
@@ -282,7 +284,7 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
         <div className="space-y-4">
           <div ref={supplierInputRef} className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Supplier Name <span className="text-red-500">*</span>
+              שם ספק <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -295,7 +297,7 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
                 }
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Enter or select supplier name"
+              placeholder="הזן או בחר שם ספק"
               autoComplete="off"
             />
             {showSupplierDropdown && filteredSuppliers.length > 0 && (
@@ -305,7 +307,7 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
                     key={index}
                     type="button"
                     onClick={() => handleSupplierSelect(supplier)}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none transition-colors"
+                    className="w-full text-right px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none transition-colors"
                   >
                     <span className="text-sm text-gray-900">{supplier}</span>
                   </button>
@@ -316,7 +318,7 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date Received <span className="text-red-500">*</span>
+              תאריך קבלה <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -325,20 +327,21 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="DD/MM/YYYY"
               pattern="\d{2}/\d{2}/\d{4}"
+              dir="ltr"
             />
-            <p className="text-xs text-gray-500 mt-1">Format: DD/MM/YYYY (e.g., 04/12/2024)</p>
+            <p className="text-xs text-gray-500 mt-1">פורמט: DD/MM/YYYY (לדוגמה: 04/12/2024)</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes (Optional)
+              הערות (לא חובה)
             </label>
             <textarea
               value={shipmentData.notes}
               onChange={(e) => setShipmentData({ ...shipmentData, notes: e.target.value })}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Add any notes about this shipment"
+              placeholder="הוסף הערות לגבי המשלוח"
             />
           </div>
         </div>
@@ -354,27 +357,27 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
         {!hasInput && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
-              Upload an invoice file or paste invoice text above, then enter the supplier name.
+              העלה קובץ חשבונית או הדבק טקסט, ולאחר מכן הזן את שם הספק.
             </p>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-start">
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            ביטול
           </Button>
           <Button
             onClick={handleAnalyze}
             disabled={!hasInput || !shipmentData.supplier.trim()}
             loading={loading}
             title={
-              !hasInput ? 'Upload a file or paste text first' :
-              !shipmentData.supplier.trim() ? 'Enter supplier name' :
-              'Analyze with Claude AI'
+              !hasInput ? 'העלה קובץ או הדבק טקסט תחילה' :
+              !shipmentData.supplier.trim() ? 'הזן שם ספק' :
+              'נתח עם Claude AI'
             }
           >
-            {loading ? 'Analyzing...' : '✨ Analyze with AI'}
+            {loading ? 'מנתח...' : '✨ נתח עם AI'}
           </Button>
         </div>
       </div>
@@ -384,24 +387,32 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
   function renderPreviewStep() {
     if (!parseResult) return null
 
+    const validCount = parseResult.summary.validRows
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" dir="rtl">
         <ImportPreview
           data={parseResult.data}
           summary={parseResult.summary}
           error={error}
         />
 
-        <div className="flex gap-3 justify-end pt-4 border-t">
+        {parseResult.summary.errorRows > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+            {parseResult.summary.errorRows} שורות שגויות יידלגו — רק {validCount} פריטים תקינים ייובאו.
+          </div>
+        )}
+
+        <div className="flex gap-3 justify-start pt-4 border-t">
           <Button variant="outline" onClick={() => setStep('upload')}>
-            Back
+            חזרה
           </Button>
           <Button
             onClick={handleImport}
-            disabled={parseResult.summary.errorRows > 0}
+            disabled={validCount === 0}
             loading={loading}
           >
-            Confirm Import ({parseResult.summary.totalRows} items)
+            אשר יבוא ({validCount} פריטים תקינים)
           </Button>
         </div>
       </div>
@@ -410,20 +421,20 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
 
   function renderImportingStep() {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12" dir="rtl">
         <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary mb-4" />
-        <p className="text-lg font-medium text-gray-900">Importing shipment...</p>
-        <p className="text-sm text-gray-600 mt-2">Please wait while we save your data</p>
+        <p className="text-lg font-medium text-gray-900">מייבא משלוח...</p>
+        <p className="text-sm text-gray-600 mt-2">אנא המתן בזמן שהנתונים נשמרים</p>
       </div>
     )
   }
 
   function renderSuccessStep() {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12" dir="rtl">
         <div className="text-6xl mb-4">✅</div>
-        <p className="text-xl font-semibold text-gray-900 mb-2">Import Successful!</p>
-        <p className="text-gray-600">Shipment has been imported successfully</p>
+        <p className="text-xl font-semibold text-gray-900 mb-2">היבוא הושלם בהצלחה!</p>
+        <p className="text-gray-600">המשלוח יובא בהצלחה</p>
       </div>
     )
   }
@@ -433,10 +444,10 @@ function ShipmentImportModal({ isOpen, onClose, farmId, onSuccess }) {
       isOpen={isOpen}
       onClose={handleClose}
       title={
-        step === 'upload' ? 'Import Shipment with AI' :
-        step === 'preview' ? 'Preview & Validate' :
-        step === 'importing' ? 'Importing...' :
-        'Success!'
+        step === 'upload' ? 'יבוא משלוח עם AI' :
+        step === 'preview' ? 'תצוגה מקדימה ואימות' :
+        step === 'importing' ? 'מייבא...' :
+        'הצלחה!'
       }
       size={step === 'preview' ? 'xl' : 'lg'}
     >
