@@ -155,6 +155,7 @@ export default function OrderPortalPage() {
         size: f.size,
         price: f.price,
         aquariumId: f.aquariumId,
+        aquariumRoom: f.aquariumRoom,
         aquariumNumber: f.aquariumNumber,
         requestedQuantity: quantities[f.fishId],
       }))

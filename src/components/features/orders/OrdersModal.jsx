@@ -47,10 +47,15 @@ function PackingItemRow({ item, onPackedChange, onIsPackedChange, onMarkAquarium
         className="w-5 h-5 accent-green-500 cursor-pointer"
       />
 
-      {/* Fish name */}
+      {/* Fish name + location */}
       <div className={item.isPacked ? 'line-through text-gray-400' : 'text-gray-900'}>
         <div className="font-medium truncate">{item.hebrewName || item.scientificName}</div>
         <div className="text-xs text-gray-400 truncate">{item.size}</div>
+        {(item.aquariumRoom || item.aquariumNumber) && (
+          <div className="text-xs text-blue-500 truncate mt-0.5">
+            📍 {[item.aquariumRoom, item.aquariumNumber ? `#${item.aquariumNumber}` : ''].filter(Boolean).join(' ')}
+          </div>
+        )}
       </div>
 
       {/* Requested qty */}
@@ -71,19 +76,18 @@ function PackingItemRow({ item, onPackedChange, onIsPackedChange, onMarkAquarium
         />
       </div>
 
-      {/* Aquarium empty */}
+      {/* Mark aquarium empty */}
       <div className="text-center">
-        {item.aquariumNumber ? (
-          <label className="flex flex-col items-center gap-1 cursor-pointer">
+        {item.aquariumId ? (
+          <label className={`flex flex-col items-center gap-1 cursor-pointer rounded-lg p-1 transition-colors ${item.markAquariumEmpty ? 'bg-orange-100' : ''}`}>
             <input
               type="checkbox"
               checked={item.markAquariumEmpty}
               onChange={e => onMarkAquariumEmptyChange(e.target.checked)}
               className="w-4 h-4 accent-orange-500"
             />
-            <span className="text-xs text-gray-500 leading-tight">
-              #{item.aquariumNumber}
-              <br />ריק
+            <span className={`text-xs leading-tight text-center ${item.markAquariumEmpty ? 'text-orange-600 font-semibold' : 'text-gray-400'}`}>
+              רוקן
             </span>
           </label>
         ) : null}
@@ -147,7 +151,7 @@ function OrderCard({ order, isExpanded, isSaving, onExpand, onItemUpdate, onComp
             <div>דג</div>
             <div className="text-center">הוזמן</div>
             <div className="text-center">נארז</div>
-            <div className="text-center">אקווריום</div>
+            <div className="text-center">רוקן</div>
           </div>
 
           <div className="space-y-1.5">
