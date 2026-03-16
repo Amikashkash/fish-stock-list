@@ -65,8 +65,9 @@ function FishPriceListModal({ isOpen, onClose }) {
       fishInstances.forEach(inst => {
         // Skip non-active instances
         if (inst.status && inst.status !== 'active') return
-        // Skip instances with no aquarium — stale data from cancelled/deleted plans
-        if (!inst.aquariumId || !aquariumMap.has(inst.aquariumId)) return
+        // Skip instances whose aquariumId points to a deleted/non-existent aquarium
+        // (null aquariumId is valid — direct shipment imports are not yet assigned to an aquarium)
+        if (inst.aquariumId && !aquariumMap.has(inst.aquariumId)) return
 
         const key = `${(inst.scientificName || '').toLowerCase()}_${(inst.commonName || '').toLowerCase()}_${sizeKey(inst.size)}`
         const existing = fishMap.get(key)
@@ -112,7 +113,9 @@ function FishPriceListModal({ isOpen, onClose }) {
 
       // Convert map to array and sort
       const allFish = Array.from(fishMap.values())
-      allFish.sort((a, b) => (a.scientificName || '').localeCompare(b.scientificName || ''))
+      allFish.sort((a, b) =>
+        (a.hebrewName || a.scientificName || '').localeCompare(b.hebrewName || b.scientificName || '', 'he')
+      )
       setFish(allFish)
     } catch (err) {
       console.error('Error loading fish:', err)
