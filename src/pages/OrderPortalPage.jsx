@@ -79,7 +79,7 @@ function buildFishList(catalogFish, fishInstances, aquariums) {
   })
 
   return Array.from(fishMap.values())
-    .filter(f => f.price && (f.currentQuantity || 0) > 0)
+    .filter(f => (f.currentQuantity || 0) > 0)
     .sort((a, b) =>
       (a.hebrewName || a.scientificName || '').localeCompare(
         b.hebrewName || b.scientificName || '',
@@ -299,9 +299,13 @@ export default function OrderPortalPage() {
                       )}
                       <div className="flex gap-3 mt-1 text-xs text-gray-600">
                         <span>{f.size}</span>
-                        <span className="font-semibold text-green-700">
-                          ₪{typeof f.price === 'number' ? f.price.toFixed(2) : f.price}
-                        </span>
+                        {f.price ? (
+                          <span className="font-semibold text-green-700">
+                            ₪{typeof f.price === 'number' ? f.price.toFixed(2) : f.price}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">מחיר לא עודכן</span>
+                        )}
                         <span className="text-gray-400">מלאי: {f.currentQuantity}</span>
                       </div>
                     </div>
