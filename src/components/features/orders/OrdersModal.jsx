@@ -6,6 +6,8 @@ import {
   markOrderProcessing,
   markOrderCompleted,
 } from '../../../services/order.service'
+import { getAquariums } from '../../../services/aquarium.service'
+import QuickEmptyModal from '../aquarium/QuickEmptyModal'
 
 const STATUS_LABELS = {
   pending: 'ממתין',
@@ -31,7 +33,11 @@ function formatTimeAgo(date) {
 
 // ─── PackingItemRow ───────────────────────────────────────────────────────────
 
-function PackingItemRow({ item, onPackedChange, onIsPackedChange, onMarkAquariumEmptyChange }) {
+function PackingItemRow({ item, aquariumMap, onPackedChange, onIsPackedChange, onMarkAquariumEmptyChange, onQuickEmptyClick }) {
+  const aquarium = item.aquariumId ? aquariumMap?.get(item.aquariumId) : null
+  const room = item.aquariumRoom || aquarium?.room || ''
+  const aquariumNumber = item.aquariumNumber || aquarium?.aquariumNumber || ''
+
   return (
     <div
       className={`grid gap-2 p-3 rounded-xl text-sm items-center ${
@@ -51,10 +57,19 @@ function PackingItemRow({ item, onPackedChange, onIsPackedChange, onMarkAquarium
       <div className={item.isPacked ? 'line-through text-gray-400' : 'text-gray-900'}>
         <div className="font-medium truncate">{item.hebrewName || item.scientificName}</div>
         <div className="text-xs text-gray-400 truncate">{item.size}</div>
-        {(item.aquariumRoom || item.aquariumNumber) && (
-          <div className="text-xs text-blue-500 truncate mt-0.5">
-            📍 {[item.aquariumRoom, item.aquariumNumber ? `#${item.aquariumNumber}` : ''].filter(Boolean).join(' ')}
-          </div>
+        {(room || aquariumNumber) && (
+          item.aquariumId && onQuickEmptyClick ? (
+            <button
+              onClick={() => onQuickEmptyClick(item.aquariumId)}
+              className="text-xs text-blue-500 truncate mt-0.5 hover:text-blue-700 hover:underline text-right block"
+            >
+              📍 {[room, aquariumNumber ? `#${aquariumNumber}` : ''].filter(Boolean).join(' ')}
+            </button>
+          ) : (
+            <div className="text-xs text-blue-500 truncate mt-0.5">
+              📍 {[room, aquariumNumber ? `#${aquariumNumber}` : ''].filter(Boolean).join(' ')}
+            </div>
+          )
         )}
       </div>
 
@@ -98,7 +113,7 @@ function PackingItemRow({ item, onPackedChange, onIsPackedChange, onMarkAquarium
 
 // ─── OrderCard ────────────────────────────────────────────────────────────────
 
-function OrderCard({ order, isExpanded, isSaving, onExpand, onItemUpdate, onComplete }) {
+function OrderCard({ order, isExpanded, isSaving, aquariumMap, onExpand, onItemUpdate, onComplete, onQuickEmptyClick }) {
   const totalRequested = order.items.reduce((sum, i) => sum + (i.requestedQuantity || 0), 0)
   const packedCount = order.items.filter(i => i.isPacked).length
 
@@ -159,9 +174,11 @@ function OrderCard({ order, isExpanded, isSaving, onExpand, onItemUpdate, onComp
               <PackingItemRow
                 key={idx}
                 item={item}
+                aquariumMap={aquariumMap}
                 onPackedChange={val => onItemUpdate(idx, 'packedQuantity', val)}
                 onIsPackedChange={val => onItemUpdate(idx, 'isPacked', val)}
                 onMarkAquariumEmptyChange={val => onItemUpdate(idx, 'markAquariumEmpty', val)}
+                onQuickEmptyClick={onQuickEmptyClick}
               />
             ))}
           </div>
@@ -204,6 +221,8 @@ function OrdersModal({ isOpen, onClose }) {
   const [statusFilter, setStatusFilter] = useState('pending')
   const [expandedOrderId, setExpandedOrderId] = useState(null)
   const [savingOrderId, setSavingOrderId] = useState(null)
+  const [aquariumMap, setAquariumMap] = useState(new Map())
+  const [quickEmptyAquarium, setQuickEmptyAquarium] = useState(null)
 
   useEffect(() => {
     if (isOpen && currentFarm?.farmId) {
@@ -214,8 +233,12 @@ function OrdersModal({ isOpen, onClose }) {
   async function loadOrders() {
     setLoading(true)
     try {
-      const data = await getOrders(currentFarm.farmId)
+      const [data, aquariums] = await Promise.all([
+        getOrders(currentFarm.farmId),
+        getAquariums(currentFarm.farmId),
+      ])
       setOrders(data)
+      setAquariumMap(new Map(aquariums.map(a => [a.aquariumId, a])))
     } catch (err) {
       console.error('Error loading orders:', err)
     } finally {
@@ -255,6 +278,11 @@ function OrdersModal({ isOpen, onClose }) {
       idx === itemIndex ? { ...item, [field]: value } : item
     )
     await updateOrder(orderId, { items: updatedItems })
+  }
+
+  function handleQuickEmptyClick(aquariumId) {
+    const aquarium = aquariumMap.get(aquariumId)
+    if (aquarium) setQuickEmptyAquarium(aquarium)
   }
 
   async function handleCompleteOrder(orderId) {
@@ -351,11 +379,13 @@ function OrdersModal({ isOpen, onClose }) {
                 order={order}
                 isExpanded={expandedOrderId === order.orderId}
                 isSaving={savingOrderId === order.orderId}
+                aquariumMap={aquariumMap}
                 onExpand={() => handleExpandOrder(order)}
                 onItemUpdate={(itemIndex, field, value) =>
                   handleItemUpdate(order.orderId, itemIndex, field, value)
                 }
                 onComplete={() => handleCompleteOrder(order.orderId)}
+                onQuickEmptyClick={handleQuickEmptyClick}
               />
             ))
           )}
@@ -372,6 +402,18 @@ function OrdersModal({ isOpen, onClose }) {
           </button>
         </div>
       </div>
+
+      {/* Quick Empty Modal — rendered above OrdersModal (z-[1002]) */}
+      {quickEmptyAquarium && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1002 }}>
+          <QuickEmptyModal
+            isOpen={true}
+            aquarium={quickEmptyAquarium}
+            onClose={() => setQuickEmptyAquarium(null)}
+            onSuccess={() => setQuickEmptyAquarium(null)}
+          />
+        </div>
+      )}
     </div>
   )
 }
