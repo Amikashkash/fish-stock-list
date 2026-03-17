@@ -136,10 +136,11 @@ function FishPriceListModal({ isOpen, onClose }) {
     )
   })
 
-  // Categorize fish into 3 sections
-  const inStockWithPrice = filteredFish.filter(f => (f.currentQuantity || 0) > 0 && f.price)
+  // Categorize fish into 4 sections
+  const inStockWithPrice    = filteredFish.filter(f => (f.currentQuantity || 0) > 0 && f.price)
   const outOfStockWithPrice = filteredFish.filter(f => (f.currentQuantity || 0) <= 0 && f.price)
-  const noPrice = filteredFish.filter(f => !f.price)
+  const noPriceInStock      = filteredFish.filter(f => (f.currentQuantity || 0) > 0 && !f.price)
+  const noPriceOutOfStock   = filteredFish.filter(f => (f.currentQuantity || 0) <= 0 && !f.price)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1001] p-4">
@@ -215,13 +216,24 @@ function FishPriceListModal({ isOpen, onClose }) {
                     />
                   )}
 
-                  {/* Section 3: No Price */}
-                  {noPrice.length > 0 && (
+                  {/* Section 3: In stock, no price */}
+                  {noPriceInStock.length > 0 && (
                     <FishSection
                       title="ללא מחיר - יש לעדכן"
                       icon="⚠️"
                       color="red"
-                      fish={noPrice}
+                      fish={noPriceInStock}
+                      onSelect={setSelectedFish}
+                    />
+                  )}
+
+                  {/* Section 4: Not in stock, no price — bottom of list */}
+                  {noPriceOutOfStock.length > 0 && (
+                    <FishSection
+                      title="לא במלאי"
+                      icon="🚫"
+                      color="gray"
+                      fish={noPriceOutOfStock}
                       onSelect={setSelectedFish}
                     />
                   )}
@@ -230,7 +242,7 @@ function FishPriceListModal({ isOpen, onClose }) {
                   <div className="mt-4 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
                     {filteredFish.length} דגים במחירון
                     {inStockWithPrice.length > 0 && ` | ${inStockWithPrice.length} במלאי`}
-                    {noPrice.length > 0 && ` | ${noPrice.length} ללא מחיר`}
+                    {noPriceInStock.length > 0 && ` | ${noPriceInStock.length} ללא מחיר`}
                   </div>
                 </div>
               )}
@@ -249,13 +261,15 @@ function FishSection({ title, icon, color, fish, onSelect }) {
   const colorClasses = {
     green: 'bg-green-50 border-green-200',
     orange: 'bg-orange-50 border-orange-200',
-    red: 'bg-red-50 border-red-200'
+    red: 'bg-red-50 border-red-200',
+    gray: 'bg-gray-50 border-gray-200'
   }
 
   const headerColors = {
     green: 'text-green-800',
     orange: 'text-orange-800',
-    red: 'text-red-800'
+    red: 'text-red-800',
+    gray: 'text-gray-500'
   }
 
   return (
