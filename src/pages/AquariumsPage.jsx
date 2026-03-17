@@ -27,6 +27,7 @@ function AquariumsPage() {
   const [quickEmptyAquarium, setQuickEmptyAquarium] = useState(null)
   const [selectedRoom, setSelectedRoom] = useState(null) // null = room selection screen
   const [filterStatus, setFilterStatus] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (currentFarm) {
@@ -197,6 +198,14 @@ function AquariumsPage() {
     }
   })
 
+  // Fish search results (across all aquariums)
+  const trimmedQuery = searchQuery.trim().toLowerCase()
+  const searchResults = trimmedQuery
+    ? aquariums.filter(aq =>
+        aq.fishNames?.some(name => name.toLowerCase().includes(trimmedQuery))
+      )
+    : []
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-5 md:p-4">
@@ -208,227 +217,258 @@ function AquariumsPage() {
     )
   }
 
-  // Room Selection Screen
-  if (!selectedRoom) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-3 sm:p-5">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-3 gap-2">
-            <button
-              className="px-3 py-2 sm:px-5 sm:py-2.5 bg-white border border-gray-300 rounded-lg cursor-pointer text-xs sm:text-sm font-semibold text-gray-900 transition-all hover:bg-gray-50 hover:border-gray-400"
-              onClick={() => navigate('/home')}
-            >
-              ← חזרה
-            </button>
-            <h1 className="text-xl sm:text-2xl md:text-[28px] font-bold text-gray-900 m-0 flex-1 text-center">בחר אזור</h1>
-            <div className="w-[60px] sm:w-[100px]"></div> {/* Spacer for centering */}
-          </div>
-        </div>
-
-        {/* Room Selection Cards */}
-        <div className="max-w-4xl mx-auto">
-          {rooms.length === 0 ? (
-            <div className="text-center py-20 px-4 bg-white rounded-xl shadow-md">
-              <div className="text-6xl mb-4 opacity-50">🏊</div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">אין אקווריומים</h3>
-              <p className="text-base text-gray-500 mb-6">
-                התחל על ידי יצירת האקווריום הראשון שלך
-              </p>
-              <button
-                className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-                onClick={() => setShowCreateModal(true)}
-              >
-                + צור אקווריום ראשון
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {roomStats.map(({ room, total, empty, occupied, maintenance }) => (
-                <button
-                  key={room}
-                  onClick={() => setSelectedRoom(room)}
-                  className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 text-right border-2 border-transparent hover:border-blue-400 hover:-translate-y-1 cursor-pointer"
-                >
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">{room}</h2>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">סה"כ אקווריומים:</span>
-                      <span className="text-lg font-bold text-blue-600">{total}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">ריקים:</span>
-                      <span className="text-base font-semibold text-green-600">{empty}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">תפוסים:</span>
-                      <span className="text-base font-semibold text-blue-600">{occupied}</span>
-                    </div>
-                    {maintenance > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">בתחזוקה:</span>
-                        <span className="text-base font-semibold text-yellow-600">{maintenance}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <span className="text-sm text-blue-500 font-semibold">לחץ לצפייה →</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Modals */}
-        <AquariumCreateModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={handleAquariumCreated}
-          existingAquariums={aquariums}
-        />
-      </div>
-    )
-  }
-
-  // Aquariums View (when room is selected)
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-5">
-      {/* Header */}
-      <div className="mb-4 sm:mb-6">
-        <div className="flex justify-between items-center mb-3 gap-2">
-          <button
-            className="px-3 py-2 sm:px-5 sm:py-2.5 bg-white border border-gray-300 rounded-lg cursor-pointer text-xs sm:text-sm font-semibold text-gray-900 transition-all hover:bg-gray-50 hover:border-gray-400"
-            onClick={() => setSelectedRoom(null)}
-          >
-            ← כל האזורים
-          </button>
-          <h1 className="text-xl sm:text-2xl md:text-[28px] font-bold text-gray-900 m-0 flex-1 text-center">{selectedRoom}</h1>
-          <button
-            className="px-3 py-2 sm:px-5 sm:py-2.5 bg-blue-500 text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-600 transition-colors whitespace-nowrap"
-            onClick={() => setShowCreateModal(true)}
-          >
-            + חדש
-          </button>
-        </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-        <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
-          <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.total}</div>
-          <div className="text-xs sm:text-sm text-gray-500 font-medium">סה"כ</div>
-        </div>
-        <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
-          <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.occupied}</div>
-          <div className="text-xs sm:text-sm text-gray-500 font-medium">תפוסים</div>
-        </div>
-        <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
-          <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.empty}</div>
-          <div className="text-xs sm:text-sm text-gray-500 font-medium">ריקים</div>
-        </div>
-        <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
-          <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.maintenance}</div>
-          <div className="text-xs sm:text-sm text-gray-500 font-medium">תחזוקה</div>
-        </div>
-      </div>
+      {/* ── Room Selection Screen ─────────────────────────────────────────── */}
+      {!selectedRoom && (
+        <>
+          {/* Header */}
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-3 gap-2">
+              <button
+                className="px-3 py-2 sm:px-5 sm:py-2.5 bg-white border border-gray-300 rounded-lg cursor-pointer text-xs sm:text-sm font-semibold text-gray-900 transition-all hover:bg-gray-50 hover:border-gray-400"
+                onClick={() => navigate('/home')}
+              >
+                ← חזרה
+              </button>
+              <h1 className="text-xl sm:text-2xl md:text-[28px] font-bold text-gray-900 m-0 flex-1 text-center">בחר אזור</h1>
+              <div className="w-[60px] sm:w-[100px]"></div>
+            </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-md">
-        <label className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">סינון:</label>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
-        >
-          <option value="all">כל הסטטוסים</option>
-          {currentFarm?.settings?.aquariumStatuses?.map((status) => (
-            <option key={status.id} value={status.id}>
-              {status.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Aquariums List */}
-      {filteredAquariums.length === 0 ? (
-        <div className="text-center py-10 sm:py-[60px] px-4 sm:px-5 bg-white rounded-lg sm:rounded-xl shadow-md">
-          <div className="text-5xl sm:text-[80px] mb-3 sm:mb-4 opacity-50">🏊</div>
-          <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2">אין אקווריומים</h3>
-          <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">
-            {filterStatus !== 'all'
-              ? `אין אקווריומים עם סטטוס "${currentFarm?.settings?.aquariumStatuses?.find(s => s.id === filterStatus)?.label}" באזור ${selectedRoom}`
-              : `אין אקווריומים באזור ${selectedRoom}`}
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white p-3 sm:p-6 rounded-lg sm:rounded-xl shadow-md">
-          <div className="flex flex-col gap-2">
-            {filteredAquariums.map((aquarium) => (
-              <AquariumCard
-                key={aquarium.aquariumId}
-                aquarium={aquarium}
-                statusLabel={getStatusLabel(aquarium.status)}
-                onClick={() => handleManageFish(aquarium)}
-                onEditAquarium={handleAquariumClick}
-                onQuickEmpty={handleQuickEmpty}
-              />
-            ))}
+            {/* Search bar */}
+            {aquariums.length > 0 && (
+              <div className="relative max-w-4xl mx-auto">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="🔍 חפש דג לפי שם..."
+                  className="w-full px-4 py-3 pr-10 border-2 border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-blue-400 transition-colors"
+                  dir="rtl"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-lg leading-none"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-        </div>
+
+          <div className="max-w-4xl mx-auto">
+            {/* Search Results */}
+            {trimmedQuery ? (
+              searchResults.length === 0 ? (
+                <div className="text-center py-14 text-gray-400">
+                  <div className="text-4xl mb-2">🔍</div>
+                  <div>לא נמצאו דגים בשם &ldquo;{searchQuery}&rdquo;</div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="text-xs text-gray-400 mb-2 text-right">{searchResults.length} אקווריומים נמצאו</div>
+                  {searchResults.map(aquarium => {
+                    const matchingFish = aquarium.fishNames?.filter(n =>
+                      n.toLowerCase().includes(trimmedQuery)
+                    ) || []
+                    return (
+                      <button
+                        key={aquarium.aquariumId}
+                        onClick={() => handleManageFish(aquarium)}
+                        className="w-full bg-white rounded-xl shadow-sm hover:shadow-md border-2 border-transparent hover:border-blue-400 transition-all p-4 text-right flex items-center justify-between gap-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
+                              {aquarium.room}
+                            </span>
+                            <span className="font-bold text-gray-900">
+                              אקווריום #{aquarium.aquariumNumber}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">
+                            {matchingFish.join(' · ')}
+                          </div>
+                        </div>
+                        <span className="text-blue-400 text-lg shrink-0">←</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            ) : rooms.length === 0 ? (
+              /* No aquariums at all */
+              <div className="text-center py-20 px-4 bg-white rounded-xl shadow-md">
+                <div className="text-6xl mb-4 opacity-50">🏊</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">אין אקווריומים</h3>
+                <p className="text-base text-gray-500 mb-6">התחל על ידי יצירת האקווריום הראשון שלך</p>
+                <button
+                  className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  + צור אקווריום ראשון
+                </button>
+              </div>
+            ) : (
+              /* Room cards */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {roomStats.map(({ room, total, empty, occupied, maintenance }) => (
+                  <button
+                    key={room}
+                    onClick={() => setSelectedRoom(room)}
+                    className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 text-right border-2 border-transparent hover:border-blue-400 hover:-translate-y-1 cursor-pointer"
+                  >
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">{room}</h2>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">סה"כ אקווריומים:</span>
+                        <span className="text-lg font-bold text-blue-600">{total}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">ריקים:</span>
+                        <span className="text-base font-semibold text-green-600">{empty}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">תפוסים:</span>
+                        <span className="text-base font-semibold text-blue-600">{occupied}</span>
+                      </div>
+                      {maintenance > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">בתחזוקה:</span>
+                          <span className="text-base font-semibold text-yellow-600">{maintenance}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <span className="text-sm text-blue-500 font-semibold">לחץ לצפייה →</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
-      {/* Create Modal */}
+      {/* ── Aquariums View (room selected) ───────────────────────────────── */}
+      {selectedRoom && (
+        <>
+          {/* Header */}
+          <div className="mb-4 sm:mb-6">
+            <div className="flex justify-between items-center mb-3 gap-2">
+              <button
+                className="px-3 py-2 sm:px-5 sm:py-2.5 bg-white border border-gray-300 rounded-lg cursor-pointer text-xs sm:text-sm font-semibold text-gray-900 transition-all hover:bg-gray-50 hover:border-gray-400"
+                onClick={() => setSelectedRoom(null)}
+              >
+                ← כל האזורים
+              </button>
+              <h1 className="text-xl sm:text-2xl md:text-[28px] font-bold text-gray-900 m-0 flex-1 text-center">{selectedRoom}</h1>
+              <button
+                className="px-3 py-2 sm:px-5 sm:py-2.5 bg-blue-500 text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-blue-600 transition-colors whitespace-nowrap"
+                onClick={() => setShowCreateModal(true)}
+              >
+                + חדש
+              </button>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
+              <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.total}</div>
+              <div className="text-xs sm:text-sm text-gray-500 font-medium">סה"כ</div>
+            </div>
+            <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
+              <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.occupied}</div>
+              <div className="text-xs sm:text-sm text-gray-500 font-medium">תפוסים</div>
+            </div>
+            <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
+              <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.empty}</div>
+              <div className="text-xs sm:text-sm text-gray-500 font-medium">ריקים</div>
+            </div>
+            <div className="bg-white p-3 sm:p-5 rounded-lg sm:rounded-xl shadow-md text-center">
+              <div className="text-2xl sm:text-[32px] font-bold text-blue-500 mb-0.5 sm:mb-1">{stats.maintenance}</div>
+              <div className="text-xs sm:text-sm text-gray-500 font-medium">תחזוקה</div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center gap-3 mb-4 sm:mb-6 p-3 sm:p-4 bg-white rounded-lg sm:rounded-xl shadow-md">
+            <label className="text-xs sm:text-sm font-semibold text-gray-900 whitespace-nowrap">סינון:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm cursor-pointer bg-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="all">כל הסטטוסים</option>
+              {currentFarm?.settings?.aquariumStatuses?.map((status) => (
+                <option key={status.id} value={status.id}>{status.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Aquariums List */}
+          {filteredAquariums.length === 0 ? (
+            <div className="text-center py-10 sm:py-[60px] px-4 sm:px-5 bg-white rounded-lg sm:rounded-xl shadow-md">
+              <div className="text-5xl sm:text-[80px] mb-3 sm:mb-4 opacity-50">🏊</div>
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2">אין אקווריומים</h3>
+              <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6">
+                {filterStatus !== 'all'
+                  ? `אין אקווריומים עם סטטוס "${currentFarm?.settings?.aquariumStatuses?.find(s => s.id === filterStatus)?.label}" באזור ${selectedRoom}`
+                  : `אין אקווריומים באזור ${selectedRoom}`}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white p-3 sm:p-6 rounded-lg sm:rounded-xl shadow-md">
+              <div className="flex flex-col gap-2">
+                {filteredAquariums.map((aquarium) => (
+                  <AquariumCard
+                    key={aquarium.aquariumId}
+                    aquarium={aquarium}
+                    statusLabel={getStatusLabel(aquarium.status)}
+                    onClick={() => handleManageFish(aquarium)}
+                    onEditAquarium={handleAquariumClick}
+                    onQuickEmpty={handleQuickEmpty}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Shared Modals ────────────────────────────────────────────────── */}
       <AquariumCreateModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleAquariumCreated}
         existingAquariums={aquariums}
       />
-
-      {/* Edit Modal */}
       <AquariumEditModal
         isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false)
-          setSelectedAquarium(null)
-        }}
+        onClose={() => { setShowEditModal(false); setSelectedAquarium(null) }}
         onSuccess={handleAquariumUpdated}
         onTransferClick={handleTransferClick}
         aquarium={selectedAquarium}
       />
-
-      {/* Fish Management Modal */}
       <AquariumFishModal
         isOpen={showFishModal}
-        onClose={() => {
-          setShowFishModal(false)
-          setFishModalAquarium(null)
-        }}
+        onClose={() => { setShowFishModal(false); setFishModalAquarium(null) }}
         onSuccess={handleFishModalSuccess}
         aquarium={fishModalAquarium}
       />
-
-      {/* Transfer Modal */}
       <FishTransferModal
         isOpen={showTransferModal}
-        onClose={() => {
-          setShowTransferModal(false)
-          setTransferSourceAquarium(null)
-        }}
+        onClose={() => { setShowTransferModal(false); setTransferSourceAquarium(null) }}
         onSuccess={handleTransferSuccess}
         sourceAquarium={transferSourceAquarium}
       />
-
-      {/* Quick Empty Modal */}
       <QuickEmptyModal
         isOpen={showQuickEmptyModal}
-        onClose={() => {
-          setShowQuickEmptyModal(false)
-          setQuickEmptyAquarium(null)
-        }}
+        onClose={() => { setShowQuickEmptyModal(false); setQuickEmptyAquarium(null) }}
         onSuccess={handleQuickEmptySuccess}
         aquarium={quickEmptyAquarium}
       />
