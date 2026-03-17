@@ -50,14 +50,17 @@ function FishPriceListModal({ isOpen, onClose }) {
       const fishMap = new Map()
 
       // First, add all catalog fish
+      // Preserve the catalog's aquariumId so it can serve as a fallback
+      // when the matching fish_instance still has aquariumId: null
       catalogFish.forEach(f => {
         const key = `${(f.scientificName || '').toLowerCase()}_${(f.hebrewName || '').toLowerCase()}_${sizeKey(f.size)}`
+        const catAqInfo = f.aquariumId ? aquariumMap.get(f.aquariumId) : null
         fishMap.set(key, {
           ...f,
           currentQuantity: 0,
-          aquariumId: null,
-          aquariumRoom: '',
-          aquariumNumber: ''
+          aquariumId: f.aquariumId || null,
+          aquariumRoom: catAqInfo?.room || '',
+          aquariumNumber: catAqInfo?.number || ''
         })
       })
 
