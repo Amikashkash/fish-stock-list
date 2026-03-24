@@ -57,7 +57,7 @@ function FishPriceListModal({ isOpen, onClose }) {
         const catAqInfo = f.aquariumId ? aquariumMap.get(f.aquariumId) : null
         fishMap.set(key, {
           ...f,
-          currentQuantity: 0,
+          currentQuantity: f.quantity || 0,
           aquariumId: f.aquariumId || null,
           aquariumRoom: catAqInfo?.room || '',
           aquariumNumber: catAqInfo?.number || ''
