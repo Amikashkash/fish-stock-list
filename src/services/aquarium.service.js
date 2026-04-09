@@ -348,6 +348,24 @@ export async function emptyAquarium(farmId, aquariumId, reason, notes = '') {
           })
         }
       }
+
+      // Zero out quantities and remove from aquarium (same as SHIPMENT)
+      const batch = writeBatch(db)
+      for (const fish of farmFishList) {
+        batch.update(doc(db, 'farmFish', fish.fishId), {
+          quantity: 0,
+          aquariumId: null,
+          updatedAt: Timestamp.now(),
+        })
+      }
+      for (const fish of fishInstancesList) {
+        batch.update(doc(db, 'farms', farmId, 'fish_instances', fish.instanceId), {
+          currentQuantity: 0,
+          aquariumId: null,
+          updatedAt: Timestamp.now(),
+        })
+      }
+      await batch.commit()
     } else if (reason === EMPTY_REASONS.SHIPMENT) {
       // Remove from aquarium but keep records for history
       const batch = writeBatch(db)
