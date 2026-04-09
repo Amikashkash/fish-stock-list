@@ -5,6 +5,7 @@ import { getFarmFish, addFarmFish, updateFarmFish, deleteFarmFish } from '../../
 import { getFishByAquarium, updateFishInstance, deleteFishInstance } from '../../../services/fish.service'
 import { getPendingTasksForFish } from '../../../services/task.service'
 import MortalityRecordModal from '../health/MortalityRecordModal'
+import FishTransferModal from '../transfer/FishTransferModal'
 
 // Default fallback sources if none defined in settings
 const DEFAULT_FISH_SOURCES = [
@@ -35,6 +36,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
   const [editingId, setEditingId] = useState(null)
   const [mortalityModalOpen, setMortalityModalOpen] = useState(false)
   const [selectedFishForMortality, setSelectedFishForMortality] = useState(null)
+  const [transferModalOpen, setTransferModalOpen] = useState(false)
 
   // Get default source id
   const defaultSourceId = fishSources[0]?.id || 'local_delivery'
@@ -547,6 +549,12 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                             </div>
                             <div className="mt-3 flex gap-2">
                               <button
+                                onClick={() => setTransferModalOpen(true)}
+                                className="flex-1 px-3 py-2 text-xs font-semibold bg-green-100 text-green-700 rounded hover:bg-green-200"
+                              >
+                                🔄 העבר
+                              </button>
+                              <button
                                 onClick={() => startEditingReceptionFish(fish)}
                                 className="flex-1 px-3 py-2 text-xs font-semibold bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
                               >
@@ -554,9 +562,9 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                               </button>
                               <button
                                 onClick={() => handleOpenMortalityModal(fish, 'reception')}
-                                className="flex-1 px-3 py-2 text-xs font-semibold bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
+                                className="px-3 py-2 text-xs font-semibold bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
                               >
-                                💀 תמותה
+                                💀
                               </button>
                               <button
                                 onClick={() => handleDeleteReceptionFish(fish.instanceId)}
@@ -745,14 +753,20 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                             </div>
                             <div className="flex gap-2">
                               <button
+                                onClick={() => setTransferModalOpen(true)}
+                                className="flex-1 px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded hover:bg-green-200"
+                              >
+                                🔄 העבר
+                              </button>
+                              <button
                                 onClick={() => handleOpenMortalityModal(fish, 'local')}
                                 className="flex-1 px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded hover:bg-red-200"
                               >
-                                💀 רשום תמותה
+                                💀 תמותה
                               </button>
                               <button
                                 onClick={() => startEditing(fish)}
-                                className="flex-1 px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                className="px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                               >
                                 ✏️ ערוך
                               </button>
@@ -760,7 +774,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
                                 onClick={() => handleDeleteFish(fish.fishId)}
                                 className="px-3 py-1 text-xs font-semibold bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
                               >
-                                🗑️ מחק
+                                🗑️
                               </button>
                             </div>
                           </>
@@ -933,6 +947,18 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
         }}
         fishData={selectedFishForMortality}
         onMortalityRecorded={handleMortalityRecorded}
+      />
+
+      {/* Fish Transfer Modal */}
+      <FishTransferModal
+        isOpen={transferModalOpen}
+        onClose={() => setTransferModalOpen(false)}
+        onSuccess={() => {
+          setTransferModalOpen(false)
+          loadData()
+          if (onSuccess) onSuccess()
+        }}
+        sourceAquarium={aquarium}
       />
     </div>
   )

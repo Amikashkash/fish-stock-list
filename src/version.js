@@ -3,6 +3,6 @@
  * Update this file before each release
  */
 
-export const VERSION = '20.5.15'
+export const VERSION = '20.5.16'
 export const RELEASE_DATE = '2026-04-09'
-export const RELEASE_NAME = 'Fix: Mortality empty leaves fish in stock'
+export const RELEASE_NAME = 'Transfer button inside aquarium fish card'
