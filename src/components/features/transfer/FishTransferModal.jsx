@@ -3,7 +3,7 @@ import { useFarm } from '../../../contexts/FarmContext'
 import { getAquariums } from '../../../services/aquarium.service'
 import { getFishInAquarium, transferFish } from '../../../services/transfer.service'
 
-function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }) {
+function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null, zIndex = 1000 }) {
   const { currentFarm } = useFarm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -24,16 +24,16 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
     }
   }, [currentFarm, isOpen])
 
-  // Set source aquarium if provided
+  // Set source aquarium if provided; reload fish every time modal opens
   useEffect(() => {
-    if (sourceAquarium) {
+    if (sourceAquarium && isOpen) {
       setSelectedSourceAquarium(sourceAquarium)
       setStep(2)
       loadFishInAquarium(sourceAquarium.aquariumId)
-    } else {
+    } else if (!sourceAquarium) {
       setStep(1)
     }
-  }, [sourceAquarium])
+  }, [sourceAquarium, isOpen])
 
   async function loadAquariums() {
     try {
@@ -92,6 +92,7 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
         sourceAquariumId: selectedSourceAquarium.aquariumId,
         destinationAquariumId: selectedDestAquarium.aquariumId,
         fishInstanceId: selectedFish.instanceId,
+        fishSource: selectedFish.source,
         quantity: quantity,
       })
 
@@ -150,7 +151,8 @@ function FishTransferModal({ isOpen, onClose, onSuccess, sourceAquarium = null }
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-5"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-5"
+      style={{ zIndex }}
       onClick={handleClose}
     >
       <div

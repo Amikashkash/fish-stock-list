@@ -959,6 +959,7 @@ function AquariumFishModal({ isOpen, onClose, aquarium, onSuccess }) {
           if (onSuccess) onSuccess()
         }}
         sourceAquarium={aquarium}
+        zIndex={1002}
       />
     </div>
   )

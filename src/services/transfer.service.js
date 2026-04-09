@@ -43,11 +43,61 @@ export async function transferFish(farmId, transferData) {
       throw new Error('Source and destination cannot be the same')
     }
 
-    // Import services dynamically
-    const { updateFarmFish, addFarmFish } = await import('./farm-fish.service')
-    const { collection: firestoreCollection, query, where, getDocs } = await import('firebase/firestore')
+    const { updateFarmFish, addFarmFish, updateAquariumStatus } = await import('./farm-fish.service')
 
-    // Get the fish record
+    // Determine if this is a farmFish or fish_instance
+    // getFishInAquarium now tags each entry with a 'source' field
+    // We receive fishInstanceId and fishSource from the transfer data
+    const fishSource = transferData.fishSource || 'farmFish'
+
+    if (fishSource === 'fish_instance') {
+      // ── Reception fish (fish_instances) ─────────────────────────────────
+      const fishRef = doc(db, 'farms', farmId, 'fish_instances', fishInstanceId)
+      const fishDoc = await getDoc(fishRef)
+      if (!fishDoc.exists()) throw new Error('Fish not found')
+
+      const fishData = fishDoc.data()
+      if (fishData.aquariumId !== sourceAquariumId) throw new Error('Fish not found in source aquarium')
+
+      const available = fishData.currentQuantity || 0
+      if (available < quantity) throw new Error(`Not enough fish (available: ${available}, requested: ${quantity})`)
+
+      const now = Timestamp.now()
+      const remaining = available - quantity
+      const batch = writeBatch(db)
+
+      if (remaining === 0) {
+        // Move all — just change aquariumId
+        batch.update(fishRef, { aquariumId: destinationAquariumId, updatedAt: now })
+      } else {
+        // Partial — reduce source, create new instance in destination
+        batch.update(fishRef, { currentQuantity: remaining, updatedAt: now })
+        const { collection: col, addDoc, serverTimestamp } = await import('firebase/firestore')
+        await addDoc(col(db, 'farms', farmId, 'fish_instances'), {
+          ...fishData,
+          aquariumId: destinationAquariumId,
+          currentQuantity: quantity,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+      }
+
+      await batch.commit()
+      await updateAquariumStatus(farmId, sourceAquariumId)
+      await updateAquariumStatus(farmId, destinationAquariumId)
+
+      return {
+        success: true,
+        transferred: quantity,
+        sourceAquariumId,
+        destinationAquariumId,
+        fishInstanceId,
+        fishName: fishData.commonName || fishData.scientificName,
+        remainingInSource: remaining,
+      }
+    }
+
+    // ── Local fish (farmFish) ──────────────────────────────────────────────
     const fishRef = doc(db, 'farmFish', fishInstanceId)
     const fishDoc = await getDoc(fishRef)
 
@@ -73,7 +123,6 @@ export async function transferFish(farmId, transferData) {
 
     if (remainingInSource === 0) {
       // Move all fish - just update aquariumId
-      // updateFarmFish will automatically update both source and destination aquarium statuses
       await updateFarmFish(farmId, fishInstanceId, {
         aquariumId: destinationAquariumId,
         updatedAt: now,
@@ -81,17 +130,9 @@ export async function transferFish(farmId, transferData) {
     } else {
       // Split fish - reduce quantity in source and create new entry in destination
       const batch = writeBatch(db)
-
-      // Update source fish quantity
-      batch.update(fishRef, {
-        quantity: remainingInSource,
-        updatedAt: now,
-      })
-
+      batch.update(fishRef, { quantity: remainingInSource, updatedAt: now })
       await batch.commit()
 
-      // Create new fish entry in destination
-      // addFarmFish will automatically update destination aquarium status
       await addFarmFish(farmId, {
         hebrewName: fishData.hebrewName,
         scientificName: fishData.scientificName,
@@ -102,8 +143,6 @@ export async function transferFish(farmId, transferData) {
         aquariumId: destinationAquariumId,
       })
 
-      // Manually update source aquarium status since we used batch.update
-      const { updateAquariumStatus } = await import('./farm-fish.service')
       await updateAquariumStatus(farmId, sourceAquariumId)
     }
 
@@ -136,26 +175,46 @@ export async function getFishInAquarium(farmId, aquariumId) {
     if (!farmId) throw new Error('Farm ID is required')
     if (!aquariumId) throw new Error('Aquarium ID is required')
 
-    // Import getFarmFish dynamically to avoid circular dependency
     const { getFarmFish } = await import('./farm-fish.service')
+    const { collection: col, query, where, getDocs } = await import('firebase/firestore')
 
-    // Get all farm fish
+    // Local fish (farmFish)
     const allFish = await getFarmFish(farmId)
+    const localFish = allFish
+      .filter(fish => fish.aquariumId === aquariumId && (fish.quantity || 0) > 0)
+      .map(fish => ({
+        instanceId: fish.fishId,
+        source: 'farmFish',
+        quantity: fish.quantity,
+        currentQuantity: fish.quantity,
+        scientificName: fish.scientificName,
+        commonName: fish.hebrewName,
+        size: fish.size,
+        code: fish.code || '',
+        dateAdded: fish.createdAt,
+      }))
 
-    // Filter fish in this specific aquarium
-    const fishInAquarium = allFish.filter(fish => fish.aquariumId === aquariumId)
+    // Reception fish (fish_instances)
+    const { db: database } = await import('../firebase/config')
+    const instancesRef = col(database, 'farms', farmId, 'fish_instances')
+    const instancesQuery = query(instancesRef, where('aquariumId', '==', aquariumId))
+    const instancesSnapshot = await getDocs(instancesQuery)
+    const receptionFish = instancesSnapshot.docs
+      .map(doc => ({ instanceId: doc.id, ...doc.data() }))
+      .filter(fish => (fish.currentQuantity || 0) > 0)
+      .map(fish => ({
+        instanceId: fish.instanceId,
+        source: 'fish_instance',
+        quantity: fish.currentQuantity,
+        currentQuantity: fish.currentQuantity,
+        scientificName: fish.scientificName,
+        commonName: fish.commonName,
+        size: fish.size,
+        code: fish.code || '',
+        dateAdded: fish.arrivalDate,
+      }))
 
-    // Transform to expected format for FishTransferModal
-    return fishInAquarium.map(fish => ({
-      instanceId: fish.fishId, // Using fishId as instanceId for compatibility
-      quantity: fish.quantity,
-      dateAdded: fish.createdAt,
-      code: fish.code || '',
-      scientificName: fish.scientificName,
-      commonName: fish.hebrewName, // Using hebrewName as commonName
-      size: fish.size,
-      currentQuantity: fish.quantity,
-    }))
+    return [...localFish, ...receptionFish]
   } catch (error) {
     console.error('Error getting fish in aquarium:', error)
     throw error
